@@ -82,6 +82,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     public Collection(OptionsList models) {
         this(null, models, null);
     }
+    public Collection(OptionsList models, Options options) {
+        this(null, models, options);
+    }
     public Collection(Options ...models) {
         this(null, new OptionsList(models), null);
     }
@@ -250,6 +253,15 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         return add(parse(models, options), options);
     }
 
+    public Collection add(Options attrs) {
+        return add(attrs, null);
+    }
+    public Collection add(Options attrs, Options options) {
+        T model = instantiateModel();
+        model.set(attrs, options);
+
+        return add(model, options);
+    }
     public Collection add(T model) {
         return add(Arrays.asList(model), null);
     }

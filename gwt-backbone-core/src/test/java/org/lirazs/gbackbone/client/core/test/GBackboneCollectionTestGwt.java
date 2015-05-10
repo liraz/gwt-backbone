@@ -351,4 +351,80 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(9, col1.length());
         assertEquals(7, addCount[0]);
     }
+
+    public void testAddMultipleModels() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("at", 0),
+                new Options("at", 1),
+                new Options("at", 9)
+        ));
+        col.add(new OptionsList(
+                new Options("at", 2),
+                new Options("at", 3),
+                new Options("at", 4),
+                new Options("at", 5),
+                new Options("at", 6),
+                new Options("at", 7),
+                new Options("at", 8)
+        ), new Options("at", 2));
+
+        for (int i = 0; i < 5; i++) {
+            assertEquals(i, col.at(i).get("at"));
+        }
+    }
+
+    public void testAddAtShouldHavePreferenceOverComparator() {
+        Comparator<Model> colComparator = new Comparator<Model>() {
+            @Override
+            public int compare(Model a, Model b) {
+                return a.getId() > b.getId() ? -1 : 1;
+            }
+        };
+
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 2),
+                new Options("id", 3)
+        ), new Options("comparator", colComparator));
+
+        col.add(new Model(new Options("id", 1)), new Options("at", 1));
+
+        assertEquals("3 1 2", col.jsPluck("id").join(" "));
+    }
+
+    public void testCantAddModelToCollectionTwice() {
+        Collection<Model> col = new Collection<Model>(
+                new Options("id", 1),
+                new Options("id", 2),
+                new Options("id", 1),
+                new Options("id", 2),
+                new Options("id", 3)
+        );
+        assertEquals("1 2 3", col.jsPluck("id").join(" "));
+    }
+
+    public void testCantAddDifferentModelWithSameIdToCollectionTwice() {
+        Collection<Model> col = new Collection<Model>();
+        col.unshift(new Options("id", 101));
+        col.add(new Options("id", 101));
+
+        assertEquals(1, col.length());
+    }
+
+    public void testMergeInDuplicateModelsWithMergeTrue() {
+        Collection<Model> col = new Collection<Model>();
+        col.add(new OptionsList(
+                new Options("id", 1, "name", "Moe"),
+                new Options("id", 2, "name", "Curly"),
+                new Options("id", 3, "name", "Larry")
+        ));
+
+        col.add(new Options("id", 1, "name", "Moses"));
+        assertEquals("Moe", col.first().get("name"));
+
+        col.add(new Options("id", 1, "name", "Moses"), new Options("merge", true));
+        assertEquals("Moses", col.first().get("name"));
+
+        col.add(new Options("id", 1, "name", "Tim"), new Options("merge", true, "silent", true));
+        assertEquals("Tim", col.first().get("name"));
+    }
 }
