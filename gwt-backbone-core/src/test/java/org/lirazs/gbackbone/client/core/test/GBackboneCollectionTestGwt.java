@@ -293,4 +293,62 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             assertEquals(strings[i], label);
         }
     }
+
+    public void testAdd() {
+        final String[] added = new String[1];
+        final Boolean[] secondAdded = new Boolean[1];
+        final Options[] opts = new Options[1];
+
+        Model e = new Model(new Options("id", 10, "label", "e"));
+        otherCol.add(e);
+        otherCol.on("add", new Function() {
+            @Override
+            public void f() {
+                secondAdded[0] = true;
+            }
+        });
+        col.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Options options = this.getArgument(2);
+
+                added[0] = model.get("label");
+                opts[0] = options;
+            }
+        });
+        col.add(e, new Options("amazing", true));
+        assertEquals("e", added[0]);
+        assertEquals(5, col.length());
+        assertEquals(e, col.last());
+        assertEquals(1, otherCol.length());
+        assertEquals(null, secondAdded[0]);
+        assertTrue(opts[0].getBoolean("amazing"));
+
+        Model f = new Model(new Options("id", 20, "label", "f"));
+        Model g = new Model(new Options("id", 21, "label", "g"));
+        Model h = new Model(new Options("id", 22, "label", "h"));
+
+        Collection<Model> atCol = new Collection<Model>(f, g, h);
+        assertEquals(3, atCol.length());
+        atCol.add(e, new Options("at", 1));
+        assertEquals(4, atCol.length());
+        assertEquals(e, atCol.at(1));
+        assertEquals(h, atCol.last());
+
+        Collection<Model> col1 = new Collection<Model>(Arrays.<Model>asList(null, null));
+        final int[] addCount = {0};
+        col1.on("add", new Function() {
+            @Override
+            public void f() {
+                addCount[0] += 1;
+            }
+        });
+        col1.add(Arrays.asList(null, f, g));
+        assertEquals(5, col1.length());
+        assertEquals(3, addCount[0]);
+        col1.add(Arrays.<Model>asList(null, null, null, null));
+        assertEquals(9, col1.length());
+        assertEquals(7, addCount[0]);
+    }
 }

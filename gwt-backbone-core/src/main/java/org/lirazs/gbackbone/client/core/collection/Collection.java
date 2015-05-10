@@ -164,7 +164,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
         initialize(models);
         initialize(models, options);
-        if(models != null && models.size() > 0) {
+        if(models != null) {
             options.put("silent", options.containsKey("silent") ? options.get("silent") : true);
             reset(models, options);
         }
@@ -452,6 +452,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             T model = models.get(i);
             T preparedModel = prepareModel(model);
 
+            if(model == null)
+                model = preparedModel;
+
             if(preparedModel != null) {
                 T existing = get(preparedModel);
                 // If a duplicate is found, prevent it from being added and
@@ -557,7 +560,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
         for (int i = 0; i < models.size(); i++) {
             T model = models.get(i);
-            removeReference(model);
+            if (model != null) {
+                removeReference(model);
+            }
         }
 
         options.put("previousModels", this.models);
@@ -1130,6 +1135,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         return model;
     }
     private T prepareModel(T attrs) {
+        if(attrs == null)
+            attrs = instantiateModel();
+
         if (attrs.getCollection() == null)
             attrs.setCollection(this);
         return attrs;
