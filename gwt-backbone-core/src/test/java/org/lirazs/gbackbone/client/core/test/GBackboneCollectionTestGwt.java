@@ -29,6 +29,7 @@ import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.test.model.MongoModel;
+import org.lirazs.gbackbone.client.core.test.model.ParseModel;
 import org.lirazs.gbackbone.client.core.test.model.TestModel;
 import org.lirazs.gbackbone.client.core.util.ArrayUtils;
 
@@ -426,5 +427,150 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         col.add(new Options("id", 1, "name", "Tim"), new Options("merge", true, "silent", true));
         assertEquals("Tim", col.first().get("name"));
+    }
+
+    public void testAddModelToMultipleCollections() {
+        final int[] counter = {0};
+        final Collection<Model> colF = new Collection<Model>();
+        final Collection<Model> colE = new Collection<Model>();
+
+        final Model e = new Model(new Options("id", 10, "label", "e"));
+        e.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Collection collection = this.getArgument(1);
+
+                counter[0]++;
+                assertEquals(model, e);
+
+                if (counter[0] > 1) {
+                    assertEquals(colF, collection);
+                } else {
+                    assertEquals(colE, collection);
+                }
+            }
+        });
+
+        colE.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Collection collection = this.getArgument(1);
+
+                assertEquals(model, e);
+                assertEquals(collection, colE);
+            }
+        });
+        colF.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Collection collection = this.getArgument(1);
+
+                assertEquals(model, e);
+                assertEquals(collection, colF);
+            }
+        });
+
+        colE.add(e);
+        assertEquals(colE, e.getCollection());
+        colF.add(e);
+        assertEquals(colE, e.getCollection());
+    }
+
+    public void testAddModelWithParse() {
+        Collection<ParseModel> col = new Collection<ParseModel>(ParseModel.class);
+
+        JSONObject obj = new JSONObject();
+        obj.put("value", new JSONNumber(1));
+
+        col.add(obj, new Options("parse", true));
+
+        assertEquals(2.0d, col.at(0).get("value"));
+    }
+
+    public void testAddWithParseAndMerge() {
+        class ParseCollection extends Collection<Model> {
+            @Override
+            public List<Model> parse(OptionsList models, Options options) {
+                OptionsList filtered = new OptionsList();
+                for (Options model : models) {
+                    if(model.containsKey("model"))
+                        filtered.add(model.<Options>get("model"));
+                }
+
+                return super.parse(filtered, options);
+            }
+        }
+
+        Collection<Model> collection = new ParseCollection();
+        collection.add(new Options("id", 1));
+        collection.add(new OptionsList(new Options("model", new Options("id", 1, "name", "Alf"))), new Options("parse", true, "merge", true));
+
+        assertEquals("Alf", collection.first().get("name"));
+    }
+
+    public void testAddModelToCollectionWithSortStyleComparator() {
+        Collection<Model> col = new Collection<Model>();
+        col.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model a, Model b) {
+                return a.<String>get("name").compareTo(b.<String>get("name"));
+            }
+        });
+
+        Model tom = new Model(new Options("name", "Tom"));
+        Model rob = new Model(new Options("name", "Rob"));
+        Model tim = new Model(new Options("name", "Tim"));
+
+        col.add(tom);
+        col.add(rob);
+        col.add(tim);
+
+        assertEquals(0, col.indexOf(rob));
+        assertEquals(1, col.indexOf(tim));
+        assertEquals(2, col.indexOf(tom));
+    }
+
+    public void testComparatorThatDependsOnThis() {
+
+        class NegativeCollection extends Collection<Model> {
+
+            public void registerNegativeComparator() {
+                registerComparator(new Comparator<Model>() {
+                    @Override
+                    public int compare(Model a, Model b) {
+                        return a.getId();
+                    }
+                });
+            }
+
+            public void registerDoubleNegativeComparator() {
+                registerComparator(new Comparator<Model>() {
+                    @Override
+                    public int compare(Model a, Model b) {
+                        return NegativeCollection.this.negative(b.getId()) - NegativeCollection.this.negative(a.getId());
+                    }
+                });
+            }
+
+            protected int negative(int num) {
+                return -num;
+            }
+        }
+
+        NegativeCollection col = new NegativeCollection();
+        col.registerNegativeComparator();
+        col.add(new OptionsList(
+                new Options("id", 1),
+                new Options("id", 2),
+                new Options("id", 3)
+        ));
+        assertEquals(Arrays.asList(new Object[]{3, 2, 1}), Arrays.asList(col.pluck("id")));
+
+        col.registerDoubleNegativeComparator();
+        col.sort();
+        assertEquals(Arrays.asList(new Object[]{1, 2, 3}), Arrays.asList(col.pluck("id")));
     }
 }

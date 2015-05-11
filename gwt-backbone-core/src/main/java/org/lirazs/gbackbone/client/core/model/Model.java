@@ -360,7 +360,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         return set(jsonObject, null);
     }
     public Model set(JSONObject jsonObject, Options options) {
-        return set(new Options(jsonObject), options);
+        return set(parse(jsonObject, options), options);
     }
 
     public <T> Model set(String name, T value) {
