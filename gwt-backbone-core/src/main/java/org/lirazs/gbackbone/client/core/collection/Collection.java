@@ -325,7 +325,8 @@ public class Collection<T extends Model> extends Events implements Synchronized 
                 this.models.remove(index);
 
                 this.length--;
-                if(options.containsKey("silent") && options.<Boolean>get("silent")) {
+                boolean silent = options.containsKey("silent") && options.<Boolean>get("silent");
+                if(!silent) {
                     options.put("index", index);
                     model.trigger("remove", model, this, options);
                 }
@@ -659,12 +660,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     }
 
     /**
-     * // Remove a model from the beginning of the collection.
-     shift(options?: SilentOptions): Model {
-         var model = this.at(0);
-         this.remove(model, options);
-         return model;
-     }
+     * Remove a model from the beginning of the collection.
+     *
+     * @return
      */
     public T shift() {
         return shift(null);
@@ -683,13 +681,15 @@ public class Collection<T extends Model> extends Events implements Synchronized 
      }
      */
     public T[] slice() {
-        return (T[]) this.models.toArray();
+        return this.models.toArray(instantiateModelArray(this.models.size()));
     }
     public T[] slice(int begin) {
-        return (T[]) this.models.subList(begin, -1).toArray();
+        List<T> subList = this.models.subList(begin, -1);
+        return subList.toArray(instantiateModelArray(subList.size()));
     }
     public T[] slice(int begin, int end) {
-        return (T[]) this.models.subList(begin, end).toArray();
+        List<T> subList = this.models.subList(begin, end);
+        return subList.toArray(instantiateModelArray(subList.size()));
     }
 
 
@@ -1163,6 +1163,16 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             model = GWT.create(Model.class);
         }
         return model;
+    }
+
+    private T[] instantiateModelArray(int length) {
+        T[] models = null;
+        if (modelClass != null) {
+            models = GWT.<Reflection>create(Reflection.class).instantiateArray(modelClass, length);
+        } else {
+            models = (T[]) new Model[length];
+        }
+        return models;
     }
 
     /**

@@ -17,5 +17,7 @@ package org.lirazs.gbackbone.client.generator;
 
 
 public interface Reflection {
-    public <T, V extends T> T instantiate( Class<V> clazz );
+    <T, V extends T> T instantiate( Class<V> clazz );
+
+    <T, V extends T> T[] instantiateArray( Class<V> clazz, int length );
 }

@@ -573,4 +573,55 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.sort();
         assertEquals(Arrays.asList(new Object[]{1, 2, 3}), Arrays.asList(col.pluck("id")));
     }
+
+    public void testRemove() {
+        final String[] removed = {null};
+        final Boolean[] otherRemoved = {null};
+
+        col.on("remove", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Options options = this.getArgument(2);
+
+                removed[0] = model.get("label");
+                assertEquals(3, options.get("index"));
+            }
+        });
+
+        otherCol.on("remove", new Function() {
+            @Override
+            public void f() {
+                otherRemoved[0] = true;
+            }
+        });
+        col.remove(d);
+
+        assertEquals("d", removed[0]);
+        assertEquals(3, col.length());
+        assertEquals(a, col.first());
+        assertEquals(otherRemoved[0], null);
+    }
+
+    public void testShiftAndPop() {
+        Collection<Model> col = new Collection<Model>(
+                new Options("a", "a"),
+                new Options("b", "b"),
+                new Options("c", "c")
+        );
+        assertEquals("a", col.shift().get("a"));
+        assertEquals("c", col.pop().get("c"));
+    }
+
+    public void testSlice() {
+        Collection<Model> col = new Collection<Model>(
+                new Options("a", "a"),
+                new Options("b", "b"),
+                new Options("c", "c")
+        );
+        Model[] array = col.slice(1, 3);
+
+        assertEquals(2, array.length);
+        assertEquals("b", array[0].get("b"));
+    }
 }

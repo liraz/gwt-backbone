@@ -66,7 +66,8 @@ public class ReflectionGenerator extends Generator
             sourceWriter.println( "ReflectionImpl( ) {" );
             sourceWriter.println( "}" );
 
-            printFactoryMethod( clazzes, sourceWriter );
+            printFactoryMethod(clazzes, sourceWriter);
+            printArrayFactoryMethod( clazzes, sourceWriter );
 
             sourceWriter.commit( logger );
         }
@@ -96,6 +97,36 @@ public class ReflectionGenerator extends Generator
         }
         sourceWriter.indent();
         sourceWriter.println("return (T) null;");
+        sourceWriter.outdent();
+        sourceWriter.println();
+        sourceWriter.println("}");
+        sourceWriter.outdent( );
+        sourceWriter.println( );
+    }
+
+    private void printArrayFactoryMethod( List<JClassType> clazzes, SourceWriter sourceWriter )
+    {
+        sourceWriter.println( );
+
+        sourceWriter.println( "public <T, V extends T> T[] instantiateArray( Class<V> clazz, int length ) {" );
+
+        for ( JClassType classType : clazzes )
+        {
+            if ( classType.isAbstract( ) )
+                continue;
+
+            sourceWriter.println( );
+            sourceWriter.indent( );
+            sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+            sourceWriter.indent( );
+            sourceWriter.println( "return (T[]) new " + classType.getQualifiedSourceName( ) + "[length];" );
+            sourceWriter.outdent( );
+            sourceWriter.println( "}" );
+            sourceWriter.outdent( );
+            sourceWriter.println( );
+        }
+        sourceWriter.indent();
+        sourceWriter.println("return (T[]) null;");
         sourceWriter.outdent();
         sourceWriter.println();
         sourceWriter.println("}");
