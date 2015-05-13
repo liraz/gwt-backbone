@@ -567,12 +567,15 @@ public class Collection<T extends Model> extends Events implements Synchronized 
          return this;
      }
      */
+    public Collection reset() {
+        return reset(new ArrayList<T>(), null);
+    }
     public Collection reset(List<T> models, Options options) {
         if(options == null)
             options = new Options();
 
-        for (int i = 0; i < models.size(); i++) {
-            T model = models.get(i);
+        for (int i = 0; i < this.models.size(); i++) {
+            T model = this.models.get(i);
             if (model != null) {
                 removeReference(model);
             }

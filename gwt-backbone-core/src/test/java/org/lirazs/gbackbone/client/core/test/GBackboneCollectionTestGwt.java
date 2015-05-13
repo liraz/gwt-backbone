@@ -624,4 +624,58 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(2, array.length);
         assertEquals("b", array[0].get("b"));
     }
+
+    public void testEventsAreUnboundOnRemove() {
+        final int[] counter = {0};
+
+        Model dj = new Model();
+        Collection<Model> emcees = new Collection<Model>(dj);
+        emcees.on("change", new Function() {
+            @Override
+            public void f() {
+                counter[0]++;
+            }
+        });
+
+        dj.set(new Options("name", "Kool"));
+        dj.set(new Options("name", "Kool2"));
+        assertEquals(1, counter[0]);
+
+        emcees.reset();
+        assertEquals(null, dj.getCollection());
+
+        dj.set(new Options("name", "Shadow"));
+        assertEquals(1, counter[0]);
+    }
+
+    public void testRemoveInMultipleCollections() {
+        Options modelData = new Options("id", 5, "title", "Othello");
+        final boolean[] passed = {false};
+
+        Model e = new Model(modelData);
+        Model f = new Model(modelData);
+
+        f.on("remove", new Function() {
+            @Override
+            public void f() {
+                passed[0] = true;
+            }
+        });
+
+        Collection<Model> colE = new Collection<Model>(e);
+        Collection<Model> colF = new Collection<Model>(f);
+
+        assertTrue(!e.equals(f));
+        assertTrue(colE.length() == 1);
+        assertTrue(colF.length() == 1);
+
+        colE.remove(e);
+        assertEquals(false, passed[0]);
+
+        assertTrue(colE.length() == 0);
+
+        colF.remove(f);
+        assertTrue(colF.length() == 0);
+        assertEquals(true, passed[0]);
+    }
 }
