@@ -24,13 +24,18 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
 import com.google.gwt.query.client.js.JsMap;
+import com.google.gwt.user.client.Random;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.event.Events;
+import org.lirazs.gbackbone.client.core.function.FilterFunction;
+import org.lirazs.gbackbone.client.core.function.MapFunction;
+import org.lirazs.gbackbone.client.core.function.MinMaxFunction;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
+import org.lirazs.gbackbone.client.core.util.ArrayUtils;
 import org.lirazs.gbackbone.client.generator.Reflection;
 
 import java.util.*;
@@ -79,6 +84,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     public Collection(Class<T> modelClass) {
         this(modelClass, new ArrayList<T>(), null);
     }
+    public Collection(Class<T> modelClass, Options options) {
+        this(modelClass, new ArrayList<T>(), options);
+    }
     public Collection(OptionsList models) {
         this(null, models, null);
     }
@@ -98,6 +106,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
         if(options.containsKey("comparator"))
             comparator = options.get("comparator");
+
+        if(options.containsKey("url"))
+            url = options.get("url");
 
         internalReset();
 
@@ -124,6 +135,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
         if(options.containsKey("comparator"))
             comparator = options.get("comparator");
+
+        if(options.containsKey("url"))
+            url = options.get("url");
 
         internalReset();
 
@@ -162,6 +176,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
         if(options.containsKey("comparator"))
             comparator = options.get("comparator");
+
+        if(options.containsKey("url"))
+            url = options.get("url");
 
         internalReset();
 
@@ -221,6 +238,9 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
     public String getUrl() {
         return url;
+    }
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     /**
@@ -423,6 +443,12 @@ public class Collection<T extends Model> extends Events implements Synchronized 
          return this;
      }
      */
+    public Collection set(JSONArray models) {
+        return set(models, null);
+    }
+    public Collection set(JSONArray models, Options options) {
+        return set(parse(models, options), options);
+    }
     public Collection set(Options[] objects) {
         return set(objects, null);
     }
@@ -432,7 +458,6 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             T model = instantiateModel();
             model.set(object, options);
 
-            //models.add(newModel(object, options));
             models.add(model);
         }
         return set(models, options);
@@ -567,6 +592,12 @@ public class Collection<T extends Model> extends Events implements Synchronized 
          return this;
      }
      */
+    public Collection reset(JSONArray models) {
+        return reset(models, null);
+    }
+    public Collection reset(JSONArray models, Options options) {
+        return reset(parse(models, options), options);
+    }
     public Collection reset() {
         return reset(new ArrayList<T>(), null);
     }
@@ -683,16 +714,14 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         return Array.prototype.slice.apply(this.models, arguments);
      }
      */
-    public T[] slice() {
-        return this.models.toArray(instantiateModelArray(this.models.size()));
+    public List<T> slice() {
+        return new ArrayList<T>(this.models);
     }
-    public T[] slice(int begin) {
-        List<T> subList = this.models.subList(begin, -1);
-        return subList.toArray(instantiateModelArray(subList.size()));
+    public List<T> slice(int begin) {
+        return this.models.subList(begin, length);
     }
-    public T[] slice(int begin, int end) {
-        List<T> subList = this.models.subList(begin, end);
-        return subList.toArray(instantiateModelArray(subList.size()));
+    public List<T> slice(int begin, int end) {
+        return this.models.subList(begin, end);
     }
 
 
@@ -777,9 +806,10 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             int hasKeyCount = 0;
             Options modelAttributes = model.getAttributes();
 
-            String[] keys = (String[]) attrs.keySet().toArray();
+            Set<String> keys = attrs.keySet();
             for (String attr : keys) {
-                if(modelAttributes.containsKey(attr)) {
+                Object value = attrs.get(attr);
+                if(modelAttributes.containsKey(attr) && modelAttributes.get(attr).equals(value)) {
                     hasKeyCount++;
                 }
             }
@@ -800,9 +830,10 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             int hasKeyCount = 0;
             Options modelAttributes = model.getAttributes();
 
-            String[] keys = (String[]) attrs.keySet().toArray();
+            Set<String> keys = attrs.keySet();
             for (String attr : keys) {
-                if(modelAttributes.containsKey(attr)) {
+                Object value = attrs.get(attr);
+                if(modelAttributes.containsKey(attr) && modelAttributes.get(attr).equals(value)) {
                     hasKeyCount++;
                 }
             }
@@ -916,6 +947,251 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     }
 
     /**
+     * Return the results of applying the iteratee to each element.
+     *
+     * @param applyFunction
+     * @return
+     */
+    public <K> JsArray<K> map(MapFunction<K, T> applyFunction) {
+        if(applyFunction == null)
+            return JsArray.create();
+
+        JsArray<K> attrs = JsArray.create();
+
+        for (int i = 0; i < this.models.size(); i++) {
+            T model = this.models.get(i);
+            attrs.add(i, applyFunction.f(model, i, this.models));
+        }
+        return attrs;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public Boolean any() {
+        return size() > 0;
+    }
+    public Boolean any(FilterFunction<T> applyFunction) {
+        return filter(applyFunction).size() > 0;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public Boolean isEmpty() {
+        return !any();
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int size() {
+        return this.length;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public List<T> rest() {
+        return rest(1);
+    }
+    public List<T> rest(int index) {
+        return index == -1 ? slice(size() - 1) : slice(index);
+    }
+
+    /**
+     *
+     * @param models
+     * @return
+     */
+    public List<T> without(T ...models) {
+        List<T> result = new ArrayList<T>();
+
+        for (int i = 0; i < this.length; i++) {
+            boolean includeModel = true;
+            T model = this.models.get(i);
+
+            for (T withoutModel : models) {
+                if (model.equals(withoutModel) || model.getId() == withoutModel.getId()) {
+                    includeModel = false;
+                    break;
+                }
+            }
+            if(includeModel)
+                result.add(model);
+        }
+
+        return result;
+    }
+
+    /**
+     *
+     * @param applyFunction
+     * @return
+     */
+    public T max(MinMaxFunction<T> applyFunction) {
+        int maxValue = Integer.MIN_VALUE;
+        T result = null;
+
+        if (applyFunction != null) {
+            for (int i = 0; i < this.models.size(); i++) {
+                T model = this.models.get(i);
+                int value = applyFunction.f(model, i, this.models);
+                if(value > maxValue) {
+                    result = model;
+                    maxValue = value;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param applyFunction
+     * @return
+     */
+    public T min(MinMaxFunction<T> applyFunction) {
+        int minValue = Integer.MAX_VALUE;
+        T result = null;
+
+        if (applyFunction != null) {
+            for (int i = 0; i < this.models.size(); i++) {
+                T model = this.models.get(i);
+                int value = applyFunction.f(model, i, this.models);
+                if(value < minValue) {
+                    result = model;
+                    minValue = value;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param applyFunction
+     * @return
+     */
+    public List<T> filter(FilterFunction<T> applyFunction) {
+        if(applyFunction == null)
+            return new ArrayList<T>();
+
+        List<T> result = new ArrayList<T>();
+
+        for (int i = 0; i < this.models.size(); i++) {
+            T model = this.models.get(i);
+
+            boolean includeModel = applyFunction.f(model, i, this.models);
+            if(includeModel)
+                result.add(model);
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param models
+     * @return
+     */
+    public List<T> difference(T[] models) {
+        return without(models);
+    }
+
+    /**
+     *
+     * @param model
+     * @return
+     */
+    public boolean contains(Model model) {
+        return contains(model, 0);
+    }
+
+    /**
+     *
+     * @param model
+     * @param fromIndex
+     * @return
+     */
+    public boolean contains(Model model, int fromIndex) {
+
+        if (model != null) {
+            if(fromIndex < 0)
+                fromIndex = 0;
+
+            for (int i = fromIndex; i < models.size(); i++) {
+                Model existingModel = models.get(i);
+                if (model.equals(existingModel) || model.getId() == existingModel.getId()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public T sample() {
+        return isEmpty() ? null : sample(1).get(0);
+    }
+
+    /**
+     *
+     * @param quantity
+     * @return
+     */
+    public List<T> sample(int quantity) {
+        List<T> result = new ArrayList<T>();
+        JsArray<Integer> indexes = getRandomIndexes(quantity);
+
+        for (int i = 0; i < indexes.length(); i++) {
+            Integer randomIndex = indexes.getInt(i);
+            result.add(models.get(randomIndex));
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param attribute
+     * @return
+     */
+    public Options indexBy(String attribute) {
+        Options result = new Options();
+
+        for (int i = 0; i < models.size(); i++) {
+            Model model = models.get(i);
+            if(model.has(attribute)) {
+                String valueAsKey = String.valueOf(model.get(attribute));
+                result.put(valueAsKey, model);
+            }
+        }
+        return result;
+    }
+
+    private JsArray<Integer> getRandomIndexes(int quantity) {
+        return getRandomIndexes(quantity, JsArray.<Integer>create());
+    }
+    private JsArray<Integer> getRandomIndexes(int quantity, JsArray<Integer> excludes) {
+        int number;
+
+        if(excludes.length() == quantity)
+            return excludes;
+
+        do {
+            number = Random.nextInt(size());
+        } while (excludes.contains(number));
+
+        return getRandomIndexes(quantity, excludes.add(number));
+    }
+
+    /**
      * // Fetch the default set of models for this collection, resetting the
      // collection when they arrive. If `reset: true` is passed, the response
      // data will be passed through the `reset` method instead of `set`.
@@ -945,8 +1221,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         options.put("success", new Function() {
             @Override
             public void f() {
-                JavaScriptObject jso = getArgument(0);
-                List response = Arrays.asList(jso);
+                JSONArray response = getArgument(0);
 
                 if(options.getBoolean("reset")) {
                     Collection.this.reset(response, options);
@@ -1035,7 +1310,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             }
         });
 
-        preparedModel.save(new Options(), options);
+        preparedModel.save(null, options);
 
         return preparedModel;
     }
@@ -1060,26 +1335,14 @@ public class Collection<T extends Model> extends Events implements Synchronized 
 
     public List<T> parse(JSONValue resp, Options options) {
         List<T> result = new ArrayList<T>();
-        JSONArray array = resp.isArray();
-        JSONObject jsonObject = resp.isObject();
+        JSONArray array = resp != null ? resp.isArray() : new JSONArray();
 
-        if(jsonObject != null) {
-            array = new JSONArray();
-            array.set(0, jsonObject);
+        if(resp != null && resp.isObject() != null) {
+            array.set(0, resp.isObject());
         }
 
-        if(array != null) {
-            for (int i = 0; i < array.size(); i++) {
-                JSONValue value = array.get(i);
-                JSONObject object = value.isObject();
-                if(object != null) {
-                    T model = instantiateModel();
-                    model.set(object, options);
+        parse(new OptionsList(array), options);
 
-                    result.add(model);
-                }
-            }
-        }
         return result;
     }
 
@@ -1139,7 +1402,6 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         options.put("collection", this);
 
         T model = instantiateModel();
-
         model.set(attrs, options);
 
         //TODO: Why needed?
@@ -1235,7 +1497,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
                             byId.put(String.valueOf(model.getId()), model);
                     }
                 }
-                trigger(event, model, collection, options);
+                trigger(event, getArguments());
             }
         }
     };

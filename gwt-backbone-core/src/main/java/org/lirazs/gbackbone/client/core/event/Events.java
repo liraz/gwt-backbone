@@ -164,10 +164,8 @@ public class Events {
             for (String splittedName : names) {
                 off(splittedName, callback, context);
             }
-        } else {
+        } else if(events.containsKey(name)) {
             List<EventEntry> eventEntries = events.get(name);
-            if(eventEntries == null)
-                eventEntries = new ArrayList<EventEntry>();
 
             int retainIndex = 0;
             EventEntry[] retainKey = new EventEntry[eventEntries.size()];
@@ -180,10 +178,12 @@ public class Events {
                             || (context != null && !context.equals(eventEntry.context)))
                         retainKey[retainIndex] = eventEntry;
                 }
-                eventEntries.clear();
             }
 
-            if(retainKey.length == 0) events.remove(name);
+            if(retainKey.length == 0) {
+                eventEntries.clear();
+                events.remove(name);
+            }
         }
         return this;
     }

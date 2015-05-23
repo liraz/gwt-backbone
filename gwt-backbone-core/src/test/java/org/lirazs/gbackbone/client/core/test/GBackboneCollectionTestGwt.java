@@ -23,14 +23,16 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
+import com.google.gwt.query.client.Promise;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
+import org.lirazs.gbackbone.client.core.function.FilterFunction;
+import org.lirazs.gbackbone.client.core.function.MapFunction;
+import org.lirazs.gbackbone.client.core.function.MinMaxFunction;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
-import org.lirazs.gbackbone.client.core.test.model.MongoModel;
-import org.lirazs.gbackbone.client.core.test.model.ParseModel;
-import org.lirazs.gbackbone.client.core.test.model.TestModel;
+import org.lirazs.gbackbone.client.core.test.model.*;
 import org.lirazs.gbackbone.client.core.util.ArrayUtils;
 
 import java.util.ArrayList;
@@ -619,10 +621,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 new Options("b", "b"),
                 new Options("c", "c")
         );
-        Model[] array = col.slice(1, 3);
+        List<Model> array = col.slice(1, 3);
 
-        assertEquals(2, array.length);
-        assertEquals("b", array[0].get("b"));
+        assertEquals(2, array.size());
+        assertEquals("b", array.get(0).get("b"));
     }
 
     public void testEventsAreUnboundOnRemove() {
@@ -677,5 +679,364 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         colF.remove(f);
         assertTrue(colF.length() == 0);
         assertEquals(true, passed[0]);
+    }
+
+    public void testRemoveSameModelInMultipleCollection() {
+        final int[] counter = {0};
+        final Model e = new Model(new Options("id", 5, "title", "Othello"));
+        final Collection<Model> colE = new Collection<Model>(e);
+        final Collection<Model> colF = new Collection<Model>(e);
+
+        e.on("remove", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Collection collection = this.getArgument(1);
+
+                counter[0]++;
+
+                assertEquals(model, e);
+
+                if(counter[0] > 1) {
+                    assertEquals(colE, collection);
+                } else {
+                    assertEquals(colF, collection);
+                }
+            }
+        });
+
+        colE.on("remove", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Collection collection = this.getArgument(1);
+
+                assertEquals(model, e);
+                assertEquals(collection, colE);
+            }
+        });
+
+        colF.on("remove", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(0);
+                Collection collection = this.getArgument(1);
+
+                assertEquals(model, e);
+                assertEquals(collection, colF);
+            }
+        });
+
+        assertEquals(e.getCollection(), colE);
+
+        colF.remove(e);
+        assertEquals(0, colF.length());
+        assertEquals(1, colE.length());
+
+        assertEquals(1, counter[0]);
+        assertEquals(e.getCollection(), colE);
+
+        colE.remove(e);
+        assertEquals(e.getCollection(), null);
+        assertEquals(0, colE.length());
+        assertEquals(2, counter[0]);
+    }
+
+    public void testModelDestroyRemovesFromAllCollections() {
+        class LocalModel extends Model {
+            public LocalModel(Options attributes) {
+                super(attributes);
+            }
+
+            @Override
+            public Promise sync(String method, Options options) {
+                Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+        }
+
+        LocalModel e = new LocalModel(new Options("id", 5, "title", "Othello"));
+
+        Collection<LocalModel> colE = new Collection<LocalModel>(e);
+        Collection<LocalModel> colF = new Collection<LocalModel>(e);
+
+        e.destroy();
+
+        assertEquals(0, colE.length());
+        assertEquals(0, colF.length());
+
+        assertEquals(e.getCollection(), null);
+    }
+
+    public void testCollectionNonPersistedModelDestroyRemovesFromAllCollections() {
+        class LocalModel extends Model {
+            public LocalModel(Options attributes) {
+                super(attributes);
+            }
+
+            @Override
+            public Promise sync(String method, Options options) {
+                throw new Error("Should not be called");
+            }
+        }
+        LocalModel e = new LocalModel(new Options("title", "Othello"));
+
+        Collection<LocalModel> colE = new Collection<LocalModel>(e);
+        Collection<LocalModel> colF = new Collection<LocalModel>(e);
+
+        e.destroy();
+
+        assertEquals(0, colE.length());
+        assertEquals(0, colF.length());
+
+        assertEquals(e.getCollection(), null);
+    }
+
+    /*test("fetch", 4, function() {
+        var collection = new Backbone.Collection;
+        collection.url = '/test';
+        collection.fetch();
+        equal(this.syncArgs.method, 'read');
+        equal(this.syncArgs.model, collection);
+        equal(this.syncArgs.options.parse, true);
+
+        collection.fetch({parse: false});
+        equal(this.syncArgs.options.parse, false);
+    });*/
+    public void testFetch() {
+        //TODO: testFetch
+    }
+
+    public void testFetchWithAnErrorResponseTriggersAnErrorEvent() {
+        class LocalCollection extends Collection<Model> {
+            @Override
+            public Promise sync(String method, Options options) {
+                Function error = options.get("error");
+                error.f();
+
+                return null;
+            }
+        }
+
+        final int[] counter = {0};
+
+        LocalCollection collection = new LocalCollection();
+        collection.on("error", new Function() {
+            @Override
+            public void f() {
+                counter[0]++;
+            }
+        });
+        collection.fetch();
+
+        assertEquals(1, counter[0]);
+    }
+
+    public void testFetchWithAnErrorResponseCallsErrorWithOption() {
+        class LocalCollection extends Collection<Model> {
+            @Override
+            public Promise sync(String method, Options options) {
+                Function error = options.get("error");
+                error.f();
+
+                return null;
+            }
+        }
+
+        final Object errorObject = new Object();
+
+        Options options = new Options(
+                "context", errorObject,
+                "error", new Function() {
+                @Override
+                public void f() {
+                    Options options = this.getArgument(2);
+                    assertEquals(errorObject, options.get("context"));
+                }
+            }
+        );
+
+        LocalCollection collection = new LocalCollection();
+        collection.fetch(options);
+    }
+
+    public void testEnsureFetchOnlyParsesOnce() {
+        final int[] counter = {0};
+
+        class LocalCollection extends Collection<Model> {
+            @Override
+            public Promise sync(String method, Options options) {
+                Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+
+            @Override
+            public List<Model> parse(OptionsList models, Options options) {
+                counter[0]++;
+                return super.parse(models, options);
+            }
+        }
+        LocalCollection collection = new LocalCollection();
+        collection.setUrl("/test");
+        collection.fetch();
+
+        assertEquals(1, counter[0]);
+    }
+
+    public void testCreate() {
+        Collection<TestSyncCreateModel> collection = new Collection<TestSyncCreateModel>(TestSyncCreateModel.class);
+        collection.setUrl("/test");
+
+        TestSyncCreateModel model = collection.create(new Options("label", "f"), new Options("wait", true));
+
+        assertEquals("create", model.getLastSyncMethod());
+        assertEquals("f", model.get("label"));
+        assertEquals(collection, model.getCollection());
+    }
+
+    public void testCreateWithValidateTrueEnforcesValidation() {
+        Collection<ValidatingModel> col = new Collection<ValidatingModel>(ValidatingModel.class);
+        col.on("invalid", new Function() {
+            @Override
+            public void f() {
+                String error = getArgument(2);
+                Options options = getArgument(3);
+
+                assertEquals("fail", error);
+                assertEquals("fail", options.get("validationError"));
+            }
+        });
+
+        ValidatingModel validatingModel = col.create(new Options("foo", "bar"), new Options("validate", true));
+        assertEquals(false, validatingModel.isValid());
+    }
+
+    public void testCreateWillPassExtraOptionsToSuccessCallback() {
+        Collection<ExtendedOptionsSyncModel> collection = new Collection<ExtendedOptionsSyncModel>(ExtendedOptionsSyncModel.class, new Options("url", "/test"));
+
+        Function success = new Function() {
+            @Override
+            public void f() {
+                Options options = getArgument(2);
+                assertTrue(options.getBoolean("specialSync"));
+            }
+        };
+        collection.create(new Options(), new Options("success", success));
+    }
+
+    public void testAFailingCreateReturnsModelWithErrors() {
+        Collection<ValidatingModel> col = new Collection<ValidatingModel>(ValidatingModel.class);
+        ValidatingModel model = col.create(new Options("foo", "bar"));
+
+        assertFalse(model.isValid());
+        assertEquals(1, col.length());
+    }
+
+    public void testInitialize() {
+        class InitializeCollection extends Collection {
+            private int one;
+
+            public int getOne() {
+                return one;
+            }
+
+            @Override
+            protected void initialize(List models) {
+                this.one = 1;
+            }
+        }
+
+        InitializeCollection col = new InitializeCollection();
+        assertEquals(1, col.getOne());
+    }
+
+    public void testToJSON() {
+        assertEquals("[{\"id\":3, \"label\":\"a\"},{\"id\":2, \"label\":\"b\"},{\"id\":1, \"label\":\"c\"},{\"id\":0, \"label\":\"d\"}]", col.toJSON().toJsonString());
+    }
+
+    public void testWhereAndFindWhere() {
+        Model model = new Model(new Options("a", 1));
+        Collection<Model> coll = new Collection<Model>();
+        coll.add(model);
+        coll.add(
+                new OptionsList(
+                        new Options("a", 1),
+                        new Options("a", 1, "b", 2),
+                        new Options("a", 2, "b", 2),
+                        new Options("a", 3)
+                )
+        );
+
+        assertEquals(3, coll.where(new Options("a", 1)).size());
+        assertEquals(1, coll.where(new Options("a", 2)).size());
+        assertEquals(1, coll.where(new Options("a", 3)).size());
+        assertEquals(0, coll.where(new Options("b", 1)).size());
+        assertEquals(2, coll.where(new Options("b", 2)).size());
+        assertEquals(1, coll.where(new Options("a", 1, "b", 2)).size());
+        assertEquals(model, coll.findWhere(new Options("a", 1)));
+        assertEquals(null, coll.findWhere(new Options("a", 4)));
+    }
+
+    public void testUnderscoreMethods() {
+        JsArray<String> labels = col.map(new MapFunction<String, Model>() {
+            @Override
+            public String f(Model model, int index, List<Model> models) {
+                return model.get("label");
+            }
+        });
+        assertEquals(labels.join(" "), "a b c d");
+
+        boolean hasAny = col.any(new FilterFunction<Model>() {
+            @Override
+            public boolean f(Model model, int index, List<Model> models) {
+                return model.getId() == 100;
+            }
+        });
+        assertFalse(hasAny);
+
+        hasAny = col.any(new FilterFunction<Model>() {
+            @Override
+            public boolean f(Model model, int index, List<Model> models) {
+                return model.getId() == 0;
+            }
+        });
+        assertTrue(hasAny);
+
+        assertEquals(1, col.indexOf(b));
+
+        List<Model> rest = col.rest();
+        assertEquals(3, rest.size());
+        assertFalse(rest.contains(a));
+        assertTrue(rest.contains(b));
+
+        assertFalse(col.isEmpty());
+
+        assertFalse(col.without(d).contains(d));
+
+        Model maxModel = col.max(new MinMaxFunction<Model>() {
+            @Override
+            public int f(Model model, int index, List<Model> models) {
+                return model.getId();
+            }
+        });
+        assertEquals(3, maxModel.getId());
+
+
+        Model minModel = col.min(new MinMaxFunction<Model>() {
+            @Override
+            public int f(Model model, int index, List<Model> models) {
+                return model.getId();
+            }
+        });
+        assertEquals(0, minModel.getId());
+        assertEquals(Arrays.asList(new Model[] { a, b }), col.difference(new Model[] { c, d }));
+        assertTrue(col.contains(col.sample()));
+
+        Model first = col.first();
+        assertEquals(first, col.indexBy("id").get(String.valueOf(first.getId())));
     }
 }

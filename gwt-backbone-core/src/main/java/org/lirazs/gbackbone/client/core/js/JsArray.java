@@ -37,9 +37,9 @@ public final class JsArray<T> extends JavaScriptObject {
     public JsArray<T> add(T...vals) {
         for (T t: vals) {
             if (t instanceof Number) {
-                c().putNumber(length(), (((Number)t).doubleValue()));
+                c().putNumber(length(), (((Number) t).doubleValue()));
             } else if (t instanceof Boolean) {
-                c().putBoolean(length(), ((Boolean)t).booleanValue());
+                c().putBoolean(length(), ((Boolean) t).booleanValue());
             } else {
                 c().put(length(), t);
             }
@@ -52,9 +52,37 @@ public final class JsArray<T> extends JavaScriptObject {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     public T get(int index) {
         return (T)c().get(index);
+    }
+
+    public final int getInt(int index) {
+        Integer r = get(index, Integer.class);
+        return r == null ? 0 : r;
+    }
+
+    public final <T> T get(int index, Class<? extends T> clz) {
+        Object o = get(index);
+        if (o != null && clz != null) {
+            if (o instanceof Double) {
+                Double d = (Double) o;
+                if (clz == Float.class)
+                    o = d.floatValue();
+                else if (clz == Integer.class)
+                    o = d.intValue();
+                else if (clz == Long.class)
+                    o = d.longValue();
+                else if (clz == Short.class)
+                    o = d.shortValue();
+                else if (clz == Byte.class)
+                    o = d.byteValue();
+            } else if (clz == Boolean.class && !(o instanceof Boolean)) {
+                o = Boolean.valueOf(String.valueOf(o));
+            } else if (clz == String.class && !(o instanceof String)) {
+                o = String.valueOf(o);
+            }
+        }
+        return (T) o;
     }
 
     public int length() {

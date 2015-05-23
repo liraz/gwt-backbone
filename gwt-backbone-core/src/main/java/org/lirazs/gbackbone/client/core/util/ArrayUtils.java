@@ -19,6 +19,47 @@ import org.lirazs.gbackbone.client.core.js.JsArray;
 
 public class ArrayUtils {
 
+    public static boolean hasElements(Object[] array) {
+        for (int i=0; i<array.length; i++) {
+            if (array[i] != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether the given array contains the given object.
+     *
+     * @param object The object to search for.
+     * @param array The array to search in.
+     * @return <code>true</code> if the array contains the given object, <code>false</code> otherwise.
+     */
+    public static boolean contains(Object object, Object[] array) {
+        for (int i=0; i<array.length; i++) {
+            if (object.equals(array[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether the given string array contains the given string while ignoring the case.
+     *
+     * @param string The string to search for.
+     * @param array The array to search in.
+     * @return <code>true</code> if the array contains the given string, <code>false</code> otherwise.
+     */
+    public static boolean containsIgnoreCase(String string, String[] array) {
+        for (int i=0; i<array.length; i++) {
+            if (string.equalsIgnoreCase(array[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static Object[] joinArrays (Object[] arr1, Object[] arr2) {
         Object[] arr3 = new Object[arr1.length + arr2.length];
         int i;

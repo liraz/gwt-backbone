@@ -696,9 +696,6 @@ public class Model extends Events implements Synchronized, Reflectable {
          return xhr;
      }
      */
-    public Promise save(String key, Object value) {
-        return save(new Options().put(key, value));
-    }
     public Promise save(String key, Object value, Options options) {
         return save(new Options().put(key, value), options);
     }
@@ -950,7 +947,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         return this.internalValidate(new Options(), options);
     }
 
-    public boolean internalValidate(Options attributes, Options options) {
+    protected boolean internalValidate(Options attributes, Options options) {
         if(options != null && !options.getBoolean("validate")) return true;
 
         Object error = validationError = validate(attributes, options);

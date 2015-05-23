@@ -16,6 +16,7 @@
 package org.lirazs.gbackbone.client.core.data;
 
 import com.google.gwt.json.client.JSONArray;
+import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONValue;
 
 import java.util.ArrayList;
@@ -29,6 +30,16 @@ public class OptionsList extends ArrayList<Options> implements JsonSerializable 
 
     public OptionsList(Options ...options) {
         super(Arrays.asList(options));
+    }
+
+    public OptionsList(JSONArray array) {
+        for (int i = 0; i < array.size(); i++) {
+            JSONValue value = array.get(i);
+            JSONObject object = value.isObject();
+            if(object != null) {
+                add(new Options(object));
+            }
+        }
     }
 
     @Override
