@@ -117,6 +117,8 @@ public class Model extends Events implements Synchronized, Reflectable {
         this.cid = "c" + UUID.uuid();
         this.attributes = new Options();
 
+        options.defaults(new Options("initialize", true));
+
         if (options.containsKey("collection"))
             this.collection = options.get("collection");
 
@@ -136,9 +138,6 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         this.set(attributes, options);
         this.changed = new Options();
-
-        initialize(attributes, options);
-        initialize(attributes);
     }
     public Model(Options attributes) {
         this(attributes, null);
@@ -149,6 +148,8 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         this.cid = "c" + UUID.uuid();
         this.attributes = new Options();
+
+        options.defaults(new Options("initialize", true));
 
         if (options.containsKey("collection"))
             this.collection = options.get("collection");
@@ -166,9 +167,6 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         this.set(attributes, options);
         this.changed = new Options();
-
-        initialize(attributes, options);
-        initialize(attributes);
     }
 
     // should be overridden with the default properties of model
@@ -441,6 +439,11 @@ public class Model extends Events implements Synchronized, Reflectable {
                 this.pending = false;
                 this.trigger("change", this, options);
             }
+        }
+
+        if(options != null && options.getBoolean("initialize")) {
+            initialize(attributes, options);
+            initialize(attributes);
         }
 
         this.pending = false;

@@ -40,7 +40,7 @@ import org.lirazs.gbackbone.client.generator.Reflection;
 
 import java.util.*;
 
-public class Collection<T extends Model> extends Events implements Synchronized {
+public class Collection<T extends Model> extends Events implements Synchronized, Iterable<T> {
 
     /**
      * // Default options for `Collection#set`.
@@ -156,9 +156,6 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         this(modelClass, models, null);
     }
 
-    public Collection(Options options) {
-        this(null, new ArrayList<T>(), options);
-    }
     public Collection(List<T> models) {
         this(null, models, null);
     }
@@ -256,7 +253,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     }
     public Collection add(JSONObject jsonObject, Options options) {
         T model = instantiateModel();
-        model.set(jsonObject, options);
+        model.set(jsonObject, options.extend(new Options("initialize", true)));
 
         return add(model, options);
     }
@@ -278,7 +275,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     }
     public Collection add(Options attrs, Options options) {
         T model = instantiateModel();
-        model.set(attrs, options);
+        model.set(attrs, options.extend(new Options("initialize", true)));
 
         return add(model, options);
     }
@@ -456,7 +453,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         List<T> models = Arrays.asList();
         for (Options object : objects) {
             T model = instantiateModel();
-            model.set(object, options);
+            model.set(object, options.extend(new Options("initialize", true)));
 
             models.add(model);
         }
@@ -598,8 +595,26 @@ public class Collection<T extends Model> extends Events implements Synchronized 
     public Collection reset(JSONArray models, Options options) {
         return reset(parse(models, options), options);
     }
+    public Collection reset(Options ...models) {
+        return reset(new OptionsList(models), null);
+    }
+    public Collection reset(OptionsList models) {
+        return reset(models, null);
+    }
+    public Collection reset(OptionsList models, Options options) {
+        return reset(parse(models, options), options);
+    }
     public Collection reset() {
         return reset(new ArrayList<T>(), null);
+    }
+    public Collection reset(T ...models) {
+        return reset(models, null);
+    }
+    public Collection reset(T[] models, Options options) {
+        return reset(Arrays.asList(models), options);
+    }
+    public Collection reset(List<T> models) {
+        return reset(models, null);
     }
     public Collection reset(List<T> models, Options options) {
         if(options == null)
@@ -952,11 +967,24 @@ public class Collection<T extends Model> extends Events implements Synchronized 
      * @param applyFunction
      * @return
      */
-    public <K> JsArray<K> map(MapFunction<K, T> applyFunction) {
+    public <K> JsArray<K> jsMap(MapFunction<K, T> applyFunction) {
         if(applyFunction == null)
             return JsArray.create();
 
         JsArray<K> attrs = JsArray.create();
+
+        for (int i = 0; i < this.models.size(); i++) {
+            T model = this.models.get(i);
+            attrs.add(i, applyFunction.f(model, i, this.models));
+        }
+        return attrs;
+    }
+
+    public <K> List<K> map(MapFunction<K, T> applyFunction) {
+        if(applyFunction == null)
+            return new ArrayList<K>();
+
+        List<K> attrs = new ArrayList<K>();
 
         for (int i = 0; i < this.models.size(); i++) {
             T model = this.models.get(i);
@@ -1322,27 +1350,27 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         return resp;
      }
      */
-    public List<T> parse(OptionsList models, Options options) {
-        List<T> result = new ArrayList<T>();
-        for (Options attributes : models) {
-            T model = instantiateModel();
-            model.set(attributes, options);
-
-            result.add(model);
-        }
-        return result;
+    public List<T> parse(List<Options> models, Options options) {
+        return parse(new OptionsList(models), options);
     }
 
     public List<T> parse(JSONValue resp, Options options) {
-        List<T> result = new ArrayList<T>();
         JSONArray array = resp != null ? resp.isArray() : new JSONArray();
 
         if(resp != null && resp.isObject() != null) {
             array.set(0, resp.isObject());
         }
+        return parse(new OptionsList(array), options);
+    }
 
-        parse(new OptionsList(array), options);
+    public List<T> parse(OptionsList models, Options options) {
+        List<T> result = new ArrayList<T>();
+        for (Options attributes : models) {
+            T model = instantiateModel();
+            model.set(attributes, options.extend(new Options("initialize", true)));
 
+            result.add(model);
+        }
         return result;
     }
 
@@ -1402,7 +1430,7 @@ public class Collection<T extends Model> extends Events implements Synchronized 
         options.put("collection", this);
 
         T model = instantiateModel();
-        model.set(attrs, options);
+        model.set(attrs, options.extend(new Options("initialize", true)));
 
         //TODO: Why needed?
         //if (!model.validationError) return model;
@@ -1637,5 +1665,27 @@ public class Collection<T extends Model> extends Events implements Synchronized 
             return this.models.get(this.models.size() - 1);
         }
         return null;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return size() > i;
+            }
+
+            @Override
+            public T next() {
+                return models.get(i++);
+            }
+
+            @Override
+            public void remove() {
+                Collection.this.remove(models.get(i));
+            }
+        };
     }
 }

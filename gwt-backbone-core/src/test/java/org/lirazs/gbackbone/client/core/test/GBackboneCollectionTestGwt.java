@@ -982,7 +982,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testUnderscoreMethods() {
-        JsArray<String> labels = col.map(new MapFunction<String, Model>() {
+        JsArray<String> labels = col.jsMap(new MapFunction<String, Model>() {
             @Override
             public String f(Model model, int index, List<Model> models) {
                 return model.get("label");
@@ -1038,5 +1038,83 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         Model first = col.first();
         assertEquals(first, col.indexBy("id").get(String.valueOf(first.getId())));
+    }
+
+    public void testReset() {
+        List<Model> models = col.slice();
+
+        final int[] resetCount = {0};
+        col.on("reset", new Function() {
+            @Override
+            public void f() {
+                resetCount[0]++;
+            }
+        });
+        col.reset();
+
+        assertEquals(1, resetCount[0]);
+        assertEquals(0, col.length());
+        assertEquals(null, col.last());
+
+        col.reset(models);
+
+        assertEquals(2, resetCount[0]);
+        assertEquals(4, col.length());
+        assertEquals(d, col.last());
+
+        col.reset(new OptionsList(col.map(new MapFunction<Options, Model>() {
+            @Override
+            public Options f(Model model, int index, List<Model> models) {
+                return model.getAttributes();
+            }
+        })));
+
+        assertEquals(3, resetCount[0]);
+        assertEquals(4, col.length());
+        assertNotSame(d, col.last());
+        assertEquals(d.getAttributes(), col.last().getAttributes());
+
+        col.reset();
+        assertEquals(0, col.length());
+        assertEquals(4, resetCount[0]);
+
+        Model f = new Model(new Options("id", 20, "label", "f"));
+        col.reset(Arrays.asList(null, f));
+        assertEquals(2, col.length());
+        assertEquals(5, resetCount[0]);
+
+        col.reset(new Model[4]);
+        assertEquals(4, col.length());
+        assertEquals(6, resetCount[0]);
+    }
+
+    public void testWithDifferentValues() {
+        Collection<Model> col = new Collection<Model>(new Options("id", 1));
+        col.reset(new Options("id", 1, "a", 1));
+
+        assertEquals(1, col.get(1).get("a"));
+    }
+
+    public void testSameReferencesInReset() {
+        Model model = new Model(new Options("id", 1));
+        Collection<Model> collection = new Collection<Model>(new Options("id", 1));
+
+        collection.reset(model);
+
+        assertEquals(model, collection.get(1));
+    }
+
+    public void testPassesCallerOptions() {
+        Collection<ParameterModel> col = new Collection<ParameterModel>(ParameterModel.class);
+        col.reset(new OptionsList(
+                new Options("astring", "green", "anumber", 1),
+                new Options("astring", "blue", "anumber", 2)
+        ), new Options("model_parameter", "model parameter"));
+
+        assertEquals(2, col.length());
+
+        for (ParameterModel model : col) {
+            assertEquals("model parameter", model.getModelParameter());
+        }
     }
 }

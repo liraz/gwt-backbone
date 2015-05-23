@@ -21,6 +21,7 @@ import com.google.gwt.json.client.JSONValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class OptionsList extends ArrayList<Options> implements JsonSerializable {
 
@@ -30,6 +31,9 @@ public class OptionsList extends ArrayList<Options> implements JsonSerializable 
 
     public OptionsList(Options ...options) {
         super(Arrays.asList(options));
+    }
+    public OptionsList(List<Options> options) {
+        super(options);
     }
 
     public OptionsList(JSONArray array) {
