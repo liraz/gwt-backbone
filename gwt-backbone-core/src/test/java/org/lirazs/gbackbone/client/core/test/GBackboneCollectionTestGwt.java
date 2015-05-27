@@ -1104,7 +1104,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(model, collection.get(1));
     }
 
-    public void testPassesCallerOptions() {
+    public void testResetPassesCallerOptions() {
         Collection<ParameterModel> col = new Collection<ParameterModel>(ParameterModel.class);
         col.reset(new OptionsList(
                 new Options("astring", "green", "anumber", 1),
@@ -1116,5 +1116,119 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         for (ParameterModel model : col) {
             assertEquals("model parameter", model.getModelParameter());
         }
+    }
+
+    public void testResetDoesNotAlterOptionsByReference() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 1)
+        ));
+        final Options origOpts = new Options();
+
+        col.on("reset", new Function() {
+            @Override
+            public void f() {
+                Options opts = getArgument(1);
+                List<Model> previousModels = opts.get("previousModels");
+
+                assertFalse(origOpts.containsKey("previousModels"));
+                assertEquals(1, previousModels.get(0).getId());
+            }
+        });
+        col.reset(new ArrayList<Model>(), origOpts);
+    }
+
+    public void testTriggerCustomEventsOnModels() {
+        final boolean[] fired = {false};
+
+        a.on("custom", new Function() {
+            @Override
+            public void f() {
+                fired[0] = true;
+            }
+        });
+        a.trigger("custom");
+        assertTrue(fired[0]);
+    }
+
+    public void testAddDoesNotAlterArguments() {
+        Options attrs = new Options();
+        OptionsList models = new OptionsList(attrs);
+
+        new Collection().add(models);
+        assertEquals(1, models.size());
+
+        assertEquals(models.get(0), attrs);
+    }
+
+    public void testAccessModelCollectionInABrandNewModel() {
+        Collection<TestAccessModel> collection = new Collection<TestAccessModel>(TestAccessModel.class);
+        collection.setUrl("/test");
+
+        collection.create(new Options("prop", "value"));
+    }
+
+    public void testRemoveItsOwnReferenceToTheModelsArray() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 1),
+                new Options("id", 2),
+                new Options("id", 3),
+                new Options("id", 4),
+                new Options("id", 5),
+                new Options("id", 6)
+        ));
+
+        assertEquals(6, col.length());
+        col.remove(col.slice());
+
+        assertEquals(0, col.length());
+    }
+
+    public void testAddingModelsToACollectionWhichDoNotPassValidationWithValidateTrue() {
+        final boolean[] invalidCalled = {false};
+
+        Collection<ValidatingThreeFailModel> collection = new Collection<ValidatingThreeFailModel>(ValidatingThreeFailModel.class);
+        collection.on("invalid", new Function() {
+            @Override
+            public void f() {
+                invalidCalled[0] = true;
+            }
+        });
+
+        collection.add(new OptionsList(
+                new Options("id", 1),
+                new Options("id", 2),
+                new Options("id", 3),
+                new Options("id", 4),
+                new Options("id", 5),
+                new Options("id", 6)
+        ), new Options("validate", true));
+
+        assertTrue(invalidCalled[0]);
+        assertEquals(Arrays.asList(1, 2, 4, 5, 6), Arrays.asList(collection.pluck("id")));
+    }
+
+    public void testInvalidModelsAreDiscardedWithValidateTrue() {
+        final boolean[] testWasTriggered = {false};
+
+        Collection<ValidatingInvalidModel> collection = new Collection<ValidatingInvalidModel>(ValidatingInvalidModel.class);
+        collection.on("test", new Function() {
+            @Override
+            public void f() {
+                testWasTriggered[0] = true;
+            }
+        });
+
+        ValidatingInvalidModel model = new ValidatingInvalidModel(new Options("id", 1, "valid", true));
+        collection.add(model, new Options("validate", true));
+        collection.add(new Options("id", 2), new Options("validate", true));
+
+        model.trigger("test");
+        assertTrue(testWasTriggered[0]);
+
+        assertNotNull(collection.get(model.getCid()));
+        assertNotNull(collection.get(1));
+        assertNull(collection.get(2));
+
+        assertEquals(1, collection.length());
     }
 }

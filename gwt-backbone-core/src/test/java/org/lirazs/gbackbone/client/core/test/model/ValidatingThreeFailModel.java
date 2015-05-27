@@ -18,21 +18,18 @@ package org.lirazs.gbackbone.client.core.test.model;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
 
-public class ParameterModel extends Model {
+public class ValidatingThreeFailModel extends Model {
 
-    private String modelParameter;
-
-    public String getModelParameter() {
-        return modelParameter;
-    }
-
-    public void setModelParameter(String modelParameter) {
-        this.modelParameter = modelParameter;
-    }
-
-    public ParameterModel(Options attributes, Options options) {
+    public ValidatingThreeFailModel(Options attributes, Options options) {
         super(attributes, options);
+    }
 
-        modelParameter = options.get("model_parameter");
+    @Override
+    public Object validate(Options attributes, Options options) {
+        if (attributes.getInt("id") == 3){
+            return "id can't be 3";
+        }
+
+        return null;
     }
 }

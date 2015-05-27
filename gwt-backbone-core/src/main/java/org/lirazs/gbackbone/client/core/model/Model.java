@@ -74,8 +74,14 @@ public class Model extends Events implements Synchronized, Reflectable {
 
     // A hash of attributes whose current and previous value differ.
     private Options changed = null;
+
     // The value returned during the last failed validation.
     private Object validationError;
+
+    public Object getValidationError() {
+        return validationError;
+    }
+
     // The default name for the JSON `id` attribute is `"id"`. MongoDB and
     // CouchDB users may want to set this to `"_id"`.
     protected String idAttribute;
@@ -103,7 +109,6 @@ public class Model extends Events implements Synchronized, Reflectable {
      this.initialize.apply(this, arguments);
      */
 
-
     public Model() {
         this(new Options(), null);
     }
@@ -116,8 +121,6 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         this.cid = "c" + UUID.uuid();
         this.attributes = new Options();
-
-        options.defaults(new Options("initialize", true));
 
         if (options.containsKey("collection"))
             this.collection = options.get("collection");
@@ -149,8 +152,6 @@ public class Model extends Events implements Synchronized, Reflectable {
         this.cid = "c" + UUID.uuid();
         this.attributes = new Options();
 
-        options.defaults(new Options("initialize", true));
-
         if (options.containsKey("collection"))
             this.collection = options.get("collection");
 
@@ -180,20 +181,6 @@ public class Model extends Events implements Synchronized, Reflectable {
      */
     public Object validate(Options attributes, Options options) {
         return null; // override
-    }
-
-    /**
-     * // Initialize is an empty function by default. Override it with your own
-     // initialization logic.
-     initialize(attributes?: any, options?: ModelOptions) { }
-     */
-    // Initialize is an abstract by default. Override it with your own
-    // initialization logic.
-    protected void initialize(Options attributes) {
-        // override
-    }
-    protected void initialize(Options attributes, Options options) {
-        // override
     }
 
 
@@ -439,11 +426,6 @@ public class Model extends Events implements Synchronized, Reflectable {
                 this.pending = false;
                 this.trigger("change", this, options);
             }
-        }
-
-        if(options != null && options.getBoolean("initialize")) {
-            initialize(attributes, options);
-            initialize(attributes);
         }
 
         this.pending = false;
@@ -907,7 +889,7 @@ public class Model extends Events implements Synchronized, Reflectable {
      }
      */
     public Model clone() {
-        Model result = GWT.<Reflection>create(Reflection.class).instantiate(getClass());
+        Model result = GWT.<Reflection>create(Reflection.class).instantiateModel(getClass(), null, null);
 
         result.id = id;
         result.attributes = attributes.clone();
@@ -954,13 +936,11 @@ public class Model extends Events implements Synchronized, Reflectable {
         if(options != null && !options.getBoolean("validate")) return true;
 
         Object error = validationError = validate(attributes, options);
-        if(error == null)
+        if(error == null || (error instanceof Boolean && ((Boolean) error)))
             return true;
 
         if(options == null)
             options = new Options();
-
-        options.put("validationError", error);
 
         this.trigger("invalid", this, error, options);
         return false;

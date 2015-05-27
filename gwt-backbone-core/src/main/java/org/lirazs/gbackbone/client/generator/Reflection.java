@@ -16,8 +16,10 @@
 package org.lirazs.gbackbone.client.generator;
 
 
+import org.lirazs.gbackbone.client.core.data.Options;
+
 public interface Reflection {
-    <T, V extends T> T instantiate( Class<V> clazz );
+    <T, V extends T> T instantiateModel( Class<V> clazz, Options attributes, Options options );
 
     <T, V extends T> T[] instantiateArray( Class<V> clazz, int length );
 }

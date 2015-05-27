@@ -15,24 +15,22 @@
  */
 package org.lirazs.gbackbone.client.core.test.model;
 
+import junit.framework.Assert;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
 
-public class ParameterModel extends Model {
+public class TestAccessModel extends Model {
 
-    private String modelParameter;
-
-    public String getModelParameter() {
-        return modelParameter;
-    }
-
-    public void setModelParameter(String modelParameter) {
-        this.modelParameter = modelParameter;
-    }
-
-    public ParameterModel(Options attributes, Options options) {
+    public TestAccessModel(Options attributes, Options options) {
         super(attributes, options);
+    }
 
-        modelParameter = options.get("model_parameter");
+    @Override
+    public <T> Model set(Options attributes, Options options) {
+        Assert.assertEquals("value", attributes.get("prop"));
+        Assert.assertNotNull(getCollection());
+        Assert.assertEquals("/test", getCollection().getUrl());
+
+        return this;
     }
 }

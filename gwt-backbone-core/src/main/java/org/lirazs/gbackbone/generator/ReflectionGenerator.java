@@ -19,12 +19,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gwt.core.ext.Generator;
-import com.google.gwt.core.ext.GeneratorContext;
-import com.google.gwt.core.ext.PropertyOracle;
-import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.UnableToCompleteException;
+import com.google.gwt.core.ext.*;
 import com.google.gwt.core.ext.typeinfo.JClassType;
+import com.google.gwt.core.ext.typeinfo.JConstructor;
+import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
@@ -33,6 +31,14 @@ import org.lirazs.gbackbone.client.generator.Reflection;
 
 public class ReflectionGenerator extends Generator
 {
+    enum ModelConstructorType {
+        EMPTY,
+        JSON_OBJECT,
+        JSON_OBJECT_AND_OPTIONS,
+        ATTRIBUTES,
+        ATTRIBUTES_AND_OPTIONS,
+    }
+
     @Override
     public String generate( TreeLogger logger, GeneratorContext context, String typeName ) throws UnableToCompleteException
     {
@@ -57,6 +63,7 @@ public class ReflectionGenerator extends Generator
         composer.addImplementedInterface( Reflection.class.getCanonicalName( ) );
 
         composer.addImport( "org.lirazs.gbackbone.client.generator.*" );
+        composer.addImport( "org.lirazs.gbackbone.client.core.data.Options" );
 
         PrintWriter printWriter = context.tryCreate( logger, genPackageName, genClassName );
 
@@ -71,6 +78,7 @@ public class ReflectionGenerator extends Generator
 
             sourceWriter.commit( logger );
         }
+
         return composer.getCreatedClassName( );
     }
 
@@ -78,22 +86,89 @@ public class ReflectionGenerator extends Generator
     {
         sourceWriter.println( );
 
-        sourceWriter.println( "public <T, V extends T> T instantiate( Class<V> clazz ) {" );
+        sourceWriter.println( "public <T, V extends T> T instantiateModel( Class<V> clazz, Options attributes, Options options ) {" );
 
         for ( JClassType classType : clazzes )
         {
             if ( classType.isAbstract( ) )
                 continue;
 
-            sourceWriter.println( );
-            sourceWriter.indent( );
-            sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
-            sourceWriter.indent( );
-            sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( );" );
-            sourceWriter.outdent( );
-            sourceWriter.println( "}" );
-            sourceWriter.outdent( );
-            sourceWriter.println( );
+            JConstructor[] constructors = classType.getConstructors();
+            if (constructors.length > 0) {
+                for (JConstructor constructor : constructors) {
+                    ModelConstructorType modelConstructorType = getModelConstructorType(constructor);
+
+                    if(modelConstructorType == ModelConstructorType.ATTRIBUTES_AND_OPTIONS) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes, options );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.ATTRIBUTES) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.JSON_OBJECT_AND_OPTIONS) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes.toJsonObject(), options );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.JSON_OBJECT) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes.toJsonObject() );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.EMPTY) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+                }
+            } else {
+                sourceWriter.println( );
+                sourceWriter.indent( );
+                sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                sourceWriter.indent( );
+                sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( );" );
+                sourceWriter.outdent( );
+                sourceWriter.println( "}" );
+                sourceWriter.outdent( );
+                sourceWriter.println( );
+            }
         }
         sourceWriter.indent();
         sourceWriter.println("return (T) null;");
@@ -101,14 +176,14 @@ public class ReflectionGenerator extends Generator
         sourceWriter.println();
         sourceWriter.println("}");
         sourceWriter.outdent( );
-        sourceWriter.println( );
+        sourceWriter.println();
     }
 
     private void printArrayFactoryMethod( List<JClassType> clazzes, SourceWriter sourceWriter )
     {
         sourceWriter.println( );
 
-        sourceWriter.println( "public <T, V extends T> T[] instantiateArray( Class<V> clazz, int length ) {" );
+        sourceWriter.println("public <T, V extends T> T[] instantiateArray( Class<V> clazz, int length ) {");
 
         for ( JClassType classType : clazzes )
         {
@@ -132,5 +207,38 @@ public class ReflectionGenerator extends Generator
         sourceWriter.println("}");
         sourceWriter.outdent( );
         sourceWriter.println( );
+    }
+
+
+    private ModelConstructorType getModelConstructorType(JConstructor constructor) {
+        ModelConstructorType modelConstructorType = ModelConstructorType.EMPTY;
+
+        JType[] parameterTypes = constructor.getParameterTypes();
+
+        int optionsParameterCount = 0;
+        int jsonObjectParameterCount = 0;
+
+        for (JType parameterType : parameterTypes) {
+
+            if(parameterType.getQualifiedSourceName().equals("org.lirazs.gbackbone.client.core.data.Options"))
+                optionsParameterCount++;
+
+            if(parameterType.getQualifiedSourceName().equals("com.google.gwt.json.client.JSONObject"))
+                jsonObjectParameterCount++;
+        }
+
+        if(optionsParameterCount == 2) {
+            modelConstructorType = ModelConstructorType.ATTRIBUTES_AND_OPTIONS;
+        } else if(optionsParameterCount == 1) {
+            if(jsonObjectParameterCount == 1) {
+                modelConstructorType = ModelConstructorType.JSON_OBJECT_AND_OPTIONS;
+            } else {
+                modelConstructorType = ModelConstructorType.ATTRIBUTES;
+            }
+        } else if(jsonObjectParameterCount == 1) {
+            modelConstructorType = ModelConstructorType.JSON_OBJECT;
+        }
+
+        return modelConstructorType;
     }
 }

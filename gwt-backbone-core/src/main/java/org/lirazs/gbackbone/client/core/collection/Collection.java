@@ -35,7 +35,6 @@ import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
-import org.lirazs.gbackbone.client.core.util.ArrayUtils;
 import org.lirazs.gbackbone.client.generator.Reflection;
 
 import java.util.*;
@@ -252,10 +251,8 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         return add(jsonObject, null);
     }
     public Collection add(JSONObject jsonObject, Options options) {
-        T model = instantiateModel();
-        model.set(jsonObject, options.extend(new Options("initialize", true)));
-
-        return add(model, options);
+        T model = prepareModel(new Options(jsonObject), options);
+        return model != null ? add(model, options) : this;
     }
     public Collection add(JSONArray models) {
         return add(models, null);
@@ -274,16 +271,14 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         return add(attrs, null);
     }
     public Collection add(Options attrs, Options options) {
-        T model = instantiateModel();
-        model.set(attrs, options.extend(new Options("initialize", true)));
-
-        return add(model, options);
+        T model = prepareModel(attrs, options);
+        return model != null ? add(model, options) : this;
     }
     public Collection add(T model) {
-        return add(Arrays.asList(model), null);
+        return add(Collections.singletonList(model), null);
     }
     public Collection add(T model, Options options) {
-        return add(Arrays.asList(model), options);
+        return add(Collections.singletonList(model), options);
     }
     public Collection add(List<T> models) {
         return add(models, null);
@@ -318,10 +313,10 @@ public class Collection<T extends Model> extends Events implements Synchronized,
      }
      */
     public Collection remove(T model) {
-        return remove(Arrays.asList(model), null);
+        return remove(Collections.singletonList(model), null);
     }
     public Collection remove(T model, Options options) {
-        return remove(Arrays.asList(model), options);
+        return remove(Collections.singletonList(model), options);
     }
     public Collection remove(List<T> models) {
         return remove(models, null);
@@ -452,10 +447,10 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     public Collection set(Options[] objects, Options options) {
         List<T> models = Arrays.asList();
         for (Options object : objects) {
-            T model = instantiateModel();
-            model.set(object, options.extend(new Options("initialize", true)));
-
-            models.add(model);
+            T model = prepareModel(object, options);
+            if (model != null) {
+                models.add(model);
+            }
         }
         return set(models, options);
     }
@@ -575,19 +570,19 @@ public class Collection<T extends Model> extends Events implements Synchronized,
      // you can reset the entire set with a new list of models, without firing
      // any granular `add` or `remove` events. Fires `reset` when finished.
      // Useful for bulk operations and optimizations.
-     reset(models: Model[], options?: CollectionResetOptions): Collection {
-         options || (options = {});
+     reset: function(models, options) {
+         options = options ? _.clone(options) : {};
 
-         for (var i = 0, l = this.models.length; i < l; i++) {
-            this._removeReference(this.models[i]);
+         for (var i = 0; i < this.models.length; i++) {
+            this._removeReference(this.models[i], options);
          }
          options.previousModels = this.models;
          this._reset();
-
-         this.add(models, _.extend({ silent: true }, options));
+         models = this.add(models, _.extend({silent: true}, options));
          if (!options.silent) this.trigger('reset', this, options);
-         return this;
-     }
+
+         return models;
+     },
      */
     public Collection reset(JSONArray models) {
         return reset(models, null);
@@ -617,8 +612,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         return reset(models, null);
     }
     public Collection reset(List<T> models, Options options) {
-        if(options == null)
-            options = new Options();
+        options = options != null ? options.clone() : new Options();
 
         for (int i = 0; i < this.models.size(); i++) {
             T model = this.models.get(i);
@@ -1365,11 +1359,15 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
     public List<T> parse(OptionsList models, Options options) {
         List<T> result = new ArrayList<T>();
-        for (Options attributes : models) {
-            T model = instantiateModel();
-            model.set(attributes, options.extend(new Options("initialize", true)));
 
-            result.add(model);
+        if(options == null)
+            options = new Options();
+
+        for (Options attributes : models) {
+            T model = prepareModel(attributes, options);
+            if (model != null) {
+                result.add(model);
+            }
         }
         return result;
     }
@@ -1429,15 +1427,13 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         options.put("collection", this);
 
-        T model = instantiateModel();
-        model.set(attrs, options.extend(new Options("initialize", true)));
+        T model = instantiateModel(attrs, options);
 
-        //TODO: Why needed?
-        //if (!model.validationError) return model;
-        //this.trigger('invalid', this, attrs, options);
-        //return null;
+        Object validationError = model.getValidationError();
+        if (validationError == null || (validationError instanceof Boolean && ((Boolean) validationError))) return model;
+        this.trigger("invalid", this, attrs, options);
 
-        return model;
+        return null;
     }
     private T prepareModel(T attrs) {
         if(attrs == null)
@@ -1449,9 +1445,15 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
 
     private T instantiateModel() {
+        return instantiateModel(null, null);
+    }
+    private T instantiateModel(Options attributes) {
+        return instantiateModel(attributes, null);
+    }
+    private T instantiateModel(Options attributes, Options options) {
         T model = null;
         if (modelClass != null) {
-            model = GWT.<Reflection>create(Reflection.class).instantiate(modelClass);
+            model = GWT.<Reflection>create(Reflection.class).instantiateModel(modelClass, attributes, options);
         } else {
             model = GWT.create(Model.class);
         }
@@ -1504,7 +1506,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
             T model = getArgument(1);
 
             Collection collection = null;
-            if (arguments[2] instanceof Collection) {
+            if (arguments.length >= 3 && arguments[2] instanceof Collection) {
                 collection = getArgument(2);
             }
             Options options = getArgument(3);
