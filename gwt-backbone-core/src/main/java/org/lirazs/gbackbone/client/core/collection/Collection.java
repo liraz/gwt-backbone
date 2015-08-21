@@ -31,6 +31,7 @@ import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.function.FilterFunction;
 import org.lirazs.gbackbone.client.core.function.MapFunction;
 import org.lirazs.gbackbone.client.core.function.MinMaxFunction;
+import org.lirazs.gbackbone.client.core.function.SortFunction;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.net.Sync;
@@ -94,6 +95,9 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
     public Collection(Options ...models) {
         this(null, new OptionsList(models), null);
+    }
+    public Collection(Class<T> modelClass, OptionsList models) {
+        this(modelClass, models, null);
     }
     public Collection(Class<T> modelClass, OptionsList models, Options options) {
         this.modelClass = modelClass;
@@ -186,8 +190,12 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         }
     }
 
-    public void registerModelClass(Class<T> modelClass) {
-        this.modelClass = modelClass;
+    public boolean registerModelClass(Class<T> modelClass) {
+        if(!Objects.equals(this.modelClass, modelClass)) {
+            this.modelClass = modelClass;
+            return true;
+        }
+        return false;
     }
     public void registerComparator(Comparator<T> comparator) {
         this.comparator = comparator;
@@ -1197,6 +1205,87 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         return result;
     }
 
+    /**
+     *
+     * @param key
+     * @return
+     */
+    public <K> Map<K, List<T>> groupBy(final String key) {
+        return groupBy(new MapFunction<K, T>() {
+            @Override
+            public K f(T model, int index, List<T> models) {
+                return model.get(key);
+            }
+        });
+    }
+
+    /**
+     * Splits a collection into sets, grouped by the result of running each value through iteratee.
+     *
+     * @param applyFunction
+     * @param <K>
+     * @return
+     */
+    public <K> Map<K, List<T>> groupBy(MapFunction<K, T> applyFunction) {
+        if(applyFunction == null)
+            return new HashMap<K, List<T>>();
+
+        Map<K, List<T>> result = new HashMap<K, List<T>>();
+
+        for (int i = 0; i < this.models.size(); i++) {
+            List<T> groupedModels;
+            T model = this.models.get(i);
+
+            K key = applyFunction.f(model, i, this.models);
+            if(result.containsKey(key)) {
+                groupedModels = result.get(key);
+            } else {
+                groupedModels = new ArrayList<T>();
+                result.put(key, groupedModels);
+            }
+            groupedModels.add(model);
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param key
+     * @param <K>
+     * @return
+     */
+    public <K extends Comparable<K>> List<T> sortBy(final String key) {
+        return sortBy(new SortFunction<Comparable, T>() {
+            @Override
+            public K f(T model) {
+                return model.get(key);
+            }
+        });
+    }
+
+    /**
+     *
+     * @param applyFunction
+     * @param <K>
+     * @return
+     */
+    public <K extends Comparable<K>> List<T> sortBy(final SortFunction<K, T> applyFunction) {
+        if(applyFunction == null)
+            return new ArrayList<T>(this.models);
+
+        List<T> result = new ArrayList<T>(this.models);
+
+        Collections.sort(result, new Comparator<T>() {
+            @Override
+            public int compare(T model1, T model2) {
+                K value1 = applyFunction.f(model1);
+                K value2 = applyFunction.f(model2);
+                return value1.compareTo(value2);
+            }
+        });
+        return result;
+    }
+
     private JsArray<Integer> getRandomIndexes(int quantity) {
         return getRandomIndexes(quantity, JsArray.<Integer>create());
     }
@@ -1243,7 +1332,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         options.put("success", new Function() {
             @Override
             public void f() {
-                JSONArray response = getArgument(0);
+                JSONArray response = getArgument(1);
 
                 if(options.getBoolean("reset")) {
                     Collection.this.reset(response, options);
@@ -1262,7 +1351,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         options.put("error", new Function() {
             @Override
             public void f() {
-                JavaScriptObject response = getArgument(0);
+                JavaScriptObject response = getArgument(1);
                 if(error != null) {
                     error.f(Collection.this, response, options);
                 }
@@ -1455,7 +1544,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         if (modelClass != null) {
             model = GWT.<Reflection>create(Reflection.class).instantiateModel(modelClass, attributes, options);
         } else {
-            model = GWT.create(Model.class);
+            model = (T)new Model(attributes, options);
         }
         return model;
     }

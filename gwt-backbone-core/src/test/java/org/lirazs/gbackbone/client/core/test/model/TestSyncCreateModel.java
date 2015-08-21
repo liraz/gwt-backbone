@@ -27,6 +27,10 @@ public class TestSyncCreateModel extends Model {
         return lastSyncMethod;
     }
 
+    public TestSyncCreateModel(Options attributes, Options options) {
+        super(attributes, options);
+    }
+
     @Override
     public Promise sync(String method, Options options) {
         lastSyncMethod = method;

@@ -17,6 +17,8 @@ package org.lirazs.gbackbone.generator;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import com.google.gwt.core.ext.*;
@@ -32,11 +34,11 @@ import org.lirazs.gbackbone.client.generator.Reflection;
 public class ReflectionGenerator extends Generator
 {
     enum ModelConstructorType {
-        EMPTY,
-        JSON_OBJECT,
-        JSON_OBJECT_AND_OPTIONS,
-        ATTRIBUTES,
         ATTRIBUTES_AND_OPTIONS,
+        ATTRIBUTES,
+        JSON_OBJECT_AND_OPTIONS,
+        JSON_OBJECT,
+        EMPTY
     }
 
     @Override
@@ -95,6 +97,16 @@ public class ReflectionGenerator extends Generator
 
             JConstructor[] constructors = classType.getConstructors();
             if (constructors.length > 0) {
+                Arrays.sort(constructors, new Comparator<JConstructor>() {
+                    @Override
+                    public int compare(JConstructor o1, JConstructor o2) {
+                        ModelConstructorType modelConstructorType1 = getModelConstructorType(o1);
+                        ModelConstructorType modelConstructorType2 = getModelConstructorType(o2);
+
+                        return modelConstructorType1.compareTo(modelConstructorType2);
+                    }
+                });
+
                 for (JConstructor constructor : constructors) {
                     ModelConstructorType modelConstructorType = getModelConstructorType(constructor);
 

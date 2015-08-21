@@ -30,15 +30,13 @@ import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.function.FilterFunction;
 import org.lirazs.gbackbone.client.core.function.MapFunction;
 import org.lirazs.gbackbone.client.core.function.MinMaxFunction;
+import org.lirazs.gbackbone.client.core.function.SortFunction;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
+import org.lirazs.gbackbone.client.core.net.Synchronized;
 import org.lirazs.gbackbone.client.core.test.model.*;
-import org.lirazs.gbackbone.client.core.util.ArrayUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class GBackboneCollectionTestGwt extends GWTTestCase {
 
@@ -234,6 +232,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Collection<MongoModel> col2 = new Collection<MongoModel>();
         col2.registerModelClass(MongoModel.class);
         col2.add(model.getAttributes().toJsonObject());
+
         assertEquals(col2.first(), col2.get((MongoModel) model.clone()));
     }
 
@@ -267,7 +266,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.on("change:name", new Function() {
             @Override
             public void f() {
-                Model model = getArgument(0);
+                Model model = getArgument(1);
                 assertNotNull(col.get(model));
             }
         });
@@ -313,8 +312,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.on("add", new Function() {
             @Override
             public void f() {
-                Model model = this.getArgument(0);
-                Options options = this.getArgument(2);
+                Model model = this.getArgument(1);
+                Options options = this.getArgument(3);
 
                 added[0] = model.get("label");
                 opts[0] = options;
@@ -457,8 +456,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         colE.on("add", new Function() {
             @Override
             public void f() {
-                Model model = this.getArgument(0);
-                Collection collection = this.getArgument(1);
+                Model model = this.getArgument(1);
+                Collection collection = this.getArgument(2);
 
                 assertEquals(model, e);
                 assertEquals(collection, colE);
@@ -467,8 +466,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         colF.on("add", new Function() {
             @Override
             public void f() {
-                Model model = this.getArgument(0);
-                Collection collection = this.getArgument(1);
+                Model model = this.getArgument(1);
+                Collection collection = this.getArgument(2);
 
                 assertEquals(model, e);
                 assertEquals(collection, colF);
@@ -583,8 +582,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.on("remove", new Function() {
             @Override
             public void f() {
-                Model model = this.getArgument(0);
-                Options options = this.getArgument(2);
+                Model model = this.getArgument(1);
+                Options options = this.getArgument(3);
 
                 removed[0] = model.get("label");
                 assertEquals(3, options.get("index"));
@@ -708,8 +707,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         colE.on("remove", new Function() {
             @Override
             public void f() {
-                Model model = this.getArgument(0);
-                Collection collection = this.getArgument(1);
+                Model model = this.getArgument(1);
+                Collection collection = this.getArgument(2);
 
                 assertEquals(model, e);
                 assertEquals(collection, colE);
@@ -719,8 +718,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         colF.on("remove", new Function() {
             @Override
             public void f() {
-                Model model = this.getArgument(0);
-                Collection collection = this.getArgument(1);
+                Model model = this.getArgument(1);
+                Collection collection = this.getArgument(2);
 
                 assertEquals(model, e);
                 assertEquals(collection, colF);
@@ -792,21 +791,6 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(0, colF.length());
 
         assertEquals(e.getCollection(), null);
-    }
-
-    /*test("fetch", 4, function() {
-        var collection = new Backbone.Collection;
-        collection.url = '/test';
-        collection.fetch();
-        equal(this.syncArgs.method, 'read');
-        equal(this.syncArgs.model, collection);
-        equal(this.syncArgs.options.parse, true);
-
-        collection.fetch({parse: false});
-        equal(this.syncArgs.options.parse, false);
-    });*/
-    public void testFetch() {
-        //TODO: testFetch
     }
 
     public void testFetchWithAnErrorResponseTriggersAnErrorEvent() {
@@ -1231,4 +1215,305 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         assertEquals(1, collection.length());
     }
+
+    public void testMultipleCopiesOfTheSameModel() {
+        Collection<Model> col = new Collection<Model>();
+        Model model = new Model();
+
+        col.add(Arrays.asList(model, model));
+        assertEquals(1, col.length());
+
+        col.add(new OptionsList(
+                new Options("id", 1),
+                new Options("id", 1)
+        ));
+        assertEquals(2, col.length());
+        assertEquals(1, col.last().getId());
+    }
+
+    public void testPassingOptionsModelSetsCollectionModel() {
+        Collection<TestModel> col = new Collection<TestModel>(TestModel.class, new OptionsList(
+                new Options("id", 1)
+        ));
+        assertFalse(col.registerModelClass(TestModel.class));
+        assertTrue(col.at(0) != null);
+    }
+
+    public void testNullAndUndefinedAreInvalidIds() {
+        Model model = new Model(new Options("id", 1));
+        Collection<Model> collection = new Collection<Model>(model);
+
+        model.set(new Options("id", null));
+        assertNull(collection.get("null"));
+
+        model.set(new Options("id", 1));
+        model.set(new Options("id", null));
+
+        assertNull(collection.get("null"));
+    }
+
+    public void testOptionsIsPassedToSuccessCallbacks() {
+        class LocalCollection extends Collection<SimpleSyncModel> {
+            @Override
+            public Promise sync(String method, Options options) {
+                Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+        }
+
+        SimpleSyncModel m = new SimpleSyncModel(new Options("x", 1));
+        LocalCollection col = new LocalCollection();
+
+        Options opts = new Options(
+                "opts", true,
+                "success", new Function() {
+            @Override
+            public void f() {
+                Options options = this.getArgument(2);
+                assertTrue(options.getBoolean("opts"));
+            }
+        });
+
+        col.fetch(opts);
+        col.create(m, opts);
+    }
+
+    public void testTriggerRequestAndSyncEvents() {
+        class LocalCollection extends Collection<AjaxSyncModel> {
+            public LocalCollection() {
+                super(AjaxSyncModel.class);
+            }
+
+            @Override
+            public Promise sync(String method, Options options) {
+                Promise sync = super.sync(method, options);
+
+                Function success = options.get("success");
+                success.f();
+
+                return sync;
+            }
+        }
+
+        final LocalCollection collection = new LocalCollection();
+        collection.setUrl("/test");
+
+        collection.on("request", new Function() {
+            @Override
+            public void f() {
+                Synchronized obj = getArgument(0);
+                Promise xhr = getArgument(1);
+                Options options = getArgument(2);
+
+                assertEquals(collection, obj);
+            }
+        });
+        collection.on("sync", new Function() {
+            @Override
+            public void f() {
+                Synchronized obj = getArgument(0);
+
+                assertEquals(collection, obj);
+            }
+        });
+        collection.fetch();
+        collection.off();
+
+        collection.on("request", new Function() {
+            @Override
+            public void f() {
+                Synchronized obj = getArgument(1);
+
+                assertEquals(collection.get(1), obj);
+            }
+        });
+        collection.on("sync", new Function() {
+            @Override
+            public void f() {
+                Synchronized obj = getArgument(0);
+
+                assertEquals(collection.get(1), obj);
+            }
+        });
+        collection.create(new Options("id", 1));
+        collection.off();
+    }
+
+    public void testCreateWithWaitAddsModel() {
+        final int[] addCount = {0};
+
+        Collection<SimpleSyncModel> collection = new Collection<SimpleSyncModel>(SimpleSyncModel.class);
+        SimpleSyncModel model = new SimpleSyncModel();
+
+        collection.on("add", new Function() {
+            @Override
+            public void f() {
+                addCount[0]++;
+            }
+        });
+
+        collection.create(model, new Options("wait", true));
+        assertEquals(1, addCount[0]);
+    }
+
+    public void testAddSortsCollectionAfterMerge() {
+        Collection<Model> collection = new Collection<Model>(new OptionsList(
+                new Options("id", 1, "x", 1),
+                new Options("id", 2, "x", 2)
+        ));
+
+        collection.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                return o1.get("x");
+            }
+        });
+        collection.add(new Options("id", 1, "x", 3), new Options("merge", true));
+
+        assertEquals(Arrays.asList(collection.pluck("id")), Arrays.asList(new Object[]{2, 1}));
+    }
+
+    public void testGroupByCanBeUsedWithAStringArgument() {
+        Collection<Model> collection = new Collection<Model>(new OptionsList(
+                new Options("x", 1),
+                new Options("x", 2)
+        ));
+        Map<Integer, List<Model>> grouped = collection.groupBy("x");
+
+        assertEquals(2, grouped.keySet().size());
+        assertEquals(1, grouped.get(1).get(0).getInt("x"));
+        assertEquals(2, grouped.get(2).get(0).getInt("x"));
+    }
+
+    public void testSortByCanBeUsedWithAStringArgument() {
+        Collection<Model> collection = new Collection<Model>(new OptionsList(
+                new Options("x", 3),
+                new Options("x", 1),
+                new Options("x", 2)
+        ));
+
+        List<Model> sortBy = collection.sortBy("x");
+
+        assertEquals(1, sortBy.get(0).getInt("x"));
+        assertEquals(2, sortBy.get(1).getInt("x"));
+        assertEquals(3, sortBy.get(2).getInt("x"));
+    }
+
+    public void testRemovalDuringIteration() {
+        final Collection<Model> collection = new Collection<Model>(new OptionsList(
+                new Options(), new Options()
+        ));
+        collection.on("add", new Function() {
+            @Override
+            public void f() {
+                collection.at(0).destroy();
+            }
+        });
+        assertEquals(2, collection.length());
+        collection.add(new Options(), new Options("at", 0));
+
+        assertEquals(2, collection.length());
+    }
+
+    public void testSortDuringAddTriggersCorrectly() {
+        final Collection<Model> collection = new Collection<Model>();
+        collection.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                return o1.get("x");
+            }
+        });
+
+        final List<Integer> added = new ArrayList<Integer>();
+        collection.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = this.getArgument(1);
+
+                model.set("x", 3);
+                collection.sort();
+                added.add(model.getId());
+            }
+        });
+
+        collection.add(new OptionsList(new Options("id", 1, "x", 1), new Options("id", 2, "x", 2)));
+        assertEquals(Arrays.asList(1, 2), added);
+    }
+
+    public void testSortShouldntAlwaysFireOnAdd() {
+        final int[] sortCount = {0};
+
+        Collection<Model> c = new Collection<Model>(new OptionsList(
+                new Options("id", 1),
+                new Options("id", 2),
+                new Options("id", 3)
+        ));
+        c.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                return Integer.compare(o1.getId(), o2.getId());
+            }
+        });
+        c.on("sort", new Function() {
+            @Override
+            public void f() {
+                sortCount[0]++;
+            }
+        });
+
+        c.sort(); // triggers sort
+        c.add(new OptionsList()); // doesn't triggers sort (empty list)
+        c.add(new Options("id", 1)); // doesn't triggers sort (object already exists)
+        c.add(new OptionsList(new Options("id", 2), new Options("id", 3))); // doesn't triggers sort (objects already exists)
+        c.add(new Options("id", 4)); // triggers sort
+
+        assertEquals(2, sortCount[0]);
+    }
+
+    public void testModelAndCollectionParse() {
+        // mocking a JSON response from a service
+        JSONArray models = new JSONArray();
+
+        JSONObject a = new JSONObject();
+        a.put("a", new JSONNumber(1));
+
+        JSONObject b = new JSONObject();
+        b.put("a", new JSONNumber(2));
+
+        JSONObject c = new JSONObject();
+        c.put("a", new JSONNumber(3));
+
+        JSONObject d = new JSONObject();
+        d.put("a", new JSONNumber(4));
+
+        models.set(0, a);
+        models.set(1, b);
+        models.set(2, c);
+        models.set(3, d);
+
+        Collection<Model> collection = new Collection<Model>(models);
+
+        assertEquals(4, collection.length());
+        assertEquals(1, collection.first().getInt("a"));
+        assertEquals(4, collection.last().getInt("a"));
+    }
+
+    public void testResetIncludesPreviousModelsInTriggeredEvent() {
+        final Model model = new Model();
+
+        Collection<Model> collection = new Collection<Model>(Arrays.asList(model));
+        collection.on("reset", new Function() {
+            @Override
+            public void f() {
+                Options options = this.getArgument(1);
+
+                assertEquals(Collections.singletonList(model), options.get("previousModels"));
+            }
+        });
+        collection.reset();
+    }
+
+
 }

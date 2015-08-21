@@ -8,6 +8,10 @@ import org.lirazs.gbackbone.client.core.model.Model;
 
 public class ParseModel extends Model {
 
+    public ParseModel(JSONObject model) {
+        super(model);
+    }
+
     @Override
     protected Options parse(JSONObject resp, Options options) {
         double value = resp.get("value").isNumber().doubleValue();

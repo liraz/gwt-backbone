@@ -30,10 +30,7 @@ import org.lirazs.gbackbone.client.core.util.UUID;
 import org.lirazs.gbackbone.client.generator.Reflectable;
 import org.lirazs.gbackbone.client.generator.Reflection;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Model extends Events implements Synchronized, Reflectable {
 
@@ -393,11 +390,12 @@ public class Model extends Events implements Synchronized, Reflectable {
             Object value = attributes.get(attr);
 
             //if (!OptionsUtils.isEqual(current.get(attr), value))
-            if (current.containsKey(attr) && !current.get(attr).equals(value))
+            Object currentValue = current.get(attr);
+            if (current.containsKey(attr) && !Objects.equals(currentValue, value))
                 changes.add(attr);
 
             //if (!OptionsUtils.isEqual(prev.get(attr), value)) {
-            if (prev.containsKey(attr) && !prev.get(attr).equals(value)) {
+            if (prev.containsKey(attr) && !Objects.equals(prev.get(attr), value)) {
                 changed.put(attr, value);
             } else {
                 changed.remove(attr);
@@ -941,6 +939,8 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         if(options == null)
             options = new Options();
+
+        options.put("validationError", error);
 
         this.trigger("invalid", this, error, options);
         return false;

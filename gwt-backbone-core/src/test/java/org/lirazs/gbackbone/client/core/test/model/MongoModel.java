@@ -24,6 +24,11 @@ public class MongoModel extends Model {
     public MongoModel() {
         super();
     }
+
+    public MongoModel(Options attributes, Options options) {
+        super(attributes, options);
+    }
+
     public MongoModel(JSONObject object) {
         super(object);
     }

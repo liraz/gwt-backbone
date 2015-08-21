@@ -20,19 +20,23 @@ import com.google.gwt.query.client.Promise;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
 
-public class ExtendedOptionsSyncModel extends Model {
+public class AjaxSyncModel extends Model {
 
-    public ExtendedOptionsSyncModel(Options attributes) {
+    public AjaxSyncModel() {
+        super();
+    }
+
+    public AjaxSyncModel(Options attributes) {
         super(attributes);
     }
 
     @Override
     public Promise sync(String method, Options options) {
-        options.extend(new Options("specialSync", true));
+        Promise sync = super.sync(method, options);
 
         Function success = options.get("success");
         success.f(this, null, options);
 
-        return super.sync(method, options);
+        return sync;
     }
 }

@@ -20,9 +20,13 @@ import com.google.gwt.query.client.Promise;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
 
-public class ExtendedOptionsSyncModel extends Model {
+public class SimpleSyncModel extends Model {
 
-    public ExtendedOptionsSyncModel(Options attributes) {
+    public SimpleSyncModel() {
+        super();
+    }
+
+    public SimpleSyncModel(Options attributes) {
         super(attributes);
     }
 
@@ -33,6 +37,6 @@ public class ExtendedOptionsSyncModel extends Model {
         Function success = options.get("success");
         success.f(this, null, options);
 
-        return super.sync(method, options);
+        return null;
     }
 }

@@ -176,11 +176,11 @@ public class Events {
                     EventEntry eventEntry = eventEntries.get(i);
                     if((callback != null && !callback.equals(eventEntry.callback))
                             || (context != null && !context.equals(eventEntry.context)))
-                        retainKey[retainIndex] = eventEntry;
+                        retainKey[retainIndex++] = eventEntry;
                 }
             }
 
-            if(retainKey.length == 0) {
+            if(retainIndex == 0) {
                 eventEntries.clear();
                 events.remove(name);
             }
