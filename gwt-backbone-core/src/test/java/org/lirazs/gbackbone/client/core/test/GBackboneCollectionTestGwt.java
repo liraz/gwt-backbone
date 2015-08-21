@@ -1017,7 +1017,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
         assertEquals(0, minModel.getId());
-        assertEquals(Arrays.asList(new Model[] { a, b }), col.difference(new Model[] { c, d }));
+        assertEquals(Arrays.asList(new Model[]{a, b}), col.difference(new Model[]{c, d}));
         assertTrue(col.contains(col.sample()));
 
         Model first = col.first();
@@ -1515,5 +1515,73 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         collection.reset();
     }
 
+    public void testSet() {
+        final Model m1 = new Model();
+        final Model m2 = new Model(new Options("id", 2));
+        final Model m3 = new Model();
 
+        Collection<Model> c = new Collection<Model>(m1, m2);
+
+        // Test add/change/remove events
+        c.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = getArgument(1);
+                assertEquals(m3, model);
+            }
+        });
+        c.on("change", new Function() {
+            @Override
+            public void f() {
+                Model model = getArgument(1);
+                assertEquals(m2, model);
+            }
+        });
+        c.on("remove", new Function() {
+            @Override
+            public void f() {
+                Model model = getArgument(1);
+                assertEquals(m1, model);
+            }
+        });
+
+        // remove: false doesn't remove any models
+        c.set(Collections.<Model>emptyList(), new Options("remove", false));
+        assertEquals(2, c.length());
+
+        // add: false doesn't add any models
+        c.set(Arrays.asList(m1, m2, m3), new Options("add", false));
+        assertEquals(2, c.length());
+
+        // merge: false doesn't change any models
+        c.set(Arrays.asList( m1, new Model(new Options("id", 2, "a", 1)) ), new Options("merge", false));
+        assertFalse(m2.has("a"));
+
+        // add: false, remove: false only merges existing models
+        c.set(Arrays.asList( m1, new Model(new Options("id", 2, "a", 0)), m3, new Model(new Options("id", 4)) ), new Options("add", false, "remove", false));
+        assertEquals(2, c.length());
+        assertEquals(0, m2.get("a"));
+
+        // default options add/remove/merge as appropriate
+        c.set(Arrays.asList(new Model(new Options("id", 2, "a", 1)), m3));
+        assertEquals(2, c.length());
+        assertEquals(1, m2.get("a"));
+
+        // Test removing models not passing an argument
+        c.off("remove").on("remove", new Function() {
+            @Override
+            public void f() {
+                Model model = getArgument(1);
+                assertTrue(model == m2 || model == m3);
+            }
+        });
+        c.set(Collections.<Model>emptyList());
+        assertEquals(0, c.length());
+
+        // Test null models on set doesn't clear collection
+        c.off();
+        c.set(new Options[]{new Options("id", 1) });
+        c.set();
+        assertEquals(1, c.length());
+    }
 }

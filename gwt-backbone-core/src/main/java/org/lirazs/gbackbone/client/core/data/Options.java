@@ -71,9 +71,11 @@ public class Options extends HashMap<String, Object> implements JsonSerializable
 
     public Options defaults(Options ...args) {
         for (Options source : args) {
-            for (String key : source.keySet()) {
-                if (!containsKey(key)) {
-                    put(key, source.get(key));
+            if (source != null) {
+                for (String key : source.keySet()) {
+                    if (!containsKey(key)) {
+                        put(key, source.get(key));
+                    }
                 }
             }
         }

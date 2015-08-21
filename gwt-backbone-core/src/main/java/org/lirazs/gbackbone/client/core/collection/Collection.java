@@ -443,6 +443,10 @@ public class Collection<T extends Model> extends Events implements Synchronized,
          return this;
      }
      */
+    public Collection set() {
+        // don't do nothing... since models are null
+        return this;
+    }
     public Collection set(JSONArray models) {
         return set(models, null);
     }
@@ -453,7 +457,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         return set(objects, null);
     }
     public Collection set(Options[] objects, Options options) {
-        List<T> models = Arrays.asList();
+        List<T> models = new ArrayList<T>();
         for (Options object : objects) {
             T model = prepareModel(object, options);
             if (model != null) {
@@ -464,9 +468,15 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
 
     public Collection set(T model, Options options) {
-        return set(Arrays.asList(model), options);
+        return set(Collections.singletonList(model), options);
+    }
+    public Collection set(List<T> models) {
+        return set(models, null);
     }
     public Collection set(List<T> models, Options options) {
+        if(models == null)
+            return this;
+
         options = new Options().defaults(options, setOptions);
 
         int at = options.getInt("at");
@@ -531,7 +541,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         if(remove) {
             for (int i = 0; i < length; i++) {
                 T model = this.models.get(i);
-                if(modelMap.get(model.getCid()) != null)
+                if(modelMap.get(model.getCid()) == null)
                     toRemove.add(model);
             }
 
@@ -754,7 +764,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         if (model != null) {
             modelFromCollection = byId.get(String.valueOf(model.getId()));
-            if(modelFromCollection == null)
+            if(modelFromCollection == null || model.getId() == -1)
                 modelFromCollection = byId.get(model.getCid());
         }
 

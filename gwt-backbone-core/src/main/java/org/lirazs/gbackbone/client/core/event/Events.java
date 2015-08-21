@@ -153,6 +153,9 @@ public class Events {
         return this;
     }
 
+    public Events off(String name) {
+        return off(name, null, null);
+    }
     public Events off(String name, Function callback) {
         return off(name, callback, null);
     }
