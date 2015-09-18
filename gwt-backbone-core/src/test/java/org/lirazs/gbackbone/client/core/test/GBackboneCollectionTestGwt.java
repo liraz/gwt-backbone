@@ -1584,4 +1584,42 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         c.set();
         assertEquals(1, c.length());
     }
+
+    public void testSetWithOnlyCids() {
+        final Model m1 = new Model();
+        final Model m2 = new Model();
+
+        Collection<Model> c = new Collection<Model>();
+        c.set(m1, m2);
+        assertEquals(2, c.length());
+        c.set(m1);
+        assertEquals(1, c.length());
+        c.set(Arrays.asList(m1, m1, m1, m2, m2), new Options("remove", false));
+        assertEquals(2, c.length());
+    }
+
+    public void testSetWithOnlyIdAttribute() {
+        Options m1 = new Options("_id", 1);
+        Options m2 = new Options("_id", 2);
+
+        Collection<MongoModel> c = new Collection<MongoModel>();
+        c.set(m1, m2);
+        assertEquals(2, c.length());
+        c.set(m1);
+        assertEquals(1, c.length());
+        c.set(new OptionsList(m1, m1, m1, m2, m2), new Options("remove", false));
+    }
+
+    public void testSetPlusMergeWithDefaultValuesDefined() {
+        DefaultKeyModel m = new DefaultKeyModel(new Options("id", 1));
+        Collection<DefaultKeyModel> col = new Collection<DefaultKeyModel>(DefaultKeyModel.class, m);
+        assertEquals("value", col.first().get("key"));
+
+        col.set(new Options("id", 1, "key", "other"));
+        assertEquals("other", col.first().get("key"));
+
+        col.set(new Options("id", 1, "other", "value"));
+        assertEquals("other", col.first().get("key"));
+        assertEquals(1, col.length());
+    }
 }

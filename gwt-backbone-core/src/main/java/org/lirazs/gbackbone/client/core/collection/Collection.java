@@ -453,20 +453,127 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     public Collection set(JSONArray models, Options options) {
         return set(parse(models, options), options);
     }
-    public Collection set(Options[] objects) {
+    public Collection set(Options ...objects) {
         return set(objects, null);
     }
+    public Collection set(OptionsList objects, Options options) {
+        return set(objects.toArray(new Options[objects.size()]), options);
+    }
     public Collection set(Options[] objects, Options options) {
-        List<T> models = new ArrayList<T>();
-        for (Options object : objects) {
-            T model = prepareModel(object, options);
-            if (model != null) {
-                models.add(model);
+        if(objects == null)
+            return this;
+
+        options = new Options().defaults(options, setOptions);
+
+        int at = options.getInt("at");
+        boolean sort = false;
+        boolean sortable = comparator != null && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
+
+        List<T> toAdd = new ArrayList<T>();
+        List<T> toRemove = new ArrayList<T>();
+        List<T> toOrder = new ArrayList<T>();
+        JsMap<String, Boolean> modelMap = JsMap.create();
+
+        boolean add = options.getBoolean("add");
+        boolean merge = options.getBoolean("merge");
+        boolean remove = options.getBoolean("remove");
+
+        boolean order = !sortable && add && remove;
+
+        // Turn bare objects into model references, and prevent invalid models
+        // from being added.
+        for (Options model : objects) {
+            T preparedModel = prepareModel(model);
+
+            //if(model == null)
+            //    model = preparedModel;
+
+            //if(preparedModel != null) {
+            if(model != null) {
+                T existing = get(preparedModel);
+                // If a duplicate is found, prevent it from being added and
+                // optionally merge it into the existing model.
+                if(existing != null) {
+                    if(remove)
+                        modelMap.put(existing.getCid(), true);
+
+                    if(merge) {
+                        //Options attrs = (preparedModel == model) ? model.getAttributes() : options.<Options>get("_attrs");
+                        Options attrs = model;
+                        existing.set(attrs, options);
+
+                        if(sortable && !options.getBoolean("sort"))
+                            sort = true;
+                    }
+                } else if(add) { // This is a new model, push it to the `toAdd` list
+                    toAdd.add(preparedModel);
+
+                    // Listen to added models' events, and index models for lookup by
+                    // `id` and by `cid`.
+                    preparedModel.on("all", onModelEvent, this);
+                    byId.put(preparedModel.getCid(), preparedModel);
+
+                    if(!preparedModel.isNew())
+                        byId.put(String.valueOf(preparedModel.getId()), preparedModel);
+                }
+                if (order){
+                    toOrder.add(existing != null ? existing : preparedModel);
+                }
+
+                options.remove("_attrs");
             }
         }
-        return set(models, options);
+
+        // Remove nonexistent models if appropriate.
+        if(remove) {
+            for (int i = 0; i < length; i++) {
+                T model = this.models.get(i);
+                if(modelMap.get(model.getCid()) == null)
+                    toRemove.add(model);
+            }
+
+            if(toRemove.size() > 0)
+                remove(toRemove, options);
+        }
+
+        if(toAdd.size() > 0 || (order && toOrder.size() > 0)) {
+            if(sortable)
+                sort = true;
+
+            length += toAdd.size();
+
+            if(options.containsKey("at")) {
+                this.models.addAll(at, toAdd);
+            } else {
+                if(order)
+                    this.models.clear();
+
+                //Array.prototype.push.apply(this.models, order || toAdd);
+                this.models.addAll((order && toOrder.size() > 0) ? toOrder : toAdd);
+            }
+        }
+
+        if(sort)
+            this.sort(new Options("silent", true));
+
+        if(!options.getBoolean("silent")) {
+            for (int i = 0; i < toAdd.size(); i++) {
+                T model = toAdd.get(i);
+                model.trigger("add", model, this, options);
+            }
+
+            if(sort || (order && toOrder.size() > 0)) {
+                this.trigger("sort", this, options);
+            }
+        }
+
+        return this;
     }
 
+
+    public Collection set(T ...model) {
+        return set(Arrays.asList(model), null);
+    }
     public Collection set(T model, Options options) {
         return set(Collections.singletonList(model), options);
     }
