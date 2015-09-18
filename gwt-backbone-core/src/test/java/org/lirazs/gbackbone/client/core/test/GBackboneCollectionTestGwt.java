@@ -1622,4 +1622,19 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals("other", col.first().get("key"));
         assertEquals(1, col.length());
     }
+
+    public void testMergeWithoutMutation() {
+        OptionsList data = new OptionsList(new Options("id", 1, "child", new Options("id", 2)));
+        Collection<CreateChildModel> collection = new Collection<CreateChildModel>(
+                CreateChildModel.class, data);
+
+        assertEquals(1, collection.first().getId());
+        collection.set(data);
+        assertEquals(1, collection.first().getId());
+        collection.set(new OptionsList(new Options("id", 2, "child", new Options("id", 2))).concat(data));
+
+        assertEquals(Arrays.asList(collection.pluck("id")), Arrays.asList(2, 1));
+    }
+
+
 }

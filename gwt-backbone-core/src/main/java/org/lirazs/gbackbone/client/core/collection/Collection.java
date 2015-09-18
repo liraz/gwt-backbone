@@ -456,6 +456,9 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     public Collection set(Options ...objects) {
         return set(objects, null);
     }
+    public Collection set(OptionsList objects) {
+        return set(objects, null);
+    }
     public Collection set(OptionsList objects, Options options) {
         return set(objects.toArray(new Options[objects.size()]), options);
     }

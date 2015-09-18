@@ -46,6 +46,15 @@ public class OptionsList extends ArrayList<Options> implements JsonSerializable 
         }
     }
 
+    public Options[] concat(OptionsList other) {
+        Options[] optionses = toArray(new Options[size() + other.size()]);
+        for (int i = 0; i < other.size(); i++) {
+            Options otherOption = other.get(i);
+            optionses[i + size()] = otherOption;
+        }
+        return optionses;
+    }
+
     @Override
     public JSONValue toJsonValue() {
         JSONArray jsonArray = new JSONArray();
