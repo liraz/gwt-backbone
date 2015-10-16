@@ -13,16 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.lirazs.gbackbone.client.generator;
+package org.lirazs.gbackbone.client.core.test.model;
 
-
-import com.google.gwt.json.client.JSONObject;
 import org.lirazs.gbackbone.client.core.data.Options;
+import org.lirazs.gbackbone.client.core.model.Model;
 
-public interface Reflection {
-    <T, V extends T> T instantiateModel( Class<V> clazz, Options attributes, Options options );
+public class AModel extends Model {
 
-    <T, V extends T> T instantiateModel( Class<V> clazz, JSONObject attributes, Options options );
+    public AModel() {
+        super();
+    }
 
-    <T, V extends T> T[] instantiateArray( Class<V> clazz, int length );
+    public AModel(Options attributes) {
+        super(attributes);
+    }
 }

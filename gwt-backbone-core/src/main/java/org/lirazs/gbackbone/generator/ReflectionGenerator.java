@@ -66,6 +66,7 @@ public class ReflectionGenerator extends Generator
 
         composer.addImport( "org.lirazs.gbackbone.client.generator.*" );
         composer.addImport( "org.lirazs.gbackbone.client.core.data.Options" );
+        composer.addImport( "com.google.gwt.json.client.JSONObject" );
 
         PrintWriter printWriter = context.tryCreate( logger, genPackageName, genClassName );
 
@@ -76,6 +77,7 @@ public class ReflectionGenerator extends Generator
             sourceWriter.println( "}" );
 
             printFactoryMethod(clazzes, sourceWriter);
+            printJSONFactoryMethod(clazzes, sourceWriter);
             printArrayFactoryMethod( clazzes, sourceWriter );
 
             sourceWriter.commit( logger );
@@ -152,6 +154,119 @@ public class ReflectionGenerator extends Generator
                         sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
                         sourceWriter.indent( );
                         sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes.toJsonObject() );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.EMPTY) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+                }
+            } else {
+                sourceWriter.println( );
+                sourceWriter.indent( );
+                sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                sourceWriter.indent( );
+                sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( );" );
+                sourceWriter.outdent( );
+                sourceWriter.println( "}" );
+                sourceWriter.outdent( );
+                sourceWriter.println( );
+            }
+        }
+        sourceWriter.indent();
+        sourceWriter.println("return (T) null;");
+        sourceWriter.outdent();
+        sourceWriter.println();
+        sourceWriter.println("}");
+        sourceWriter.outdent( );
+        sourceWriter.println();
+    }
+
+    private void printJSONFactoryMethod( List<JClassType> clazzes, SourceWriter sourceWriter )
+    {
+        sourceWriter.println( );
+
+        sourceWriter.println( "public <T, V extends T> T instantiateModel( Class<V> clazz, JSONObject attributes, Options options ) {" );
+
+        for ( JClassType classType : clazzes )
+        {
+            if ( classType.isAbstract( ) )
+                continue;
+
+            JConstructor[] constructors = classType.getConstructors();
+            if (constructors.length > 0) {
+                Arrays.sort(constructors, new Comparator<JConstructor>() {
+                    @Override
+                    public int compare(JConstructor o1, JConstructor o2) {
+                        ModelConstructorType modelConstructorType1 = getModelConstructorType(o1);
+                        ModelConstructorType modelConstructorType2 = getModelConstructorType(o2);
+
+                        // json object methods gain priority since a JSONObject is provided
+                        if(modelConstructorType1 == ModelConstructorType.JSON_OBJECT)
+                            return -1;
+                        if(modelConstructorType1 == ModelConstructorType.JSON_OBJECT_AND_OPTIONS)
+                            return -1;
+
+                        return modelConstructorType1.compareTo(modelConstructorType2);
+                    }
+                });
+
+                for (JConstructor constructor : constructors) {
+                    ModelConstructorType modelConstructorType = getModelConstructorType(constructor);
+
+                    if(modelConstructorType == ModelConstructorType.JSON_OBJECT_AND_OPTIONS) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes, options );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.JSON_OBJECT) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( attributes );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.ATTRIBUTES_AND_OPTIONS) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( new Options(attributes), options );" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( "}" );
+                        sourceWriter.outdent( );
+                        sourceWriter.println( );
+                    }
+
+                    if(modelConstructorType == ModelConstructorType.ATTRIBUTES) {
+                        sourceWriter.println( );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "if (clazz.getName().endsWith(\"." + classType.getName( ) + "\")) {" );
+                        sourceWriter.indent( );
+                        sourceWriter.println( "return (T) new " + classType.getQualifiedSourceName( ) + "( new Options(attributes) );" );
                         sourceWriter.outdent( );
                         sourceWriter.println( "}" );
                         sourceWriter.outdent( );

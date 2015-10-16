@@ -17,10 +17,7 @@ package org.lirazs.gbackbone.client.core.test;
 
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.json.client.JSONArray;
-import com.google.gwt.json.client.JSONNumber;
-import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.json.client.*;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
@@ -30,7 +27,7 @@ import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.function.FilterFunction;
 import org.lirazs.gbackbone.client.core.function.MapFunction;
 import org.lirazs.gbackbone.client.core.function.MinMaxFunction;
-import org.lirazs.gbackbone.client.core.function.SortFunction;
+import org.lirazs.gbackbone.client.core.function.ModelClassFunction;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
@@ -859,9 +856,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
 
             @Override
-            public List<Model> parse(OptionsList models, Options options) {
+            public List<Model> parse(JSONValue resp, Options options) {
                 counter[0]++;
-                return super.parse(models, options);
+                return super.parse(resp, options);
             }
         }
         LocalCollection collection = new LocalCollection();
@@ -1636,5 +1633,477 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(Arrays.asList(collection.pluck("id")), Arrays.asList(2, 1));
     }
 
+    public void testSetAndModelLevelParse() {
+        Model model = new Model(new Options("id", 1));
 
+        Collection<Model> collection = new Collection<Model>(model) {
+            @Override
+            public List<Model> parse(JSONValue resp, Options options) {
+                List<Model> result = new ArrayList<Model>();
+                JSONArray array = resp.isObject().get("models").isArray();
+                if(array != null) {
+                    for (int i = 0; i < array.size(); i++) {
+                        JSONValue value = array.get(i);
+                        JSONObject object = value.isObject();
+                        if(object != null) {
+                            JSONObject jsonModel = object.get("model").isObject();
+                            if(jsonModel != null) {
+                                Model model = GWT.create(Model.class);
+                                model.set(new Options(jsonModel), options);
+
+                                result.add(model);
+                            }
+                        }
+                    }
+                }
+                return result;
+            }
+        };
+
+        // mocking a JSON response from a service
+        JSONObject response = new JSONObject();
+        JSONArray models = new JSONArray();
+
+        JSONObject model1 = new JSONObject();
+        JSONObject a = new JSONObject();
+        a.put("id", new JSONNumber(1));
+        model1.put("model", a);
+
+        JSONObject model2 = new JSONObject();
+        JSONObject b = new JSONObject();
+        b.put("id", new JSONNumber(2));
+        model2.put("model", b);
+
+        models.set(0, model1);
+        models.set(1, model2);
+        response.put("models", models);
+
+        collection.set(response);
+        assertEquals(model, collection.first());
+    }
+
+    public void testSetDataIsOnlyParsedOnce() {
+        Collection<ParseOnceModel> collection = new Collection<ParseOnceModel>(ParseOnceModel.class);
+        collection.set(new JSONObject());
+    }
+
+    public void testSetMatchesInputOrderInTheAbsenceOfAComparator() {
+        Model one = new Model(new Options("id", 1));
+        Model two = new Model(new Options("id", 2));
+        Model three = new Model(new Options("id", 3));
+
+        Collection<Model> collection = new Collection<Model>(one, two, three);
+        collection.set(new OptionsList(new Options("id", 3), new Options("id", 2), new Options("id", 1)));
+        assertEquals(collection.toList(), Arrays.asList(three, two, one));
+
+        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2)));
+        assertEquals(collection.toList(), Arrays.asList(one, two));
+
+        collection.set(two, three, one);
+        assertEquals(collection.toList(), Arrays.asList(two, three, one));
+
+        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2)), new Options("remove", false));
+        assertEquals(collection.toList(), Arrays.asList(two, three, one));
+
+        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3)), new Options("merge", false));
+        assertEquals(collection.toList(), Arrays.asList(one, two, three));
+
+        collection.set(Arrays.asList(three, two, one, new Model(new Options("id", 4))), new Options("add", false));
+        assertEquals(collection.toList(), Arrays.asList(one, two, three));
+    }
+
+    public void testPushShouldNotTriggerASort() {
+
+        Collection<Model> collection = new Collection<Model>() {
+            @Override
+            public Collection<Model> sort() {
+                assertTrue(false); // should not be triggered
+                return null;
+            }
+        };
+        collection.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                return Integer.compare(o1.getId(), o2.getId());
+            }
+        });
+        collection.push(new Options("id", 1));
+    }
+
+    public void testPushDuplicateModelsReturnTheCorrectOne() {
+        Collection<Model> col = new Collection<Model>();
+        Model model1 = col.push(new Options("id", 101));
+        Model model2 = col.push(new Options("id", 101));
+
+        assertEquals(model2.getCid(), model1.getCid());
+    }
+
+    public void testSetWithNonNormalId() {
+        Collection<MongoModel> collection = new Collection<MongoModel>(
+                MongoModel.class,
+                new OptionsList(new Options("_id", 1))
+        );
+        collection.set(new OptionsList(new Options("_id", 1, "a", 1)), new Options("add", false));
+        assertEquals(1, collection.first().get("a"));
+    }
+
+    public void testSortCanOptionallyBeTurnedOff() {
+        Collection<Model> collection = new Collection<Model>() {
+            @Override
+            public Collection<Model> sort() {
+                assertTrue(false); // should not be triggered
+                return null;
+            }
+        };
+        collection.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                return Integer.compare(o1.getId(), o2.getId());
+            }
+        });
+        collection.add(new OptionsList(new Options("id", 1)), new Options("sort", false));
+    }
+
+    public void testParseDataInTheRightOrderInSet() {
+        Collection<Model> collection = new Collection<Model>() {
+            @Override
+            public List<Model> parse(JSONValue resp, Options options) {
+                JSONObject data = resp.isObject();
+
+                assertEquals("ok", data.get("status").isString().stringValue());
+                return super.parse(data.get("data"), options);
+            }
+        };
+
+        JSONObject response = new JSONObject();
+        response.put("status", new JSONString("ok"));
+
+        JSONArray models = new JSONArray();
+
+        JSONObject a = new JSONObject();
+        a.put("id", new JSONNumber(1));
+
+        models.set(0, a);
+        response.put("data", models);
+
+        collection.set(response);
+    }
+
+    public void testAddOnlySortsWhenNecessary() {
+        Collection<Model> collection = new Collection<Model>();
+        collection.registerComparator(new Comparator<Model>() {
+            @Override
+            public int compare(Model o1, Model o2) {
+                Integer a1 = o1.has("a") ? o1.<Integer>get("a") : -1;
+                Integer a2 = o2.has("a") ? o2.<Integer>get("a") : -1;
+                return a1.compareTo(a2);
+            }
+        });
+        collection.on("sort", new Function() {
+            @Override
+            public void f() {
+                assertTrue(true);
+            }
+        });
+        collection.add(new Options("id", 4));
+        collection.add(new Options("id", 1, "a", 1), new Options("merge", true)); // do sort, comparator change
+        collection.add(new Options("id", 1, "b", 1), new Options("merge", true)); // do sort, comparator change
+
+        collection.on("sort", new Function() {
+            @Override
+            public void f() {
+                assertTrue(false); // function should not be called
+            }
+        });
+        collection.add(new Options("id", 1, "a", 1), new Options("merge", true)); // don't sort, no comparator change
+        collection.add(collection.toList()); // don't sort, nothing new
+        collection.add(collection.toList(), new Options("merge", true));  // don't sort
+    }
+
+    public void testAttachOptionsToCollection() {
+        Comparator<TestModel> comparator = new Comparator<TestModel>() {
+            @Override
+            public int compare(TestModel o1, TestModel o2) {
+                return Integer.compare(o1.getId(), o2.getId()) * -1;
+            }
+        };
+
+        Collection<TestModel> collection = new Collection<TestModel>(new OptionsList(new Options("id", 1), new Options("id", 2)), new Options(
+                "model", TestModel.class,
+                "comparator", comparator
+        ));
+
+        assertEquals(TestModel.class, collection.first().getClass());
+        assertEquals(2, collection.first().getId());
+    }
+
+    public void testAddOverridesSetFlags() {
+        final Collection collection = new Collection();
+        collection.once("add", new Function() {
+            @Override
+            public void f() {
+                Options options = getArgument(3);
+                collection.add(new Options("id", 2), options);
+            }
+        });
+        collection.set(new Options("id", 1));
+        assertEquals(2, collection.length());
+    }
+
+    public void testCollectionCreateSuccessArguments() {
+        Collection collection = new Collection() {
+            @Override
+            public Model create(Options attrs, Options options) {
+                Model model = super.create(attrs, options);
+
+                Function success = options.get("success");
+                success.f(model, "response", options);
+
+                return model;
+            }
+        };
+        collection.setUrl("test");
+        collection.create(new Options(), new Options(
+                "success", new Function() {
+            @Override
+            public void f() {
+                String response = getArgument(1);
+                assertEquals("response", response);
+            }
+        }
+        ));
+    }
+
+    public void testNestedParseWorksWithCollectionSet() {
+
+        JSONObject data = generateDummyJSONData("");
+        JSONObject newData = generateDummyJSONData("New");
+
+        JobModel job = new JobModel(data);
+        assertEquals("JobName", job.get("name"));
+        assertEquals("Sub1", job.getItems().at(0).get("name"));
+        assertEquals(2, job.getItems().length());
+
+        assertEquals("One", job.getItems().get(1).getSubItems().get(1).get("subName"));
+        assertEquals("Three", job.getItems().get(2).getSubItems().get(3).get("subName"));
+
+        job.set(newData);
+        assertEquals("NewJobName", job.get("name"));
+        assertEquals("NewSub1", job.getItems().at(0).get("name"));
+        assertEquals(2, job.getItems().length());
+
+        assertEquals("NewOne", job.getItems().get(1).getSubItems().get(1).get("subName"));
+        assertEquals("NewThree", job.getItems().get(2).getSubItems().get(3).get("subName"));
+    }
+
+    private JSONObject generateDummyJSONData(String prefix) {
+        JSONObject data = new JSONObject();
+        data.put("name", new JSONString(prefix + "JobName"));
+        data.put("id", new JSONNumber(1));
+
+        JSONArray items = new JSONArray();
+
+        JSONObject subItem1 = new JSONObject();
+        subItem1.put("id", new JSONNumber(1));
+        subItem1.put("name", new JSONString(prefix + "Sub1"));
+
+        JSONArray subItem1SubItems = new JSONArray();
+
+        JSONObject subItem1SubItem1 = new JSONObject();
+        subItem1SubItem1.put("id", new JSONNumber(1));
+        subItem1SubItem1.put("subName", new JSONString(prefix + "One"));
+
+        JSONObject subItem1SubItem2 = new JSONObject();
+        subItem1SubItem2.put("id", new JSONNumber(2));
+        subItem1SubItem2.put("subName", new JSONString(prefix + "Two"));
+
+        subItem1SubItems.set(0, subItem1SubItem1);
+        subItem1SubItems.set(1, subItem1SubItem2);
+
+        subItem1.put("subItems", subItem1SubItems);
+
+        JSONObject subItem2 = new JSONObject();
+        subItem2.put("id", new JSONNumber(2));
+        subItem2.put("name", new JSONString(prefix + "Sub2"));
+
+        JSONArray subItem2SubItems = new JSONArray();
+
+        JSONObject subItem2SubItem1 = new JSONObject();
+        subItem2SubItem1.put("id", new JSONNumber(3));
+        subItem2SubItem1.put("subName", new JSONString(prefix + "Three"));
+
+        JSONObject subItem2SubItem2 = new JSONObject();
+        subItem2SubItem2.put("id", new JSONNumber(4));
+        subItem2SubItem2.put("subName", new JSONString(prefix + "Four"));
+
+        subItem2SubItems.set(0, subItem2SubItem1);
+        subItem2SubItems.set(1, subItem2SubItem2);
+
+        subItem2.put("subItems", subItem2SubItems);
+
+        items.set(0, subItem1);
+        items.set(1, subItem2);
+
+        data.put("items", items);
+
+        return data;
+    }
+
+    public void testRemoveReferenceUnbindsAllCollectionEventsAndTies() {
+        final int[] remove = {0};
+
+        Model model = new Model(new Options("id", 1));
+        Collection<Model> collection = new Collection<Model>(model) {
+            @Override
+            protected void removeReference(Model model) {
+                super.removeReference(model);
+                remove[0]++;
+                assertNull(get(model.getId()));
+                assertNull(get(model.getCid()));
+                assertNull(model.getCollection());
+            }
+        };
+        collection.remove(model);
+
+        assertEquals(1, remove[0]);
+    }
+
+    public void testDoNotAllowDuplicateModelsToBeAddedOrSet() {
+        Collection c = new Collection();
+
+        c.add(new OptionsList(new Options("id", 1), new Options("id", 1)));
+        assertEquals(1, c.length());
+        assertEquals(1, c.toList().size());
+
+        c.set(new OptionsList(new Options("id", 1), new Options("id", 1)));
+        assertEquals(1, c.length());
+        assertEquals(1, c.toList().size());
+    }
+
+    public void testSetWithAddFalseShouldNotGrow() {
+        Collection collection = new Collection();
+        collection.set(new OptionsList(new Options("id", 1)), new Options("add", false));
+
+        assertEquals(0, collection.size());
+        assertEquals(0, collection.toList().size());
+    }
+
+    public void testCreateWithWaitModelInstance() {
+        Collection<TestSyncCollectionModel> collection = new Collection<TestSyncCollectionModel>();
+        TestSyncCollectionModel model = new TestSyncCollectionModel(new Options("id", 1));
+        model.setCollectionToTest(collection);
+
+        collection.create(model, new Options("wait", true));
+    }
+
+    public void testPolymorphicModelsWorkWithSimpleConstructors() {
+
+        Collection<Model> collection = new Collection<Model>(new OptionsList(
+                new Options("id", 1, "type", "a"), new Options("id", 2, "type", "b")
+        ), new Options("model", new ModelClassFunction<Model>() {
+            @Override
+            public Class<? extends Model> f(Options attributes) {
+                String type = attributes.get("type");
+                return type != null && type.equals("a") ? AModel.class : BModel.class;
+            }
+        }));
+
+        assertEquals(2, collection.length());
+        assertTrue(collection.at(0) instanceof AModel);
+        assertEquals(1, collection.at(0).getId());
+        assertTrue(collection.at(1) instanceof BModel);
+        assertEquals(2, collection.at(1).getId());
+    }
+
+    public void testAddingAtIndexFiresWithCorrectAt() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("at", 0),
+                new Options("at", 4)
+        ));
+        col.on("add", new Function() {
+            @Override
+            public void f() {
+                Model model = getArgument(1);
+                Options options = getArgument(3);
+
+                assertEquals(options.getInt("index").intValue(), model.getInt("at"));
+            }
+        });
+        col.add(new OptionsList(new Options("at", 1), new Options("at", 2), new Options("at", 3)), new Options("at", 1));
+    }
+
+    public void testIndexIsNotSentWhenAtIsNotSpecified() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(new Options("at", 0)));
+        col.on("add", new Function() {
+            @Override
+            public void f() {
+                Options options = getArgument(3);
+                assertNull(options.get("index"));
+            }
+        });
+        col.add(new OptionsList(new Options("at", 1), new Options("at", 2)));
+    }
+
+    public void testOrderChangingShouldTriggerASort() {
+        Model one = new Model(new Options("id", 1));
+        Model two = new Model(new Options("id", 2));
+        Model three = new Model(new Options("id", 3));
+
+        final int[] sortCallCount = {0};
+
+        Collection<Model> collection = new Collection<Model>(one, two, three);
+        collection.on("sort", new Function() {
+            @Override
+            public void f() {
+                sortCallCount[0]++;
+            }
+        });
+        collection.set(new OptionsList(new Options("id", 3), new Options("id", 2), new Options("id", 1)));
+        assertEquals(1, sortCallCount[0]);
+    }
+
+    public void testAddingAModelShouldTriggerASort() {
+        Model one = new Model(new Options("id", 1));
+        Model two = new Model(new Options("id", 2));
+        Model three = new Model(new Options("id", 3));
+
+        final int[] sortCallCount = {0};
+
+        Collection<Model> collection = new Collection<Model>(one, two, three);
+        collection.on("sort", new Function() {
+            @Override
+            public void f() {
+                sortCallCount[0]++;
+            }
+        });
+        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3), new Options("id", 0)));
+        assertEquals(1, sortCallCount[0]);
+    }
+
+    public void testOrderNotChangingShouldNotTriggerASort() {
+        Model one = new Model(new Options("id", 1));
+        Model two = new Model(new Options("id", 2));
+        Model three = new Model(new Options("id", 3));
+
+        final int[] sortCallCount = {0};
+
+        Collection<Model> collection = new Collection<Model>(one, two, three);
+        collection.on("sort", new Function() {
+            @Override
+            public void f() {
+                sortCallCount[0]++;
+            }
+        });
+        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3)));
+        assertEquals(0, sortCallCount[0]);
+    }
+
+    public void testAddSupportsNegativeIndexes() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(new Options("id", 1)));
+        col.add(new OptionsList(new Options("id", 2), new Options("id", 3)), new Options("at", -1));
+        col.add(new OptionsList(new Options("id", 2.5)), new Options("at", -2));
+        col.add(new OptionsList(new Options("id", 0.5)), new Options("at", -6));
+
+        assertEquals("0.5,1,2,2.5,3", col.jsPluck("id").join(","));
+    }
 }

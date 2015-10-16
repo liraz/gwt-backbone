@@ -88,6 +88,9 @@ public class Events {
          return this.on(name, once, context);
      }
      */
+    public Events once(final String name, final Function callback) {
+        return once(name, callback, null);
+    }
     public Events once(final String name, final Function callback, Object context) {
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {

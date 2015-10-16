@@ -28,10 +28,7 @@ import com.google.gwt.user.client.Random;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.event.Events;
-import org.lirazs.gbackbone.client.core.function.FilterFunction;
-import org.lirazs.gbackbone.client.core.function.MapFunction;
-import org.lirazs.gbackbone.client.core.function.MinMaxFunction;
-import org.lirazs.gbackbone.client.core.function.SortFunction;
+import org.lirazs.gbackbone.client.core.function.*;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.net.Sync;
@@ -61,6 +58,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     List<T> models;
     Map<String, T> byId;
     Class<T> modelClass;
+    ModelClassFunction<T> modelClassFunction;
 
     /**
      * constructor(models?: Model[], options?: CollectionOptions) {
@@ -101,6 +99,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
     public Collection(Class<T> modelClass, OptionsList models, Options options) {
         this.modelClass = modelClass;
+        processModelClassFromOptions(options);
 
         List<T> parsedModels = parse(models, options);
 
@@ -130,6 +129,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
     public Collection(Class<T> modelClass, JSONArray models, Options options) {
         this.modelClass = modelClass;
+        processModelClassFromOptions(options);
 
         List<T> parsedModels = parse(models, options);
 
@@ -170,6 +170,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
     public Collection(Class<T> modelClass, List<T> models, Options options) {
         this.modelClass = modelClass;
+        processModelClassFromOptions(options);
 
         if(options == null)
             options = new Options();
@@ -190,9 +191,27 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         }
     }
 
+    private void processModelClassFromOptions(Options options) {
+        if(options != null && options.containsKey("model")) {
+            Object model = options.get("model");
+            if(model instanceof Class) {
+                registerModelClass((Class<T>) model);
+            } else if(model instanceof ModelClassFunction) {
+                registerModelClassFunction((ModelClassFunction<T>) model);
+            }
+        }
+    }
+
     public boolean registerModelClass(Class<T> modelClass) {
         if(!Objects.equals(this.modelClass, modelClass)) {
             this.modelClass = modelClass;
+            return true;
+        }
+        return false;
+    }
+    public boolean registerModelClassFunction(ModelClassFunction<T> modelClassFunction) {
+        if(!Objects.equals(this.modelClassFunction, modelClassFunction)) {
+            this.modelClassFunction = modelClassFunction;
             return true;
         }
         return false;
@@ -447,11 +466,11 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         // don't do nothing... since models are null
         return this;
     }
-    public Collection set(JSONArray models) {
-        return set(models, null);
+    public Collection set(JSONValue jsonValue) {
+        return set(jsonValue, null);
     }
-    public Collection set(JSONArray models, Options options) {
-        return set(parse(models, options), options);
+    public Collection set(JSONValue jsonValue, Options options) {
+        return set(parse(jsonValue, options), options);
     }
     public Collection set(Options ...objects) {
         return set(objects, null);
@@ -474,7 +493,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         List<T> toAdd = new ArrayList<T>();
         List<T> toRemove = new ArrayList<T>();
-        List<T> toOrder = new ArrayList<T>();
+        Set<T> toOrder = new LinkedHashSet<T>();
         JsMap<String, Boolean> modelMap = JsMap.create();
 
         boolean add = options.getBoolean("add");
@@ -539,11 +558,24 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                 remove(toRemove, options);
         }
 
+        boolean orderChanged = false;
         if(toAdd.size() > 0 || (order && toOrder.size() > 0)) {
             if(sortable)
                 sort = true;
 
             length += toAdd.size();
+
+            orderChanged = length() != toOrder.size() || toAdd.size() > 0;
+            if (!orderChanged) {
+                Iterator<T> iterator = toOrder.iterator();
+
+                for (T model : this.models) {
+                    if (model != iterator.next()) {
+                        orderChanged = true;
+                        break;
+                    }
+                }
+            }
 
             if(options.containsKey("at")) {
                 this.models.addAll(at, toAdd);
@@ -559,13 +591,17 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         if(sort)
             this.sort(new Options("silent", true));
 
+        // Unless silenced, it's time to fire all appropriate add/sort events.
         if(!options.getBoolean("silent")) {
             for (int i = 0; i < toAdd.size(); i++) {
+                if(options.containsKey("at"))
+                    options.put("index", at + i);
+
                 T model = toAdd.get(i);
                 model.trigger("add", model, this, options);
             }
 
-            if(sort || (order && toOrder.size() > 0)) {
+            if(sort || (orderChanged && order && toOrder.size() > 0)) {
                 this.trigger("sort", this, options);
             }
         }
@@ -595,7 +631,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         List<T> toAdd = new ArrayList<T>();
         List<T> toRemove = new ArrayList<T>();
-        List<T> toOrder = new ArrayList<T>();
+        Set<T> toOrder = new LinkedHashSet<T>();
         JsMap<String, Boolean> modelMap = JsMap.create();
 
         boolean add = options.getBoolean("add");
@@ -625,7 +661,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                         Options attrs = (preparedModel == model) ? model.getAttributes() : options.<Options>get("_attrs");
                         existing.set(attrs, options);
 
-                        if(sortable && !options.getBoolean("sort"))
+                        if(sortable && !options.getBoolean("sort") && existing.hasChanged())
                             sort = true;
                     }
                 } else if(add) { // This is a new model, push it to the `toAdd` list
@@ -659,11 +695,24 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                 remove(toRemove, options);
         }
 
+        boolean orderChanged = false;
         if(toAdd.size() > 0 || (order && toOrder.size() > 0)) {
             if(sortable)
                 sort = true;
 
             length += toAdd.size();
+
+            orderChanged = length() != toOrder.size() || toAdd.size() > 0;
+            if (!orderChanged) {
+                Iterator<T> iterator = toOrder.iterator();
+
+                for (T model : this.models) {
+                    if (model != iterator.next()) {
+                        orderChanged = true;
+                        break;
+                    }
+                }
+            }
 
             if(options.containsKey("at")) {
                 this.models.addAll(at, toAdd);
@@ -671,21 +720,25 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                 if(order)
                     this.models.clear();
 
-                //Array.prototype.push.apply(this.models, order || toAdd);
                 this.models.addAll((order && toOrder.size() > 0) ? toOrder : toAdd);
             }
         }
 
+        // Silently sort the collection if appropriate.
         if(sort)
             this.sort(new Options("silent", true));
 
+        // Unless silenced, it's time to fire all appropriate add/sort events.
         if(!options.getBoolean("silent")) {
             for (int i = 0; i < toAdd.size(); i++) {
+                if(options.containsKey("at"))
+                    options.put("index", at + i);
+
                 T model = toAdd.get(i);
                 model.trigger("add", model, this, options);
             }
 
-            if(sort || (order && toOrder.size() > 0)) {
+            if(sort || (orderChanged && order && toOrder.size() > 0)) {
                 this.trigger("sort", this, options);
             }
         }
@@ -784,7 +837,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         T preparedModel = prepareModel(model);
         add(preparedModel, new Options("at", this.length).extend(options));
 
-        return preparedModel;
+        return models.get(this.length - 1);
     }
 
     /**
@@ -1558,12 +1611,26 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
 
     public List<T> parse(JSONValue resp, Options options) {
-        JSONArray array = resp != null ? resp.isArray() : new JSONArray();
+        List<T> result = new ArrayList<T>();
+        JSONArray array = resp != null && resp.isArray() != null ? resp.isArray() : new JSONArray();
 
         if(resp != null && resp.isObject() != null) {
             array.set(0, resp.isObject());
         }
-        return parse(new OptionsList(array), options);
+        if(options == null)
+            options = new Options();
+
+        for (int i = 0; i < array.size(); i++) {
+            JSONValue jsonValue = array.get(i);
+            if (jsonValue != null && jsonValue.isObject() != null) {
+                T model = prepareModel(jsonValue.isObject(), options);
+                if (model != null) {
+                    result.add(model);
+                }
+            }
+        }
+
+        return result;
     }
 
     public List<T> parse(OptionsList models, Options options) {
@@ -1588,6 +1655,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
      }
      */
     public Collection<T> clone() {
+        Class<T> modelClass = (Class<T>) getModelClass();
         Collection<T> result = new Collection<T>(modelClass, models);
         result.comparator = comparator;
 
@@ -1644,6 +1712,23 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         return null;
     }
+    private T prepareModel(JSONObject attrs) {
+        return prepareModel(attrs, null);
+    }
+    private T prepareModel(JSONObject attrs, Options options) {
+        if(options == null)
+            options = new Options();
+
+        options.put("collection", this);
+
+        T model = instantiateModel(attrs, options);
+
+        Object validationError = model.getValidationError();
+        if (validationError == null || (validationError instanceof Boolean && ((Boolean) validationError))) return model;
+        this.trigger("invalid", this, attrs, options);
+
+        return null;
+    }
     private T prepareModel(T attrs) {
         if(attrs == null)
             attrs = instantiateModel();
@@ -1654,13 +1739,30 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     }
 
     private T instantiateModel() {
-        return instantiateModel(null, null);
+        return instantiateModel(new Options(), null);
     }
     private T instantiateModel(Options attributes) {
         return instantiateModel(attributes, null);
     }
     private T instantiateModel(Options attributes, Options options) {
         T model = null;
+        Class<? extends T> modelClass = getModelClass(attributes);
+
+        if (modelClass != null) {
+            model = GWT.<Reflection>create(Reflection.class).instantiateModel(modelClass, attributes, options);
+        } else {
+            model = (T)new Model(attributes, options);
+        }
+        return model;
+    }
+
+    private T instantiateModel(JSONObject attributes) {
+        return instantiateModel(attributes, null);
+    }
+    private T instantiateModel(JSONObject attributes, Options options) {
+        T model = null;
+        Class<? extends T> modelClass = getModelClass(attributes);
+
         if (modelClass != null) {
             model = GWT.<Reflection>create(Reflection.class).instantiateModel(modelClass, attributes, options);
         } else {
@@ -1671,12 +1773,29 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
     private T[] instantiateModelArray(int length) {
         T[] models = null;
+        Class<? extends T> modelClass = getModelClass();
+
         if (modelClass != null) {
             models = GWT.<Reflection>create(Reflection.class).instantiateArray(modelClass, length);
         } else {
             models = (T[]) new Model[length];
         }
         return models;
+    }
+
+    private Class<? extends T> getModelClass() {
+        return getModelClass(new Options());
+    }
+    private Class<? extends T> getModelClass(JSONObject attributes) {
+        return getModelClass(new Options(attributes));
+    }
+    private Class<? extends T> getModelClass(Options attributes) {
+        Class<? extends T> modelClass = null;
+
+        if (this.modelClass != null || modelClassFunction != null) {
+            modelClass = this.modelClass != null ? this.modelClass : modelClassFunction.f(attributes);
+        }
+        return modelClass;
     }
 
     /**
@@ -1686,7 +1805,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
          model.off('all', this._onModelEvent, this);
      }
      */
-    private void removeReference(Model model) {
+    protected void removeReference(Model model) {
         if(model.getCollection() != null && model.getCollection().equals(this))
             model.setCollection(null);
 
@@ -1876,6 +1995,20 @@ public class Collection<T extends Model> extends Events implements Synchronized,
             return this.models.get(this.models.size() - 1);
         }
         return null;
+    }
+
+    public T[] toArray() {
+        T[] modelArray = instantiateModelArray(size());
+
+        int i = 0;
+        for (T model : models) {
+            modelArray[i++] = model;
+        }
+        return modelArray;
+    }
+
+    public List<T> toList() {
+        return new ArrayList<T>(models);
     }
 
     @Override

@@ -15,16 +15,32 @@
  */
 package org.lirazs.gbackbone.client.core.test.model;
 
+import com.google.gwt.query.client.Function;
+import com.google.gwt.query.client.Promise;
+import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
 
-public class TestModel extends Model {
+public class TestSyncCollectionModel extends Model {
 
-    public TestModel() {
+    private Collection collectionToTest;
+
+    public TestSyncCollectionModel() {
         super();
     }
 
-    public TestModel(Options attributes) {
+    public TestSyncCollectionModel(Options attributes) {
         super(attributes);
+    }
+
+    public void setCollectionToTest(Collection collection) {
+        collectionToTest = collection;
+    }
+
+    @Override
+    public Promise sync(String method, Options options) {
+        assert collectionToTest == getCollection();
+
+        return null;
     }
 }

@@ -887,7 +887,7 @@ public class Model extends Events implements Synchronized, Reflectable {
      }
      */
     public Model clone() {
-        Model result = GWT.<Reflection>create(Reflection.class).instantiateModel(getClass(), null, null);
+        Model result = GWT.<Reflection>create(Reflection.class).instantiateModel(getClass(), new Options(), null);
 
         result.id = id;
         result.attributes = attributes.clone();
