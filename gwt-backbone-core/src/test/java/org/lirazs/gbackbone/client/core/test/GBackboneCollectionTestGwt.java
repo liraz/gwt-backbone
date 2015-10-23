@@ -82,7 +82,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.registerComparator(new Comparator<Model>() {
             @Override
             public int compare(Model a, Model b) {
-                return a.getId() > b.getId() ? -1 : 1;
+                return a.getIdAsInt() > b.getIdAsInt() ? -1 : 1;
             }
         });
         col.sort();
@@ -94,7 +94,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.registerComparator(new Comparator<Model>() {
             @Override
             public int compare(Model a, Model b) {
-                return a.getId();
+                return a.getIdAsInt();
             }
         });
         col.sort();
@@ -115,7 +115,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         collection.registerComparator(new Comparator<Model>() {
             @Override
             public int compare(Model o1, Model o2) {
-                return Integer.valueOf(o1.getId()).compareTo(o2.getId());
+                return Integer.valueOf(o1.getIdAsInt()).compareTo(o2.getIdAsInt());
             }
         });
         collection.sort();
@@ -180,7 +180,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Comparator<TestModel> comparator = new Comparator<TestModel>() {
             @Override
             public int compare(TestModel o1, TestModel o2) {
-                return Integer.valueOf(o1.getId()).compareTo(o2.getId());
+                return Integer.valueOf(o1.getIdAsInt()).compareTo(o2.getIdAsInt());
             }
         };
 
@@ -246,7 +246,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         array.set(1, b);
 
         Collection<Model> collection = new Collection<Model>(array);
-        assertEquals(1, collection.get(1).getId());
+        assertEquals(1, collection.get(1).getIdAsInt());
     }
 
     public void testUpdateIndexWhenIdChanges() {
@@ -376,7 +376,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Comparator<Model> colComparator = new Comparator<Model>() {
             @Override
             public int compare(Model a, Model b) {
-                return a.getId() > b.getId() ? -1 : 1;
+                return a.getIdAsInt() > b.getIdAsInt() ? -1 : 1;
             }
         };
 
@@ -485,7 +485,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         col.add(obj, new Options("parse", true));
 
-        assertEquals(2.0d, col.at(0).get("value"));
+        assertEquals(2, col.at(0).get("value"));
     }
 
     public void testAddWithParseAndMerge() {
@@ -539,7 +539,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 registerComparator(new Comparator<Model>() {
                     @Override
                     public int compare(Model a, Model b) {
-                        return a.getId();
+                        return a.getIdAsInt();
                     }
                 });
             }
@@ -548,7 +548,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 registerComparator(new Comparator<Model>() {
                     @Override
                     public int compare(Model a, Model b) {
-                        return NegativeCollection.this.negative(b.getId()) - NegativeCollection.this.negative(a.getId());
+                        return NegativeCollection.this.negative(b.getIdAsInt()) - NegativeCollection.this.negative(a.getIdAsInt());
                     }
                 });
             }
@@ -974,7 +974,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         boolean hasAny = col.any(new FilterFunction<Model>() {
             @Override
             public boolean f(Model model, int index, List<Model> models) {
-                return model.getId() == 100;
+                return model.getIdAsInt() == 100;
             }
         });
         assertFalse(hasAny);
@@ -982,7 +982,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         hasAny = col.any(new FilterFunction<Model>() {
             @Override
             public boolean f(Model model, int index, List<Model> models) {
-                return model.getId() == 0;
+                return model.getIdAsInt() == 0;
             }
         });
         assertTrue(hasAny);
@@ -1001,24 +1001,24 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Model maxModel = col.max(new MinMaxFunction<Model>() {
             @Override
             public int f(Model model, int index, List<Model> models) {
-                return model.getId();
+                return model.getIdAsInt();
             }
         });
-        assertEquals(3, maxModel.getId());
+        assertEquals(3, maxModel.getIdAsInt());
 
 
         Model minModel = col.min(new MinMaxFunction<Model>() {
             @Override
             public int f(Model model, int index, List<Model> models) {
-                return model.getId();
+                return model.getIdAsInt();
             }
         });
-        assertEquals(0, minModel.getId());
+        assertEquals(0, minModel.getIdAsInt());
         assertEquals(Arrays.asList(new Model[]{a, b}), col.difference(new Model[]{c, d}));
         assertTrue(col.contains(col.sample()));
 
         Model first = col.first();
-        assertEquals(first, col.indexBy("id").get(String.valueOf(first.getId())));
+        assertEquals(first, col.indexBy("id").get(first.getId()));
     }
 
     public void testReset() {
@@ -1112,7 +1112,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 List<Model> previousModels = opts.get("previousModels");
 
                 assertFalse(origOpts.containsKey("previousModels"));
-                assertEquals(1, previousModels.get(0).getId());
+                assertEquals(1, previousModels.get(0).getIdAsInt());
             }
         });
         col.reset(new ArrayList<Model>(), origOpts);
@@ -1225,7 +1225,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 new Options("id", 1)
         ));
         assertEquals(2, col.length());
-        assertEquals(1, col.last().getId());
+        assertEquals(1, col.last().getIdAsInt());
     }
 
     public void testPassingOptionsModelSetsCollectionModel() {
@@ -1431,7 +1431,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
                 model.set("x", 3);
                 collection.sort();
-                added.add(model.getId());
+                added.add(model.getIdAsInt());
             }
         });
 
@@ -1450,7 +1450,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         c.registerComparator(new Comparator<Model>() {
             @Override
             public int compare(Model o1, Model o2) {
-                return Integer.compare(o1.getId(), o2.getId());
+                return Integer.compare(o1.getIdAsInt(), o2.getIdAsInt());
             }
         });
         c.on("sort", new Function() {
@@ -1625,9 +1625,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Collection<CreateChildModel> collection = new Collection<CreateChildModel>(
                 CreateChildModel.class, data);
 
-        assertEquals(1, collection.first().getId());
+        assertEquals(1, collection.first().getIdAsInt());
         collection.set(data);
-        assertEquals(1, collection.first().getId());
+        assertEquals(1, collection.first().getIdAsInt());
         collection.set(new OptionsList(new Options("id", 2, "child", new Options("id", 2))).concat(data));
 
         assertEquals(Arrays.asList(collection.pluck("id")), Arrays.asList(2, 1));
@@ -1724,7 +1724,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         collection.registerComparator(new Comparator<Model>() {
             @Override
             public int compare(Model o1, Model o2) {
-                return Integer.compare(o1.getId(), o2.getId());
+                return Integer.compare(o1.getIdAsInt(), o2.getIdAsInt());
             }
         });
         collection.push(new Options("id", 1));
@@ -1758,7 +1758,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         collection.registerComparator(new Comparator<Model>() {
             @Override
             public int compare(Model o1, Model o2) {
-                return Integer.compare(o1.getId(), o2.getId());
+                return Integer.compare(o1.getIdAsInt(), o2.getIdAsInt());
             }
         });
         collection.add(new OptionsList(new Options("id", 1)), new Options("sort", false));
@@ -1824,7 +1824,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Comparator<TestModel> comparator = new Comparator<TestModel>() {
             @Override
             public int compare(TestModel o1, TestModel o2) {
-                return Integer.compare(o1.getId(), o2.getId()) * -1;
+                return o1.getId().compareTo(o2.getId()) * -1;
             }
         };
 
@@ -1834,7 +1834,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         ));
 
         assertEquals(TestModel.class, collection.first().getClass());
-        assertEquals(2, collection.first().getId());
+        assertEquals(2, collection.first().getIdAsInt());
     }
 
     public void testAddOverridesSetFlags() {
@@ -2010,9 +2010,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         assertEquals(2, collection.length());
         assertTrue(collection.at(0) instanceof AModel);
-        assertEquals(1, collection.at(0).getId());
+        assertEquals(1, collection.at(0).getIdAsInt());
         assertTrue(collection.at(1) instanceof BModel);
-        assertEquals(2, collection.at(1).getId());
+        assertEquals(2, collection.at(1).getIdAsInt());
     }
 
     public void testAddingAtIndexFiresWithCorrectAt() {
@@ -2105,5 +2105,100 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.add(new OptionsList(new Options("id", 0.5)), new Options("at", -6));
 
         assertEquals("0.5,1,2,2.5,3", col.jsPluck("id").join(","));
+    }
+
+    public void testSetAcceptsOptionsAtAsAString() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(new Options("id", 1), new Options("id", 2)));
+        col.add(new OptionsList(new Options("id", 3)), new Options("at", "1"));
+
+        assertEquals(Arrays.asList(1, 3, 2), Arrays.asList(col.pluck("id")));
+    }
+
+    public void testAddingMultipleModelsTriggersUpdateEventOnce() {
+        Collection<Model> col = new Collection<Model>();
+
+        final int[] updateCallCount = {0};
+        col.on("update", new Function() {
+            @Override
+            public void f() {
+                updateCallCount[0]++;
+            }
+        });
+
+        col.add(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3)));
+
+        assertEquals(1, updateCallCount[0]);
+    }
+
+    public void testRemovingModelsTriggersUpdateEventOnce() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 1), new Options("id", 2), new Options("id", 3)
+        ));
+
+        final int[] updateCallCount = {0};
+        col.on("update", new Function() {
+            @Override
+            public void f() {
+                updateCallCount[0]++;
+            }
+        });
+
+        col.remove(new OptionsList(new Options("id", 1), new Options("id", 2)));
+
+        assertEquals(1, updateCallCount[0]);
+    }
+
+    public void testRemoveDoesNotTriggerSetWhenNothingRemoved() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 1), new Options("id", 2)
+        ));
+
+        final int[] updateCallCount = {0};
+        col.on("update", new Function() {
+            @Override
+            public void f() {
+                updateCallCount[0]++;
+            }
+        });
+
+        col.remove(new OptionsList(new Options("id", 3)));
+
+        assertEquals(0, updateCallCount[0]);
+    }
+
+    public void testSetTriggersSetEventOnce() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 1), new Options("id", 2)
+        ));
+
+        final int[] updateCallCount = {0};
+        col.on("update", new Function() {
+            @Override
+            public void f() {
+                updateCallCount[0]++;
+            }
+        });
+
+        col.set(new OptionsList(new Options("id", 1), new Options("id", 3)));
+
+        assertEquals(1, updateCallCount[0]);
+    }
+
+    public void testSetDoesNotTriggerUpdateEventWhenNothingAddedNorRemoved() {
+        Collection<Model> col = new Collection<Model>(new OptionsList(
+                new Options("id", 1), new Options("id", 2)
+        ));
+
+        final int[] updateCallCount = {0};
+        col.on("update", new Function() {
+            @Override
+            public void f() {
+                updateCallCount[0]++;
+            }
+        });
+
+        col.set(new OptionsList(new Options("id", 1), new Options("id", 2)));
+
+        assertEquals(0, updateCallCount[0]);
     }
 }

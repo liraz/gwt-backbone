@@ -33,8 +33,13 @@ public class Options extends HashMap<String, Object> implements JsonSerializable
             Object value = jsonValue;
 
             JSONNumber number = jsonValue.isNumber();
-            if(number != null)
-                value = number.doubleValue();
+            if(number != null) {
+                if(number.toString().contains(".")) {
+                    value = number.doubleValue();
+                } else {
+                    value = (int)number.doubleValue();
+                }
+            }
 
             JSONBoolean jsonBoolean = jsonValue.isBoolean();
             if(jsonBoolean != null)
@@ -97,8 +102,7 @@ public class Options extends HashMap<String, Object> implements JsonSerializable
     }
 
     public Integer getInt(String key) {
-        Integer integer = get(key, Integer.class);
-        return integer == null ? 0 : integer;
+        return get(key, Integer.class);
     }
 
     public boolean getBoolean(String key) {
@@ -124,6 +128,8 @@ public class Options extends HashMap<String, Object> implements JsonSerializable
                 o = Boolean.valueOf(String.valueOf(o));
             } else if (clz == String.class && !(o instanceof String)) {
                 o = String.valueOf(o);
+            } else if(clz == Integer.class && o instanceof String) {
+                o = Integer.parseInt((String) o);
             }
         }
         return (T)o;

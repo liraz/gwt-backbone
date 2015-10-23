@@ -314,31 +314,41 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         return set(models, new Options("merge", false).extend(options).extend(addOptions));
     }
 
-    /**
-     * // Remove a model, or a list of models from the set.
-     remove(model: Model, options?: CollectionRemoveOptions): any
-     remove(models: Model[], options?: CollectionRemoveOptions): any
-     remove(models: any, options?: CollectionRemoveOptions): any {
-         models = _.isArray(models) ? models.slice() : [models];
-         options || (options = {});
-         var i, l, index, model;
-         for (i = 0, l = models.length; i < l; i++) {
-             model = this.get(models[i]);
-             if (!model) continue;
-             delete this._byId[model.id];
-             delete this._byId[model.cid];
-             index = this.indexOf(model);
-             this.models.splice(index, 1);
-             this.length--;
-             if (!options.silent) {
-                 options.index = index;
-                 model.trigger('remove', model, this, options);
-             }
-             this._removeReference(model);
-         }
-         return this;
-     }
-     */
+
+    public Collection remove(JSONObject jsonObject) {
+        return remove(jsonObject, null);
+    }
+    public Collection remove(JSONObject jsonObject, Options options) {
+        T model = get(new Options(jsonObject));
+        return model != null ? remove(model, options) : this;
+    }
+    public Collection remove(JSONArray models) {
+        return remove(models, null);
+    }
+    public Collection remove(JSONArray models, Options options) {
+        return remove(new OptionsList(models), options);
+    }
+    public Collection remove(OptionsList models) {
+        return remove(models, null);
+    }
+    public Collection remove(OptionsList models, Options options) {
+        List<T> result = new ArrayList<T>();
+        for (Options attributes : models) {
+            T model = get(attributes);
+            if (model != null) {
+                result.add(model);
+            }
+        }
+        return remove(result, options);
+    }
+
+    public Collection remove(Options attrs) {
+        return remove(attrs, null);
+    }
+    public Collection remove(Options attrs, Options options) {
+        T model = get(attrs);
+        return model != null ? remove(model, options) : this;
+    }
     public Collection remove(T model) {
         return remove(Collections.singletonList(model), null);
     }
@@ -352,28 +362,52 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         if(options == null)
             options = new Options();
 
-        for (int i = 0; i < models.size(); i++) {
-            T m = models.get(i);
-            T model = get(m);
+        boolean silent = options.containsKey("silent") && options.<Boolean>get("silent");
 
-            if(model != null) {
-                byId.remove(String.valueOf(model.getId()));
-                byId.remove(model.getCid());
+        List<T> removed = removeModels(models, options);
+        if(!silent && removed.size() > 0) {
+            this.trigger("update", this, options);
+        }
 
-                int index = indexOf(model);
+        return this;
+    }
+
+    /**
+     * Internal method called by both remove and set.
+     *
+     * @param models
+     * @param options
+     * @return
+     */
+    private List<T> removeModels(List<T> models, Options options) {
+        List<T> removed = new ArrayList<T>();
+
+        boolean silent = options.containsKey("silent") && options.<Boolean>get("silent");
+
+        for (T model : models) {
+            if(model == null) continue;
+
+            int index = indexOf(model);
+            if (index != -1) { // check that the model is really there.
                 this.models.remove(index);
-
                 this.length--;
-                boolean silent = options.containsKey("silent") && options.<Boolean>get("silent");
+
+                // Remove references before triggering 'remove' event to prevent an
+                // infinite loop. #3693
+                this.byId.remove(model.getCid());
+                String id = model.getId();
+                if(id != null) this.byId.remove(id);
+
                 if(!silent) {
                     options.put("index", index);
                     model.trigger("remove", model, this, options);
                 }
+
+                removed.add(model);
                 removeReference(model);
             }
         }
-
-        return this;
+        return removed;
     }
 
 
@@ -487,7 +521,13 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         options = new Options().defaults(options, setOptions);
 
-        int at = options.getInt("at");
+        Integer at = options.getInt("at");
+        if(at != null){
+            at = +at;
+            if(at < 0) at += length + 1;
+            if(at < 0) at = 0;
+        }
+
         boolean sort = false;
         boolean sortable = comparator != null && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
 
@@ -536,7 +576,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                     byId.put(preparedModel.getCid(), preparedModel);
 
                     if(!preparedModel.isNew())
-                        byId.put(String.valueOf(preparedModel.getId()), preparedModel);
+                        byId.put(preparedModel.getId(), preparedModel);
                 }
                 if (order){
                     toOrder.add(existing != null ? existing : preparedModel);
@@ -555,7 +595,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
             }
 
             if(toRemove.size() > 0)
-                remove(toRemove, options);
+                removeModels(toRemove, options);
         }
 
         boolean orderChanged = false;
@@ -604,6 +644,9 @@ public class Collection<T extends Model> extends Events implements Synchronized,
             if(sort || (orderChanged && order && toOrder.size() > 0)) {
                 this.trigger("sort", this, options);
             }
+            if(toAdd.size() > 0 || toRemove.size() > 0) {
+                this.trigger("update", this, options);
+            }
         }
 
         return this;
@@ -625,7 +668,13 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
         options = new Options().defaults(options, setOptions);
 
-        int at = options.getInt("at");
+        Integer at = options.getInt("at");
+        if(at != null){
+            at = +at;
+            if(at < 0) at += length + 1;
+            if(at < 0) at = 0;
+        }
+
         boolean sort = false;
         boolean sortable = comparator != null && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
 
@@ -673,7 +722,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                     byId.put(model.getCid(), model);
 
                     if(!model.isNew())
-                        byId.put(String.valueOf(model.getId()), model);
+                        byId.put(model.getId(), model);
                 }
                 if (order){
                     toOrder.add(existing != null ? existing : model);
@@ -740,6 +789,9 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
             if(sort || (orderChanged && order && toOrder.size() > 0)) {
                 this.trigger("sort", this, options);
+            }
+            if(toAdd.size() > 0 || toRemove.size() > 0) {
+                this.trigger("update", this, options);
             }
         }
 
@@ -926,8 +978,8 @@ public class Collection<T extends Model> extends Events implements Synchronized,
         T modelFromCollection = null;
 
         if (model != null) {
-            modelFromCollection = byId.get(String.valueOf(model.getId()));
-            if(modelFromCollection == null || model.getId() == -1)
+            modelFromCollection = byId.get(model.getId());
+            if(modelFromCollection == null || model.getId() == null)
                 modelFromCollection = byId.get(model.getCid());
         }
 
@@ -1328,7 +1380,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
 
             for (int i = fromIndex; i < models.size(); i++) {
                 Model existingModel = models.get(i);
-                if (model.equals(existingModel) || model.getId() == existingModel.getId()) {
+                if (model.equals(existingModel) || model.getId().equals(existingModel.getId())) {
                     return true;
                 }
             }
@@ -1852,7 +1904,7 @@ public class Collection<T extends Model> extends Events implements Synchronized,
                     if(event.equals("change:" + model.getIdAttribute())) {
                         byId.remove(String.valueOf(model.previous(model.getIdAttribute())));
                         if(!model.isNew())
-                            byId.put(String.valueOf(model.getId()), model);
+                            byId.put(model.getId(), model);
                     }
                 }
                 trigger(event, getArguments());

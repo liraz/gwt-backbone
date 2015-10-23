@@ -40,7 +40,7 @@ public class Model extends Events implements Synchronized, Reflectable {
          collection: Collection;
          id;
      */
-    private int id = -1;
+    private String id = null;
     private Options attributes = null;
     private String cid;
 
@@ -210,8 +210,14 @@ public class Model extends Events implements Synchronized, Reflectable {
         return Sync.get().sync(method, this, options);
     }
 
-    public int getId() {
+    public String getId() {
         return id;
+    }
+    public int getIdAsInt() {
+        return Integer.parseInt(id);
+    }
+    public double getIdAsDouble() {
+        return Double.parseDouble(id);
     }
     public String getCid() {
         return cid;
@@ -381,7 +387,10 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         // Check for changes of `id`.
         if(attributes.containsKey(idAttribute)) {
-            this.id = attributes.getInt(idAttribute);
+            Object idObj = attributes.get(idAttribute);
+            if (idObj != null) {
+                this.id = String.valueOf(idObj);
+            }
         }
 
         // For each `set` attribute, update or delete the current value.
@@ -862,7 +871,7 @@ public class Model extends Events implements Synchronized, Reflectable {
             return base;
         }
 
-        return base + (base.charAt(base.length() - 1) == '/' ? "" : '/') + encodeURIComponent(String.valueOf(this.id));
+        return base + (base.charAt(base.length() - 1) == '/' ? "" : '/') + encodeURIComponent(this.id);
     }
 
     private native String encodeURIComponent(String s) /*-{
@@ -910,7 +919,7 @@ public class Model extends Events implements Synchronized, Reflectable {
      }
      */
     public boolean isNew() {
-        return this.id == -1;
+        return this.id == null;
     }
 
     /**
