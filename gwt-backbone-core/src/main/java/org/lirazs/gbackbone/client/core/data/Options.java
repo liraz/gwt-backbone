@@ -19,9 +19,10 @@ import com.google.gwt.json.client.*;
 import com.google.gwt.query.client.Properties;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 
-public class Options extends HashMap<String, Object> implements JsonSerializable {
+public class Options extends LinkedHashMap<String, Object> implements JsonSerializable {
 
     public Options() {
         super();

@@ -24,6 +24,7 @@ import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
+import org.lirazs.gbackbone.client.core.function.UrlRootFunction;
 import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
 import org.lirazs.gbackbone.client.core.util.UUID;
@@ -47,6 +48,7 @@ public class Model extends Events implements Synchronized, Reflectable {
     private Collection<? extends Model> collection;
 
     private String urlRoot = null;
+    private UrlRootFunction<Model> urlRootFunction = null;
 
     /**
      * _changing;
@@ -244,6 +246,10 @@ public class Model extends Events implements Synchronized, Reflectable {
         return attributes.getInt(attr);
     }
 
+    public String getString(String attr) {
+        return attributes.get(attr, String.class);
+    }
+
     public boolean getBoolean(String attr) {
         return attributes.getBoolean(attr);
     }
@@ -255,7 +261,7 @@ public class Model extends Events implements Synchronized, Reflectable {
      }
      */
     public String escape(String attr) {
-        return SafeHtmlUtils.htmlEscape(this.<String>get(attr));
+        return has(attr) ? SafeHtmlUtils.htmlEscape(getString(attr)) : "";
     }
 
     /**
@@ -266,7 +272,7 @@ public class Model extends Events implements Synchronized, Reflectable {
          }
      */
     public boolean has(String attr) {
-        return attributes.containsKey(attr);
+        return attributes.containsKey(attr) && attributes.get(attr) != null;
     }
 
     /**
@@ -847,6 +853,13 @@ public class Model extends Events implements Synchronized, Reflectable {
         return deferred;
     }
 
+    public void setUrlRoot(String urlRoot) {
+        this.urlRoot = urlRoot;
+    }
+    public void setUrlRoot(UrlRootFunction urlRoot) {
+        this.urlRootFunction = urlRoot;
+    }
+
     /**
      * // Default URL for the model's representation on the server -- if you're
      // using Backbone's restful methods, override this to change the endpoint
@@ -862,10 +875,12 @@ public class Model extends Events implements Synchronized, Reflectable {
 
         if(urlRoot != null)
             base = urlRoot;
+        else if(urlRootFunction != null)
+            base = urlRootFunction.f(this);
         else if(collection != null)
             base = collection.getUrl();
         else
-            throw new Error("A 'url' property or function must be specified");
+            throw new IllegalStateException("A 'url' property or function must be specified");
 
         if(this.isNew()) {
             return base;
@@ -955,16 +970,34 @@ public class Model extends Events implements Synchronized, Reflectable {
         return false;
     }
 
-    // Retrieve the names of an object's properties.
-    public String[] keys() {
-        return (String[]) attributes.keySet().toArray();
+    public ModelChainBuilder chain() {
+        return new ModelChainBuilder(getAttributes().clone());
     }
-    // Retrieve the values of an object's properties.
+
+    /**
+     * Retrieve the names of an object's properties.
+     *
+     * @return
+     */
+    public String[] keys() {
+        Set<String> strings = attributes.keySet();
+        return strings.toArray(new String[strings.size()]);
+    }
+
+    /**
+     * Retrieve the values of an object's properties.
+     *
+     * @return
+     */
     public Object[] values() {
         return attributes.values().toArray();
     }
 
-    // Convert an object into a list of `[key, value]` pairs.
+    /**
+     * Convert an object into a list of `[key, value]` pairs.
+     *
+     * @return
+     */
     public Object[][] pairs() {
         String[] keys = keys();
         int length = keys.length;
@@ -976,7 +1009,11 @@ public class Model extends Events implements Synchronized, Reflectable {
         return pairs;
     }
 
-    // Invert the keys and values of an object. The values must be serializable.
+    /**
+     * Invert the keys and values of an object. The values must be serializable.
+     *
+     * @return
+     */
     public Options invert() {
         Options result = new Options();
         String[] keys = keys();
@@ -986,7 +1023,12 @@ public class Model extends Events implements Synchronized, Reflectable {
         return result;
     }
 
-    // Return a copy of the object only containing the whitelisted properties.
+    /**
+     * Return a copy of the object only containing the whitelisted properties.
+     *
+     * @param keys
+     * @return
+     */
     public Options pick(String ...keys) {
         Options result = new Options();
         for (String key : keys) {
@@ -995,7 +1037,12 @@ public class Model extends Events implements Synchronized, Reflectable {
         return result;
     }
 
-    // Return a copy of the object without the blacklisted properties.
+    /**
+     * Return a copy of the object without the blacklisted properties.
+     *
+     * @param keys
+     * @return
+     */
     public Options omit(String ...keys) {
         Options result = attributes.clone();
         for (String key : keys) {

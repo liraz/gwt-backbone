@@ -1,5 +1,5 @@
 
-GwtBackbone v0.0.1
+GwtBackbone v0.1.0
 ===========
 
 GwtBackbone a.k.a. GBackbone is a Backbone-like API written in GWT, which allows GWT to be used convert already written enterprise backbone projects into entirely used in GWT.
