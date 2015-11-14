@@ -636,7 +636,6 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         });
 
         dj.set(new Options("name", "Kool"));
-        dj.set(new Options("name", "Kool2"));
         assertEquals(1, counter[0]);
 
         emcees.reset();
@@ -1329,7 +1328,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         collection.on("sync", new Function() {
             @Override
             public void f() {
-                Synchronized obj = getArgument(0);
+                Synchronized obj = getArgument(1);
 
                 assertEquals(collection.get(1), obj);
             }

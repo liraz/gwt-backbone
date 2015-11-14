@@ -34,7 +34,7 @@ public class MongoModel extends Model {
     }
 
     @Override
-    protected Options defaults() {
-        return new Options("idAttribute", "_id");
+    public String getIdAttribute() {
+        return "_id";
     }
 }

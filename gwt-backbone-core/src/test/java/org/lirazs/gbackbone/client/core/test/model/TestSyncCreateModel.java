@@ -23,6 +23,10 @@ public class TestSyncCreateModel extends Model {
 
     private String lastSyncMethod;
 
+    public TestSyncCreateModel(Options options) {
+        super(options);
+    }
+
     public String getLastSyncMethod() {
         return lastSyncMethod;
     }

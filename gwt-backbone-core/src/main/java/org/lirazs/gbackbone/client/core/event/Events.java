@@ -25,7 +25,7 @@ import java.util.*;
 
 public class Events {
 
-    String listenerId = UUID.uuid();
+    String listenerId = UUID.uniqueId("l");
 
     Map<String, Events> listeners = new HashMap<String, Events>();
     Map<String, List<EventEntry>> events = new HashMap<String, List<EventEntry>>();

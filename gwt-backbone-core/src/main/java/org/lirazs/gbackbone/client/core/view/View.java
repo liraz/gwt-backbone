@@ -72,7 +72,7 @@ public abstract class View extends Events {
         this(null);
     }
     public View(JsObject options) {
-        cid = "view" + UUID.uuid();
+        cid = UUID.uniqueId("view");
 
         if(options == null)
             options = JsObject.create("tagName", "div");

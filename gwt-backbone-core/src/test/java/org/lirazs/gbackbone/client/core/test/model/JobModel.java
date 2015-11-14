@@ -1,6 +1,7 @@
 package org.lirazs.gbackbone.client.core.test.model;
 
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONValue;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
@@ -29,10 +30,12 @@ public class JobModel extends Model {
     }
 
     @Override
-    protected Options parse(JSONObject resp, Options options) {
+    protected Options parse(JSONValue resp, Options options) {
+        JSONObject object = resp.isObject();
+
         items = new Collection<JobItemModel>(JobItemModel.class);
-        items.set(resp.get("items"));
-        resp.put("items", null);
+        items.set(object.get("items"));
+        object.put("items", null);
 
         return super.parse(resp, options);
     }

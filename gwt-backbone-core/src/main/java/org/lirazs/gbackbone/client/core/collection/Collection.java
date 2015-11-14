@@ -91,6 +91,9 @@ public class Collection<T extends Model> extends Events implements Synchronized,
     public Collection(OptionsList models, Options options) {
         this(null, models, options);
     }
+    public Collection(Class<T> modelClass, Options ...models) {
+        this(modelClass, new OptionsList(models), null);
+    }
     public Collection(Options ...models) {
         this(null, new OptionsList(models), null);
     }

@@ -17,13 +17,17 @@ package org.lirazs.gbackbone.client.core.model;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
+import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
+import org.lirazs.gbackbone.client.core.function.MatchesFunction;
 import org.lirazs.gbackbone.client.core.function.UrlRootFunction;
 import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
@@ -83,7 +87,15 @@ public class Model extends Events implements Synchronized, Reflectable {
 
     // The default name for the JSON `id` attribute is `"id"`. MongoDB and
     // CouchDB users may want to set this to `"_id"`.
-    protected String idAttribute;
+    private String idAttribute = "id";
+
+    // The prefix is used to create the client id which is used to identify models locally.
+    // You may want to override this if you're experiencing name clashes with model ids.
+    private String cidPrefix = "c";
+
+    protected String getCidPrefix() {
+        return cidPrefix;
+    }
 
     /**
      *
@@ -118,11 +130,17 @@ public class Model extends Events implements Synchronized, Reflectable {
         Options attributes = new Options();
         if(options == null) options = new Options();
 
-        this.cid = "c" + UUID.uuid();
+        if (options.containsKey("cidPrefix"))
+            cidPrefix = options.get("cidPrefix");
+
+        this.cid = UUID.uniqueId(getCidPrefix());
         this.attributes = new Options();
 
         if (options.containsKey("collection"))
             this.collection = options.get("collection");
+
+        if (options.containsKey("idAttribute"))
+            idAttribute = options.get("idAttribute");
 
         Options attrs = this.parse(model, options);
         if(attrs != null) attributes = attrs;
@@ -130,12 +148,6 @@ public class Model extends Events implements Synchronized, Reflectable {
         Options defaults = defaults();
         if(defaults != null) {
             attributes = new Options().defaults(attributes, defaults);
-        }
-
-        if(attributes.containsKey("idAttribute")) {
-            idAttribute = attributes.get("idAttribute");
-        } else if(idAttribute == null) {
-            idAttribute = "id";
         }
 
         this.set(attributes, options);
@@ -148,21 +160,21 @@ public class Model extends Events implements Synchronized, Reflectable {
         if(attributes == null) attributes = new Options();
         if(options == null) options = new Options();
 
-        this.cid = "c" + UUID.uuid();
+        if (options.containsKey("cidPrefix"))
+            cidPrefix = options.get("cidPrefix");
+
+        this.cid = UUID.uniqueId(getCidPrefix());
         this.attributes = new Options();
 
         if (options.containsKey("collection"))
             this.collection = options.get("collection");
 
+        if (options.containsKey("idAttribute"))
+            idAttribute = options.get("idAttribute");
+
         Options defaults = defaults();
         if(defaults != null) {
             attributes = new Options().defaults(attributes, defaults);
-        }
-
-        if(attributes.containsKey("idAttribute")) {
-            idAttribute = attributes.get("idAttribute");
-        } else if(idAttribute == null) {
-            idAttribute = "id";
         }
 
         this.set(attributes, options);
@@ -358,6 +370,9 @@ public class Model extends Events implements Synchronized, Reflectable {
     }
 
     public <T> Model set(String name, T value) {
+        if(name == null || name.isEmpty())
+            return this;
+
         return set(new Options().put(name, value));
     }
 
@@ -375,7 +390,9 @@ public class Model extends Events implements Synchronized, Reflectable {
     public <T> Model set(Options attributes, Options options) {
 
         // Run validation.
-        if(!internalValidate(attributes, options)) return this;
+        if(!internalValidate(attributes, options)) return null;
+
+        if(attributes == null) return this;
 
         boolean unset = options != null && options.getBoolean("unset");
         boolean silent = options != null && options.getBoolean("silent");
@@ -392,11 +409,8 @@ public class Model extends Events implements Synchronized, Reflectable {
         Options prev = previousAttributes;
 
         // Check for changes of `id`.
-        if(attributes.containsKey(idAttribute)) {
-            Object idObj = attributes.get(idAttribute);
-            if (idObj != null) {
-                this.id = String.valueOf(idObj);
-            }
+        if(attributes.containsKey(getIdAttribute())) {
+            this.id = attributes.get(getIdAttribute()) != null ? String.valueOf(attributes.get(getIdAttribute())) : null;
         }
 
         // For each `set` attribute, update or delete the current value.
@@ -406,11 +420,11 @@ public class Model extends Events implements Synchronized, Reflectable {
 
             //if (!OptionsUtils.isEqual(current.get(attr), value))
             Object currentValue = current.get(attr);
-            if (current.containsKey(attr) && !Objects.equals(currentValue, value))
+            if (!Objects.equals(currentValue, value))
                 changes.add(attr);
 
             //if (!OptionsUtils.isEqual(prev.get(attr), value)) {
-            if (prev.containsKey(attr) && !Objects.equals(prev.get(attr), value)) {
+            if (!Objects.equals(prev.get(attr), value)) {
                 changed.put(attr, value);
             } else {
                 changed.remove(attr);
@@ -604,7 +618,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         options.put("success", new Function() {
             @Override
             public void f() {
-                JSONObject response = getArgument(0);
+                JSONValue response = processAjaxJsonResponse(getArgument(0));
                 Options parsedResponse = parse(response, options);
 
                 set(parsedResponse, options);
@@ -620,7 +634,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         options.put("error", new Function() {
             @Override
             public void f() {
-                JavaScriptObject response = getArgument(0);
+                JSONValue response = processAjaxJsonResponse(getArgument(0));
                 if(error != null) {
                     error.f(Model.this, response, options);
                 }
@@ -630,105 +644,99 @@ public class Model extends Events implements Synchronized, Reflectable {
         return sync("read", options);
     }
 
-    /**
-     * // Set a hash of model attributes, and sync the model to the server.
-     // If the server returns an attributes hash that differs, the model's
-     // state will be `set` again.
-     save(attributes: any, options?: ModelSaveOptions): any
-     save(key, val?, options?): any {
-         var attrs, method, xhr, attributes = this.attributes;
-
-         // Handle both `"key", value` and `{key: value}` -style arguments.
-         if (key == null || typeof key === 'object') {
-             attrs = key;
-             options = val;
-         } else {
+    /** save: function(key, val, options) {
+        // Handle both `"key", value` and `{key: value}` -style arguments.
+        var attrs;
+        if (key == null || typeof key === 'object') {
+            attrs = key;
+            options = val;
+        } else {
             (attrs = {})[key] = val;
-         }
+        }
 
-         options = _.extend({ validate: true }, options);
+        options = _.extend({validate: true, parse: true}, options);
+        var wait = options.wait;
 
-         // If we're not waiting and attributes exist, save acts as
-         // `set(attr).save(null, opts)` with validation. Otherwise, check if
-         // the model will be valid when the attributes, if any, are set.
-         if (attrs && !options.wait) {
+        // If we're not waiting and attributes exist, save acts as
+        // `set(attr).save(null, opts)` with validation. Otherwise, check if
+        // the model will be valid when the attributes, if any, are set.
+        if (attrs && !wait) {
             if (!this.set(attrs, options)) return false;
-         } else {
+        } else {
             if (!this._validate(attrs, options)) return false;
-         }
+        }
 
-         // Set temporary attributes if `{wait: true}`.
-         if (attrs && options.wait) {
-            this.attributes = _.extend({}, attributes, attrs);
-         }
+        // After a successful server-side save, the client is (optionally)
+        // updated with the server-side state.
+        var model = this;
+        var success = options.success;
+        var attributes = this.attributes;
+        options.success = function(resp) {
+            // Ensure attributes are restored during synchronous saves.
+            model.attributes = attributes;
+            var serverAttrs = options.parse ? model.parse(resp, options) : resp;
+            if (wait) serverAttrs = _.extend({}, attrs, serverAttrs);
+            if (serverAttrs && !model.set(serverAttrs, options)) return false;
+            if (success) success.call(options.context, model, resp, options);
+            model.trigger('sync', model, resp, options);
+        };
+        wrapError(this, options);
 
-         // After a successful server-side save, the client is (optionally)
-         // updated with the server-side state.
-         if (options.parse === void 0) options.parse = true;
+        // Set temporary attributes if `{wait: true}` to properly find new ids.
+        if (attrs && wait) this.attributes = _.extend({}, attributes, attrs);
 
-         var model = this;
-         var success = options.success;
+        var method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+        if (method === 'patch' && !options.attrs) options.attrs = attrs;
+        var xhr = this.sync(method, this, options);
 
-         options.success = function (resp) {
-             // Ensure attributes are restored during synchronous saves.
-             model.attributes = attributes;
-             var serverAttrs = model.parse(resp, options);
-             if (options.wait) serverAttrs = _.extend(attrs || {}, serverAttrs);
+        // Restore attributes.
+        this.attributes = attributes;
 
-             if (_.isObject(serverAttrs) && !model.set(serverAttrs, options)) {
-                return false;
-             }
-             if (success) success(model, resp, options);
-             model.trigger('sync', model, resp, options);
-         };
-         Helpers.wrapError(this, options);
-
-         method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
-
-         if (method === 'patch') options.attrs = attrs;
-         xhr = this.sync(method, this, options);
-
-         // Restore attributes.
-         if (attrs && options.wait) this.attributes = attributes;
-
-         return xhr;
-     }
-     */
+        return xhr;
+    },*/
+    public Promise save() {
+        return save(null);
+    }
+    public Promise saveKV(String key, Object value) {
+        return save(key, value, null);
+    }
     public Promise save(String key, Object value, Options options) {
         return save(new Options().put(key, value), options);
     }
     public Promise save(Options attributes) {
         return save(attributes, null);
     }
+
+    /**
+     * Set a hash of model attributes, and sync the model to the server.
+     * If the server returns an attributes hash that differs, the model's
+     * state will be `set` again.
+     *
+     * @param attributes
+     * @param options
+     * @return
+     */
     public Promise save(final Options attributes, final Options options) {
-        final Options initialAttributes = this.attributes;
-        final Options saveOptions = new Options().put("validate", true).extend(options);
+        final Options saveOptions = new Options("validate", true, "parse", true).extend(options);
 
         // If we're not waiting and attributes exist, save acts as
         // `set(attr).save(null, opts)` with validation. Otherwise, check if
         // the model will be valid when the attributes, if any, are set.
         if (attributes != null && !saveOptions.getBoolean("wait")) {
-            this.set(attributes, saveOptions);
+            if(this.set(attributes, saveOptions) == null)
+                return null;
         } else {
             if (!this.internalValidate(attributes, saveOptions))
                 return null;
         }
 
-        // Set temporary attributes if `{wait: true}`.
-        if (attributes != null && saveOptions.getBoolean("wait")) {
-            this.attributes = new Options().extend(attributes);
-        }
-
-        // After a successful server-side save, the client is (optionally)
-        // updated with the server-side state.
-        if(!saveOptions.containsKey("parse"))
-            saveOptions.put("parse", true);
-
         final Function success = saveOptions.get("success");
+        final Options initialAttributes = this.attributes;
+
         saveOptions.put("success", new Function() {
             @Override
             public void f() {
-                JSONObject response = getArgument(0);
+                JSONValue response = processAjaxJsonResponse(getArgument(0));
 
                 // Ensure attributes are restored during synchronous saves.
                 Model.this.attributes = initialAttributes;
@@ -751,7 +759,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         saveOptions.put("error", new Function() {
             @Override
             public void f() {
-                JSONObject response = getArgument(0);
+                JSONValue response = processAjaxJsonResponse(getArgument(0));
                 if(error != null) {
                     error.f(Model.this, response, saveOptions);
                 }
@@ -759,16 +767,20 @@ public class Model extends Events implements Synchronized, Reflectable {
             }
         });
 
-        String method = this.isNew() ? "create" : (options.getBoolean("patch") ? "patch" : "update");
+        // Set temporary attributes if `{wait: true}`.
+        if (attributes != null && saveOptions.getBoolean("wait")) {
+            this.attributes = new Options().extend(initialAttributes).extend(attributes);
+        }
+
+        String method = this.isNew() ? "create" : (options != null && options.getBoolean("patch") ? "patch" : "update");
 
         if (method.equals("patch"))
-            options.put("attrs", attributes);
+            saveOptions.put("attrs", attributes);
 
-        Promise deferred = sync(method, options);
+        Promise deferred = sync(method, saveOptions);
 
         // Restore attributes.
-        if (attributes != null && options.getBoolean("wait"))
-            this.attributes = attributes;
+        this.attributes = initialAttributes;
 
         return deferred;
     }
@@ -814,14 +826,14 @@ public class Model extends Events implements Synchronized, Reflectable {
         options.put("success", new Function() {
             @Override
             public void f() {
-                JavaScriptObject response = getArgument(0);
+                JSONValue response = processAjaxJsonResponse(getArgument(0));
 
                 if (options.getBoolean("wait") || Model.this.isNew()) {
                     Model.this.trigger("destroy", Model.this, Model.this.collection, options);
                 }
 
                 if(success != null) {
-                    success.f(Model.this, response, options);
+                    success.f(response, options);
                 }
                 if(!Model.this.isNew())
                     Model.this.trigger("sync", Model.this, response, options);
@@ -838,9 +850,9 @@ public class Model extends Events implements Synchronized, Reflectable {
         options.put("error", new Function() {
             @Override
             public void f() {
-                JavaScriptObject response = getArgument(0);
+                JSONValue response = processAjaxJsonResponse(getArgument(0));
                 if(error != null) {
-                    error.f(Model.this, response, options);
+                    error.f(response, options);
                 }
                 Model.this.trigger("error", Model.this, response, options);
             }
@@ -851,6 +863,21 @@ public class Model extends Events implements Synchronized, Reflectable {
             Model.this.trigger("destroy", Model.this, Model.this.collection, options);
 
         return deferred;
+    }
+
+    private JSONValue processAjaxJsonResponse(Object response) {
+        JSONValue result = null;
+        if(response != null) {
+            if(response instanceof String && ((String) response).length() > 0) {
+                result = JSONParser.parseStrict((String) response);
+            } else if(response instanceof JavaScriptObject) {
+                String jsonString = JsonUtils.stringify((JavaScriptObject) response);
+                result = JSONParser.parseStrict(jsonString);
+            } else if(response instanceof JSONValue) {
+                result = (JSONValue) response;
+            }
+        }
+        return result;
     }
 
     public void setUrlRoot(String urlRoot) {
@@ -900,8 +927,8 @@ public class Model extends Events implements Synchronized, Reflectable {
      return resp;
      }
      */
-    protected Options parse(JSONObject resp, Options options) {
-        return new Options(resp);
+    protected Options parse(JSONValue resp, Options options) {
+        return resp != null ? new Options(resp) : null;
     }
 
     /**
@@ -922,7 +949,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         result.previousAttributes = previousAttributes.clone();
         result.parse = parse;
         result.changed = changed.clone();
-        result.idAttribute = idAttribute;
+        result.idAttribute = getIdAttribute();
 
         return result;
     }
@@ -955,9 +982,10 @@ public class Model extends Events implements Synchronized, Reflectable {
     }
 
     protected boolean internalValidate(Options attributes, Options options) {
-        if(options != null && !options.getBoolean("validate")) return true;
+        if(options == null || !options.getBoolean("validate")) return true;
 
-        Object error = validationError = validate(attributes, options);
+        Options attrs = new Options().extend(getAttributes()).extend(attributes);
+        Object error = validationError = validate(attrs, options);
         if(error == null || (error instanceof Boolean && ((Boolean) error)))
             return true;
 
@@ -1051,4 +1079,21 @@ public class Model extends Events implements Synchronized, Reflectable {
         return result;
     }
 
+    /**
+     * Returns an indication whether attributes exist equally in model
+     *
+     * @param attributes
+     * @return
+     */
+    public boolean matches(Options attributes) {
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            if(!has(entry.getKey()) || get(entry.getKey()) != entry.getValue())
+                return false;
+        }
+        return true;
+    }
+
+    public boolean matches(MatchesFunction matchesFunction) {
+        return matchesFunction.f(attributes);
+    }
 }

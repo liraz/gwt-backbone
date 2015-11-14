@@ -17,6 +17,7 @@ package org.lirazs.gbackbone.client.core.util;
 
 
 public class UUID {
+    private static Integer UNIQUE_ID = 0;
     private static final char[] CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
     /**
      * Generate a random uuid of the specified length. Example: uuid(15) returns
@@ -74,5 +75,9 @@ public class UUID {
             }
         }
         return new String(uuid);
+    }
+
+    public static String uniqueId(final String prefix) {
+        return prefix + UNIQUE_ID++;
     }
 }

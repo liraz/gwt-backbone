@@ -28,33 +28,37 @@ public class Options extends LinkedHashMap<String, Object> implements JsonSerial
         super();
     }
 
-    public Options(JSONObject jsonObject) {
-        for (String s : jsonObject.keySet()) {
-            JSONValue jsonValue = jsonObject.get(s);
-            Object value = jsonValue;
+    public Options(JSONValue jsonObject) {
+        JSONObject object = jsonObject.isObject();
 
-            JSONNumber number = jsonValue.isNumber();
-            if(number != null) {
-                if(number.toString().contains(".")) {
-                    value = number.doubleValue();
-                } else {
-                    value = (int)number.doubleValue();
+        if (object != null) {
+            for (String s : object.keySet()) {
+                JSONValue jsonValue = object.get(s);
+                Object value = jsonValue;
+
+                JSONNumber number = jsonValue.isNumber();
+                if(number != null) {
+                    if(number.toString().contains(".")) {
+                        value = number.doubleValue();
+                    } else {
+                        value = (int)number.doubleValue();
+                    }
                 }
+
+                JSONBoolean jsonBoolean = jsonValue.isBoolean();
+                if(jsonBoolean != null)
+                    value = jsonBoolean.booleanValue();
+
+                JSONNull jsonNull = jsonValue.isNull();
+                if(jsonNull != null)
+                    value = null;
+
+                JSONString jsonString = jsonValue.isString();
+                if(jsonString != null)
+                    value = jsonString.stringValue();
+
+                put(s, value);
             }
-
-            JSONBoolean jsonBoolean = jsonValue.isBoolean();
-            if(jsonBoolean != null)
-                value = jsonBoolean.booleanValue();
-
-            JSONNull jsonNull = jsonValue.isNull();
-            if(jsonNull != null)
-                value = null;
-
-            JSONString jsonString = jsonValue.isString();
-            if(jsonString != null)
-                value = jsonString.stringValue();
-
-            put(s, value);
         }
     }
 
@@ -79,7 +83,7 @@ public class Options extends LinkedHashMap<String, Object> implements JsonSerial
         for (Options source : args) {
             if (source != null) {
                 for (String key : source.keySet()) {
-                    if (!containsKey(key)) {
+                    if (!containsKey(key) || get(key) == null) {
                         put(key, source.get(key));
                     }
                 }
