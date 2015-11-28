@@ -1,23 +1,23 @@
 package org.lirazs.gbackbone.client.core.test;
 
-import com.google.gwt.json.client.JSONBoolean;
-import com.google.gwt.json.client.JSONNumber;
-import com.google.gwt.json.client.JSONObject;
-import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.json.client.*;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
-import com.google.gwt.query.client.GQuery;
 import com.google.gwt.query.client.Promise;
-import com.google.gwt.query.client.plugins.ajax.Ajax;
+import com.google.gwt.user.client.Timer;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.function.MatchesFunction;
 import org.lirazs.gbackbone.client.core.function.UrlRootFunction;
 import org.lirazs.gbackbone.client.core.model.Model;
+import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.test.model.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created on 23/10/2015.
@@ -1566,22 +1566,30 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         assertTrue((Boolean) model.previous(""));
     }
 
-    /*QUnit.test("`save` with `wait` sends correct attributes", function(assert) {
-        assert.expect(5);
-        var changed = 0;
-        var model = new Backbone.Model({x: 1, y: 2});
-        model.url = '/test';
-        model.on('change:x', function() { changed++; });
-        model.save({x: 3}, {wait: true});
-        assert.deepEqual(JSON.parse(this.ajaxSettings.data), {x: 3, y: 2});
-        assert.equal(model.get('x'), 1);
-        assert.equal(changed, 0);
-        this.syncArgs.options.success({});
-        assert.equal(model.get('x'), 3);
-        assert.equal(changed, 1);
-    });*/
+
     public void testSaveWithWaitSendsCorrectAttributes() {
-        //TODO: testSaveWithWaitSendsCorrectAttributes - how can this be checked? the ajaxSettings & syncArgs are not accessible
+        final int[] changed = {0};
+
+        Model model = new Model(new Options("x", 1, "y", 2));
+        model.setUrlRoot("/test");
+        model.on("change:x", new Function() {
+            @Override
+            public void f() {
+                changed[0]++;
+            }
+        });
+        model.save(new Options("x", 3), new Options("wait", true));
+
+        JSONValue jsonValue = JSONParser.parseStrict(String.valueOf(Sync.get().getSyncArgs().get("data")));
+        assertEquals(new Options(jsonValue), new Options("x", 3, "y", 2));
+
+        assertEquals(1, model.get("x"));
+        assertEquals(0, changed[0]);
+
+        Sync.get().getSyncArgs().getSuccess().f();
+
+        assertEquals(3, model.get("x"));
+        assertEquals(1, changed[0]);
     }
 
 
@@ -1642,5 +1650,684 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.save(new Options("x", 1), new Options("wait", true));
 
         assertEquals(1, count[0]);
+    }
+
+    public void testSaveTurnsOnParseFlag() {
+        class TestSyncModel extends Model {
+            public TestSyncModel() {
+                super();
+            }
+
+            @Override
+            public Promise sync(String method, Options options) {
+                assertTrue(options.containsKey("parse") && options.getBoolean("parse"));
+
+                return null;
+            }
+        }
+        final Model model = new TestSyncModel();
+        model.save();
+    }
+
+
+    public void testNestedSetDuringChangeAttr() {
+        final List<String> events = new ArrayList<String>();
+        final Model model = new Model();
+        model.on("all", new Function() {
+            @Override
+            public void f() {
+                String event = getArgument(0);
+                events.add(event);
+            }
+        });
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("z", true), new Options("silent", true));
+            }
+        });
+        model.on("change:x", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("y", true));
+            }
+        });
+        model.set(new Options("x", true));
+        assertEquals(events, Arrays.asList("change:y", "change:x", "change"));
+
+        events.clear();
+        model.set(new Options("z", true));
+        assertTrue(events.isEmpty());
+    }
+
+    public void testNestedChangeOnlyFiresOnce() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+                model.set(new Options("x", true));
+            }
+        });
+        model.set(new Options("x", true));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testNestedSetDuringChange() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                switch(count[0]++) {
+                    case 0:
+                        assertEquals(model.changedAttributes(), new Options("x", true));
+                        assertNull(model.previous("x"));
+                        model.set(new Options("y", true));
+                        break;
+                    case 1:
+                        assertEquals(model.changedAttributes(), new Options("x", true, "y", true));
+                        assertNull(model.previous("x"));
+                        model.set(new Options("z", true));
+                        break;
+                    case 2:
+                        assertEquals(model.changedAttributes(), new Options("x", true, "y", true, "z", true));
+                        assertNull(model.previous("y"));
+                        break;
+                }
+
+            }
+        });
+        model.set(new Options("x", true));
+
+        assertEquals(3, count[0]);
+    }
+
+
+    public void testNestedChangeWithSilent() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+        model.on("change:y", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                switch(count[0]++) {
+                    case 0:
+                        assertEquals(model.changedAttributes(), new Options("x", true));
+                        model.set(new Options("y", true), new Options("silent", true));
+                        model.set(new Options("z", true));
+                        break;
+                    case 1:
+                        assertEquals(model.changedAttributes(), new Options("x", true, "y", true, "z", true));
+                        break;
+                    case 2:
+                        assertEquals(model.changedAttributes(), new Options("z", false));
+                        break;
+                }
+
+            }
+        });
+        model.set(new Options("x", true));
+        model.set(new Options("z", false));
+
+        assertEquals(3, count[0]);
+    }
+
+
+    public void testNestedChangeAttrWithSilent() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+        model.on("change:y", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("y", true), new Options("silent", true));
+                model.set(new Options("z", true));
+            }
+        });
+        model.set(new Options("x", true));
+
+        assertEquals(0, count[0]);
+    }
+
+
+    public void testMultipleNestedChangesWithSilent() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+
+        model.on("change:x", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("y", 1), new Options("silent", true));
+                model.set(new Options("y", 2));
+            }
+        });
+        model.on("change:y", new Function() {
+            @Override
+            public void f() {
+                int value = getArgument(1);
+
+                assertEquals(2, value);
+                count[0]++;
+            }
+        });
+        model.set(new Options("x", true));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testMultipleNestedChangesWithSilentWithVariableCounting() {
+        final List<Integer> changes = new ArrayList<Integer>();
+        final Model model = new Model();
+
+        model.on("change:b", new Function() {
+            @Override
+            public void f() {
+                int value = getArgument(1);
+                changes.add(value);
+            }
+        });
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("b", 1));
+            }
+        });
+
+        model.set(new Options("b", 0));
+        assertEquals(Arrays.asList(0, 1), changes);
+    }
+
+
+    public void testBasicSilentChangeSemantics() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+
+        model.set(new Options("x", 1));
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.set(new Options("x", 2), new Options("silent", true));
+        model.set(new Options("x", 1));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testNestedSetMultipleTimes() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+
+        model.on("change:b", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.on("change:a", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("b", true));
+                model.set(new Options("b", true));
+            }
+        });
+        model.set(new Options("a", true));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testClearDoesNotAlterOptions() {
+        Model model = new Model();
+        Options options = new Options();
+
+        model.clear(options);
+        assertFalse(options.containsKey("unset"));
+    }
+
+
+    public void testUnsetDoesNotAlterOptions() {
+        Model model = new Model();
+        Options options = new Options();
+
+        model.unset("x", options);
+        assertFalse(options.containsKey("unset"));
+    }
+
+
+    public void testOptionsIsPassedToSuccessCallbacks() {
+        final int[] count = {0};
+
+        class SyncModel extends Model {
+            public SyncModel() {
+                super();
+            }
+
+            @Override
+            public Promise sync(String method, final Options options) {
+                Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+        }
+
+        Model model = new SyncModel();
+        Options opts = new Options(
+                "success", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        }
+        );
+
+        model.save(new Options("id", 1), opts);
+        model.fetch(opts);
+        model.destroy(opts);
+
+        assertEquals(3, count[0]);
+    }
+
+
+    public void testTriggerSyncEvent() {
+        final int[] count = {0};
+
+        class SyncModel extends Model {
+            public SyncModel(Options options) {
+                super(options);
+            }
+
+            @Override
+            public Promise sync(String method, final Options options) {
+                Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+        }
+
+        Model model = new SyncModel(new Options("id", 1));
+        model.on("sync", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+
+        model.fetch();
+        model.save();
+        model.destroy();
+
+        assertEquals(3, count[0]);
+    }
+
+
+    public void testDestroyNewModelsExecuteSuccessCallback() {
+        final int[] count = {0};
+
+        new Model().on("sync", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        }).on("destroy", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        }).destroy(new Options("success", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        }));
+
+        assertEquals(2, count[0]);
+    }
+
+
+    public void testSaveAnInvalidModelCannotBePersisted() {
+        final int[] count = {0};
+
+        class ValidateModel extends Model {
+            @Override
+            public Object validate(Options attributes, Options options) {
+                return "invalid";
+            }
+
+            @Override
+            public Promise sync(String method, final Options options) {
+                count[0]++;
+
+                return null;
+            }
+        }
+
+        Model model = new ValidateModel();
+        assertNull(model.save());
+        assertEquals(0, count[0]);
+    }
+
+
+    public void testSaveWithoutAttrsTriggersError() {
+        final int[] count = {0};
+
+        class ValidateModel extends Model {
+            public ValidateModel(Options options) {
+                super(options);
+            }
+
+            @Override
+            public Object validate(Options attributes, Options options) {
+                return "invalid";
+            }
+
+            @Override
+            public Promise sync(String method, final Options options) {
+                Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+        }
+
+        Model model = new ValidateModel(new Options("id", 1));
+        model.on("invalid", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.save();
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testNullCanBePassedToAModelConstructorWithoutCoersion() {
+        class UndefinedModel extends Model {
+            public UndefinedModel() {
+                super();
+            }
+
+            public UndefinedModel(Options attributes) {
+                super(attributes);
+
+                assertNull(attributes);
+            }
+
+            public UndefinedModel(Options attributes, Options options) {
+                super(attributes, options);
+
+                assertNull(attributes);
+                assertNull(options);
+            }
+
+            @Override
+            protected Options defaults() {
+                return new Options("one", 1);
+            }
+        }
+        new UndefinedModel();
+        new UndefinedModel(null);
+        new UndefinedModel(null, null);
+    }
+
+
+    public void testModelSaveDoesNotTriggerChangeOnUnchangedAttributes() {
+        final int[] count = {0};
+
+        class ChangeModel extends Model {
+            public ChangeModel(Options options) {
+                super(options);
+            }
+
+            @Override
+            public Promise sync(String method, final Options options) {
+                final Function success = options.get("success");
+                success.f();
+
+                return null;
+            }
+        }
+
+        Model model = new ChangeModel(new Options("x", true));
+        model.on("change:x", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.save(null, new Options("wait", true));
+
+        assertEquals(0, count[0]);
+    }
+
+
+    public void testChangingFromOneValueSilentlyToAnotherBackToOriginalTriggersAChange() {
+        final int[] count = {0};
+
+        Model model = new Model(new Options("x", 1));
+        model.on("change:x", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.set(new Options("x", 2), new Options("silent", true));
+        model.set(new Options("x", 3), new Options("silent", true));
+        model.set(new Options("x", 1));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testMultipleSilentChangesNestedInsideAChangeEvent() {
+        final List<Object> changes = new ArrayList<Object>();
+
+        final Model model = new Model();
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("a", "c"), new Options("silent", true));
+                model.set(new Options("b", 2), new Options("silent", true));
+                model.unset("c", new Options("silent", true));
+            }
+        });
+        model.on("change:a change:b change:c", new Function() {
+            @Override
+            public void f() {
+                Object val = getArgument(1);
+                changes.add(val);
+            }
+        });
+        model.set(new Options("a", "a", "b", 1, "c", "item"));
+        assertEquals(Arrays.asList("a", 1, "item"), changes);
+        assertEquals(new Options("a", "c", "b", 2), model.getAttributes());
+    }
+
+
+    public void testSilentChangesInLastChangeEventBackToOriginalTriggersChange() {
+        final List<Object> changes = new ArrayList<Object>();
+
+        final Model model = new Model();
+        model.on("change:a change:b change:c", new Function() {
+            @Override
+            public void f() {
+                Object val = getArgument(1);
+                changes.add(val);
+            }
+        });
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("a", "c"), new Options("silent", true));
+            }
+        });
+
+        model.set(new Options("a", "a"));
+        assertEquals(Collections.singletonList("a"), changes);
+        model.set(new Options("a", "a"));
+        assertEquals(Arrays.asList("a", "a"), changes);
+    }
+
+
+    public void testChangeCalculationsShouldUseIsEqual() {
+        Model model = new Model(new Options("a", new Options("key", "value")));
+        model.set("a", new Options("key", "value"), new Options("silent", true));
+
+        assertNull(model.changedAttributes());
+    }
+
+
+
+    public void testFinalChangeEventIsAlwaysFiredRegardlessOfInterimChanges() {
+        final int[] count = {0};
+
+        final Model model = new Model();
+        model.on("change:property", new Function() {
+            @Override
+            public void f() {
+                model.set("property", "bar");
+            }
+        });
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        });
+        model.set("property", "foo");
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testIsValid() {
+        class ValidateModel extends Model {
+            public ValidateModel(Options options) {
+                super(options);
+            }
+
+            @Override
+            public Object validate(Options attributes, Options options) {
+                if (!attributes.getBoolean("valid")) {
+                    return "invalid";
+                }
+                return true;
+            }
+        }
+        Model model = new ValidateModel(new Options("valid", true));
+        assertTrue(model.isValid());
+        model.set(new Options("valid", false), new Options("validate", true));
+        assertTrue(model.isValid());
+
+        model.set("valid", false);
+        assertFalse(model.isValid());
+        model.set(new Options("valid", false, "a", "a"), new Options("validate", true));
+        assertFalse(model.has("a"));
+        assertFalse(model.isValid());
+    }
+
+
+    public void testCreatingAModelWithValidateTrueWillCallValidateAndUseTheErrorCallback() {
+        class ValidateModel extends Model {
+            public ValidateModel(Options attributes, Options options) {
+                super(attributes, options);
+            }
+
+            @Override
+            public Object validate(Options attributes, Options options) {
+                if (attributes.getInt("id") == 1) {
+                    return "This shouldn't happen";
+                }
+                return true;
+            }
+        }
+
+        Model model = new ValidateModel(new Options("id", 1), new Options("validate", true));
+        assertEquals("This shouldn't happen", model.getValidationError());
+    }
+
+
+    public void testToJSONReceivesAttrsDuringSaveWaitTrue() {
+        final int[] count = {0};
+
+        class JSONModel extends Model {
+            public JSONModel() {
+                super();
+                setUrlRoot("/test");
+            }
+
+            @Override
+            public Options toJSON() {
+                count[0]++;
+                assertEquals(1, getAttributes().get("x"));
+                return getAttributes().clone();
+            }
+        }
+        Model model = new JSONModel();
+        model.save(new Options("x", 1), new Options("wait", true));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testNestedSetWithSilentOnlyTriggersOneChange() {
+        final int[] count = {0};
+        final Model model = new Model();
+
+        model.on("change", new Function() {
+            @Override
+            public void f() {
+                model.set(new Options("b", true), new Options("silent", true));
+                count[0]++;
+            }
+        });
+        model.set(new Options("a", true));
+
+        assertEquals(1, count[0]);
+    }
+
+
+    public void testIdWillOnlyBeUpdatedIfItIsSet() {
+        final Model model = new Model(new Options("id", 1));
+        model.setIdAsInt(2);
+        model.set(new Options("foo", "bar"));
+        assertEquals(2, model.getIdAsInt());
+        assertEquals(2, model.get("id"));
+
+        model.set(new Options("id", 3));
+        assertEquals(3, model.getIdAsInt());
+        assertEquals(3, model.get("id"));
+
+        model.set(new Options("id", "key"));
+        assertEquals("key", model.getId());
+        assertEquals("key", model.get("id"));
     }
 }

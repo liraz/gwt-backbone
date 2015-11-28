@@ -37,7 +37,7 @@ import org.lirazs.gbackbone.client.generator.Reflection;
 
 import java.util.*;
 
-public class Model extends Events implements Synchronized, Reflectable {
+public class Model extends Events<Model> implements Synchronized, Reflectable {
 
     /**
      * attributes: any;
@@ -233,6 +233,21 @@ public class Model extends Events implements Synchronized, Reflectable {
     public double getIdAsDouble() {
         return Double.parseDouble(id);
     }
+
+    public void setId(String id) {
+        this.id = id;
+        set(getIdAttribute(), id);
+    }
+    public void setIdAsInt(int id) {
+        this.id = String.valueOf(id);
+        set(getIdAttribute(), id);
+    }
+    public void setIdAsDouble(double id) {
+        this.id = String.valueOf(id);
+        set(getIdAttribute(), id);
+    }
+
+
     public String getCid() {
         return cid;
     }
@@ -474,11 +489,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         return unset(attr, null);
     }
     public Model unset(String attr, Options options) {
-        if(options == null)
-            options = new Options();
-        options.put("unset", true);
-
-        return set(attr, null, options);
+        return set(attr, null, new Options().extend(options, new Options("unset", true)));
     }
 
     /**
@@ -499,11 +510,7 @@ public class Model extends Events implements Synchronized, Reflectable {
         for (String key : keys) {
             attrs.put(key, null);
         }
-        if(options == null)
-            options = new Options();
-        options.put("unset", true);
-
-        return this.set(attrs, options);
+        return this.set(attrs, new Options().extend(options, new Options("unset", true)));
     }
 
     /**

@@ -23,14 +23,14 @@ import org.lirazs.gbackbone.client.core.util.UUID;
 
 import java.util.*;
 
-public class Events {
+public class Events<T extends Events<T>> {
 
     String listenerId = UUID.uniqueId("l");
 
     Map<String, Events> listeners = new HashMap<String, Events>();
     Map<String, List<EventEntry>> events = new HashMap<String, List<EventEntry>>();
 
-    RegExp eventsSplitter = RegExp.compile("/\\s+/");
+    RegExp eventsSplitter = RegExp.compile("\\s+");
 
     class EventEntry {
         private final Function callback;
@@ -51,10 +51,10 @@ public class Events {
      events.push({ callback: callback, context: context, ctx: context || this });
      return this;
      */
-    public Events on(String name, Function callback) {
+    public T on(String name, Function callback) {
         return on(name, callback, null);
     }
-    public Events on(String name, Function callback, Object context) {
+    public T on(String name, Function callback, Object context) {
 
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {
@@ -72,7 +72,7 @@ public class Events {
             EventEntry eventEntry = new EventEntry(callback, context, context != null ? context : this);
             eventEntries.add(eventEntry);
         }
-        return this;
+        return (T)this;
     }
 
     /**
@@ -88,10 +88,10 @@ public class Events {
          return this.on(name, once, context);
      }
      */
-    public Events once(final String name, final Function callback) {
+    public T once(final String name, final Function callback) {
         return once(name, callback, null);
     }
-    public Events once(final String name, final Function callback, Object context) {
+    public T once(final String name, final Function callback, Object context) {
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {
             String[] names = name.split(eventsSplitter.getSource());
@@ -108,7 +108,7 @@ public class Events {
             };
             on(name, onceCallback, context);
         }
-        return this;
+        return (T)this;
     }
 
 
@@ -143,27 +143,27 @@ public class Events {
          return this;
      }
      */
-    public Events off() {
+    public T off() {
         events = new HashMap();
-        return this;
+        return (T)this;
     }
 
-    public Events off(Function callback, Object context) {
+    public T off(Function callback, Object context) {
         String[] names = (String[]) events.keySet().toArray();
         for (String name : names) {
             off(name, callback, context);
         }
-        return this;
+        return (T)this;
     }
 
-    public Events off(String name) {
+    public T off(String name) {
         return off(name, null, null);
     }
-    public Events off(String name, Function callback) {
+    public T off(String name, Function callback) {
         return off(name, callback, null);
     }
 
-    public Events off(String name, Function callback, Object context) {
+    public T off(String name, Function callback, Object context) {
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {
             String[] names = name.split(eventsSplitter.getSource());
@@ -174,15 +174,17 @@ public class Events {
             List<EventEntry> eventEntries = events.get(name);
 
             int retainIndex = 0;
-            EventEntry[] retainKey = new EventEntry[eventEntries.size()];
+            //EventEntry[] retainKey = new EventEntry[eventEntries.size()];
 
             if(eventEntries.size() > 0 && (callback != null || context != null)) {
 
                 for (int i = 0; i < eventEntries.size(); i++) {
                     EventEntry eventEntry = eventEntries.get(i);
                     if((callback != null && !callback.equals(eventEntry.callback))
-                            || (context != null && !context.equals(eventEntry.context)))
-                        retainKey[retainIndex++] = eventEntry;
+                            || (context != null && !context.equals(eventEntry.context))) {
+                        //retainKey[retainIndex++] = eventEntry;
+                        retainIndex++;
+                    }
                 }
             }
 
@@ -191,7 +193,7 @@ public class Events {
                 events.remove(name);
             }
         }
-        return this;
+        return (T)this;
     }
 
 
@@ -209,9 +211,9 @@ public class Events {
          return this;
      }
      */
-    public Events trigger(String name, Object ...args) {
+    public T trigger(String name, Object ...args) {
         if(events == null || events.isEmpty())
-            return this;
+            return (T)this;
 
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {
@@ -231,7 +233,7 @@ public class Events {
                 triggerEvents(allEventEntries, ArrayUtils.joinArrays(new Object[] {name}, args));
             }
         }
-        return this;
+        return (T)this;
     }
 
     /**
@@ -251,9 +253,9 @@ public class Events {
          return this;
      }
      */
-    public Events stopListening() {
+    public T stopListening() {
         if(listeners == null || listeners.isEmpty())
-            return this;
+            return (T)this;
 
         for (String listenerId : listeners.keySet()) {
             Events listener = listeners.get(listenerId);
@@ -261,31 +263,31 @@ public class Events {
             listeners.remove(listenerId);
         }
 
-        return this;
+        return (T)this;
     }
-    public Events stopListening(Events obj) {
+    public T stopListening(Events obj) {
         if(listeners == null || listeners.isEmpty())
-            return this;
+            return (T)this;
 
         obj.off(null, this);
         listeners.remove(obj.listenerId);
 
-        return this;
+        return (T)this;
     }
-    public Events stopListening(Events obj, String name) {
+    public T stopListening(Events obj, String name) {
         if(listeners == null || listeners.isEmpty())
-            return this;
+            return (T)this;
 
         obj.off(name, null, this);
-        return this;
+        return (T)this;
     }
 
-    public Events stopListening(Events obj, String name, Function callback) {
+    public T stopListening(Events obj, String name, Function callback) {
         if(listeners == null || listeners.isEmpty())
-            return this;
+            return (T)this;
 
         obj.off(name, callback, this);
-        return this;
+        return (T)this;
     }
 
     /**
@@ -308,17 +310,17 @@ public class Events {
      });
      */
 
-    public Events listenTo(Events obj, String name, Function callback) {
+    public T listenTo(Events obj, String name, Function callback) {
         listeners.put(obj.listenerId, obj);
         obj.on(name, callback, this);
 
-        return this;
+        return (T)this;
     }
-    public Events listenToOnce(Events obj, String name, Function callback) {
+    public T listenToOnce(Events obj, String name, Function callback) {
         listeners.put(obj.listenerId, obj);
         obj.once(name, callback, this);
 
-        return this;
+        return (T)this;
     }
 
     /**

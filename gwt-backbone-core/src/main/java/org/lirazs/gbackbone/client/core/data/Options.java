@@ -92,6 +92,13 @@ public class Options extends LinkedHashMap<String, Object> implements JsonSerial
         return this;
     }
 
+    public Options extend(Options ...args) {
+        for (Options arg : args) {
+            extend(arg);
+        }
+        return this;
+    }
+
     public Options extend(Options o) {
         if (o != null) {
             for (String k : o.keySet()) {

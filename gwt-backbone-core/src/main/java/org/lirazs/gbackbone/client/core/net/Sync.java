@@ -37,6 +37,11 @@ public class Sync {
          };
      */
     JsMap<String, String> methodMap;
+    private Ajax.Settings syncArgs;
+
+    public Ajax.Settings getSyncArgs() {
+        return syncArgs;
+    }
 
     private static Sync instance = null;
     public static Sync get() {
@@ -290,6 +295,8 @@ public class Sync {
 
         Promise xhr = GQuery.ajax(settings);
         options.put("xhr", xhr);
+
+        syncArgs = settings;
 
         if(model != null)
             model.trigger("request", model, xhr, options);

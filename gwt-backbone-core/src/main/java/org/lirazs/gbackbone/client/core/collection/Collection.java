@@ -37,7 +37,7 @@ import org.lirazs.gbackbone.client.generator.Reflection;
 
 import java.util.*;
 
-public class Collection<T extends Model> extends Events implements Synchronized, Iterable<T> {
+public class Collection<T extends Model> extends Events<Collection<T>> implements Synchronized, Iterable<T> {
 
     /**
      * // Default options for `Collection#set`.
