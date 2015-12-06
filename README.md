@@ -1,5 +1,5 @@
 
-GwtBackbone v0.2.0
+GwtBackbone v0.2.1
 ===========
 
 GwtBackbone a.k.a. GBackbone is a Backbone-like API written in GWT, which allows GWT to be used convert already written enterprise backbone projects into entirely used in GWT.
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.liraz:gwt-backbone:0.2.0'
+    compile 'com.github.liraz:gwt-backbone:0.2.1'
 }
 ```
 
@@ -48,7 +48,7 @@ dependencies {
 <dependency>
     <groupId>com.github.liraz</groupId>
     <artifactId>gwt-backbone</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
 </dependency>
 ```
 

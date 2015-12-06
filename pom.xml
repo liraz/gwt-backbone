@@ -7,7 +7,7 @@
     <groupId>org.lirazs.gbackbone</groupId>
     <artifactId>gwt-backbone</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
     <name>Gwt Backbone Project</name>
 	<description>GwtBackbone is a Backbone.js clone written in GWT.</description>
 	
