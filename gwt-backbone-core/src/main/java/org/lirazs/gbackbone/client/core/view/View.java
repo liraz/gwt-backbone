@@ -28,7 +28,6 @@ import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.util.UUID;
-import org.lirazs.gbackbone.client.generator.EventBinder;
 
 import java.util.*;
 
