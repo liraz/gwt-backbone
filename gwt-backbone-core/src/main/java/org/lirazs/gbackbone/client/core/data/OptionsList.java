@@ -25,6 +25,19 @@ import java.util.List;
 
 public class OptionsList extends ArrayList<Options> implements JsonSerializable {
 
+    public static OptionsList OL() {
+        return new OptionsList();
+    }
+    public static OptionsList OL(Options ...options) {
+        return new OptionsList(options);
+    }
+    public static OptionsList OL(List<Options> options) {
+        return new OptionsList(options);
+    }
+    public static OptionsList OL(JSONArray array) {
+        return new OptionsList(array);
+    }
+
     public OptionsList() {
         super();
     }

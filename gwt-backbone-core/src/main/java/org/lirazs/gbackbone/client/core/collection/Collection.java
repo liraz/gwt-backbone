@@ -25,16 +25,23 @@ import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
 import com.google.gwt.query.client.js.JsMap;
 import com.google.gwt.user.client.Random;
+import org.lirazs.gbackbone.client.core.collection.function.*;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.function.*;
 import org.lirazs.gbackbone.client.core.js.JsArray;
 import org.lirazs.gbackbone.client.core.model.Model;
+import org.lirazs.gbackbone.client.core.model.function.OnChangeAttrFunction;
+import org.lirazs.gbackbone.client.core.model.function.OnChangeFunction;
+import org.lirazs.gbackbone.client.core.model.function.OnDestroyFunction;
+import org.lirazs.gbackbone.client.core.model.function.OnSyncFunction;
 import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
+import org.lirazs.gbackbone.client.core.util.ObjectUtils;
 import org.lirazs.gbackbone.client.generator.Reflection;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class Collection<T extends Model> extends Events<Collection<T>> implements Synchronized, Iterable<T> {
@@ -49,6 +56,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
     Options addOptions = new Options("add", true, "remove", false);
 
     Comparator<T> comparator;
+    String attributeComparator;
 
     /**
      * length: number;
@@ -109,8 +117,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         if(options == null)
             options = new Options();
 
-        if(options.containsKey("comparator"))
-            comparator = options.get("comparator");
+        processComparatorFromOptions(options);
 
         if(options.containsKey("url"))
             url = options.get("url");
@@ -139,8 +146,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         if(options == null)
             options = new Options();
 
-        if(options.containsKey("comparator"))
-            comparator = options.get("comparator");
+        processComparatorFromOptions(options);
 
         if(options.containsKey("url"))
             url = options.get("url");
@@ -178,8 +184,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         if(options == null)
             options = new Options();
 
-        if(options.containsKey("comparator"))
-            comparator = options.get("comparator");
+        processComparatorFromOptions(options);
 
         if(options.containsKey("url"))
             url = options.get("url");
@@ -205,6 +210,17 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         }
     }
 
+    private void processComparatorFromOptions(Options options) {
+        if(options != null && options.containsKey("comparator")) {
+            Object comparator = options.get("comparator");
+            if(comparator instanceof Comparator) {
+                registerComparator((Comparator<T>) comparator);
+            } else if(comparator instanceof String) {
+                registerComparator((String) comparator);
+            }
+        }
+    }
+
     public boolean registerModelClass(Class<T> modelClass) {
         if(!Objects.equals(this.modelClass, modelClass)) {
             this.modelClass = modelClass;
@@ -221,6 +237,9 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
     }
     public void registerComparator(Comparator<T> comparator) {
         this.comparator = comparator;
+    }
+    public void registerComparator(String attributeComparator) {
+        this.attributeComparator = attributeComparator;
     }
 
     protected void initialize(List<T> models) {
@@ -532,7 +551,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         }
 
         boolean sort = false;
-        boolean sortable = comparator != null && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
+        boolean sortable = hasComparator() && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
 
         List<T> toAdd = new ArrayList<T>();
         List<T> toRemove = new ArrayList<T>();
@@ -679,7 +698,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         }
 
         boolean sort = false;
-        boolean sortable = comparator != null && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
+        boolean sortable = hasComparator() && !options.containsKey("at") && (!options.containsKey("sort") || options.getBoolean("sort"));
 
         List<T> toAdd = new ArrayList<T>();
         List<T> toRemove = new ArrayList<T>();
@@ -1113,13 +1132,25 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         return sort(null);
     }
     public Collection<T> sort(Options options) {
-        if(this.comparator == null) throw new Error("Cannot sort a set without a comparator");
+        if(!hasComparator()) throw new Error("Cannot sort a set without a comparator");
         if(options == null)
             options = new Options();
 
         //TODO: Support for sortBy with sort attribute?!
         // Run sort based on type of `comparator`.
-        Collections.sort(this.models, this.comparator);
+        if(comparator != null) {
+            Collections.sort(this.models, this.comparator);
+        } else if(attributeComparator != null) {
+            Collections.sort(this.models, new Comparator<T>() {
+                @Override
+                public int compare(T o1, T o2) {
+                    Object attr1 = o1.get(attributeComparator);
+                    Object attr2 = o2.get(attributeComparator);
+
+                    return ObjectUtils.compare(attr1, attr2);
+                }
+            });
+        }
 
         if(!options.getBoolean("silent"))
             this.trigger("sort", this, options);
@@ -1127,36 +1158,8 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
     }
 
     public boolean hasComparator() {
-        return this.comparator != null;
+        return this.comparator != null || this.attributeComparator != null;
     }
-
-    /**
-     * // Figure out the smallest index at which a model should be inserted so as
-     // to maintain order.
-     sortedIndex(model: Model, value: (model: Model) => any, context): number {
-         value || (value = this.comparator);
-         var iterator = _.isFunction(value) ? value : function (model) {
-            return model.get(value);
-         };
-         return _.sortedIndex(this.models, model, iterator, context);
-     }
-     */
-    /**
-    _.sortedIndex = function(array, obj, iteratee, context) {
-        iteratee = _.iteratee(iteratee, context, 1);
-        var value = iteratee(obj);
-        var low = 0, high = array.length;
-        while (low < high) {
-          var mid = low + high >>> 1;
-          if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
-        }
-        return low;
-    };
-     */
-    //TODO: No idea how this can be implemented, probably by receiving the "sortAttr", so you would know what property to take
-    /*public int sortedIndex(Model model) {
-        int value = model.get("")
-    }*/
 
     /**
      * // Pluck an attribute from each model in the collection.
@@ -1713,6 +1716,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         Class<T> modelClass = (Class<T>) getModelClass();
         Collection<T> result = new Collection<T>(modelClass, models);
         result.comparator = comparator;
+        result.attributeComparator = attributeComparator;
 
         return result;
     }
@@ -1919,50 +1923,35 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
     /**
      *
      all: (iterator: (element: Model, index: number) => boolean, context?: any) => boolean;
-     any: (iterator: (element: Model, index: number) => boolean, context?: any) => boolean;
      collect: (iterator: (element: Model, index: number, context?: any) => any[], context?: any) => any[];
      chain: () => any;
      compact: () => Model[];
-     contains: (value: any) => boolean;
      countBy: (iterator: (element: Model, index: number) => any) => any[];
      detect: (iterator: (item: any) => boolean, context?: any) => any; // ???
-     difference: (...model: Model[]) => Model[];
      drop: (n?: number) => Model[];
      each: (iterator: (element: Model, index: number, list?: any) => void , context?: any) => void;
      every: (iterator: (element: Model, index: number) => boolean, context?: any) => boolean;
-     filter: (iterator: (element: Model, index: number) => boolean, context?: any) => Model[];
      find: (iterator: (element: Model, index: number) => boolean, context?: any) => Model;
-     first: (n?: number) => Model[];
+     first: (n?: number) => Model[]; TODO: First can receive a number
      flatten: (shallow?: boolean) => Model[];
      foldl: (iterator: (memo: any, element: Model, index: number) => any, initialMemo: any, context?: any) => any;
      forEach: (iterator: (element: Model, index: number, list?: any) => void , context?: any) => void;
      include: (value: any) => boolean;
-     indexOf: (element: Model, isSorted?: boolean) => number;
      initial: (n?: number) => Model[];
      inject: (iterator: (memo: any, element: Model, index: number) => any, initialMemo: any, context?: any) => any;
      intersection: (...model: Model[]) => Model[];
-     isEmpty: (object: any) => boolean;
-     invoke: (methodName: string, arguments?: any[]) => any;
-     last: (n?: number) => Model[];
+     last: (n?: number) => Model[]; TODO: Last can receive a number
      lastIndexOf: (element: Model, fromIndex?: number) => number;
-     map: (iterator: (element: Model, index: number, context?: any) => any[], context?: any) => any[];
-     max: (iterator?: (element: Model, index: number) => any, context?: any) => Model;
-     min: (iterator?: (element: Model, index: number) => any, context?: any) => Model;
      object: (...values: any[]) => any[];
      reduce: (iterator: (memo: any, element: Model, index: number) => any, initialMemo: any, context?: any) => any;
      select: (iterator: any, context?: any) => any[];
-     size: () => number;
      shuffle: () => any[];
      some: (iterator: (element: Model, index: number) => boolean, context?: any) => boolean;
-     sortBy: (iterator: (element: Model, index: number) => number, context?: any) => Model[];
      reduceRight: (iterator: (memo: any, element: Model, index: number) => any, initialMemo: any, context?: any) => any[];
      reject: (iterator: (element: Model, index: number) => boolean, context?: any) => Model[];
-     rest: (n?: number) => Model[];
      tail: (n?: number) => Model[];
-     toArray: () => any[];
      union: (...model: Model[]) => Model[];
      uniq: (isSorted?: boolean, iterator?: (element: Model, index: number) => boolean) => Model[];
-     without: (...values: any[]) => Model[];
      zip: (...model: Model[]) => Model[];
      */
     //TODO: Support for underscore methods
@@ -2028,9 +2017,22 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         int low = 0;
         int high = this.length;
 
+        if(!hasComparator()) throw new Error("Cannot sort a set without a comparator");
+
         while(low < high) {
             int mid = low + high >>> 1;
-            if(this.comparator.compare(at(mid), item) < 0)
+
+            int compareResult = 0;
+            if(comparator != null) {
+                compareResult = this.comparator.compare(at(mid), item);
+            } else if(attributeComparator != null) {
+                Object attr1 = at(mid).get(attributeComparator);
+                Object attr2 = item.get(attributeComparator);
+
+                compareResult = ObjectUtils.compare(attr1, attr2);
+            }
+
+            if(compareResult < 0)
                 low = mid + 1;
             else
                 high = mid;
@@ -2086,5 +2088,141 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
                 Collection.this.remove(models.get(i));
             }
         };
+    }
+
+    public Collection<T> onAdd(OnAddFunction callback) {
+        return on("add", callback);
+    }
+
+    public Collection<T> onRemove(OnRemoveFunction callback) {
+        return on("remove", callback);
+    }
+
+    public Collection<T> onReset(OnResetFunction callback) {
+        return on("reset", callback);
+    }
+
+    public Collection<T> onSort(OnSortFunction callback) {
+        return on("sort", callback);
+    }
+
+    public Collection<T> onUpdate(OnUpdateFunction callback) {
+        return on("update", callback);
+    }
+
+    public Collection<T> onError(OnErrorFunction callback) {
+        return on("error", callback);
+    }
+
+    public Collection<T> onChange(OnChangeFunction callback) {
+        return on("change", callback);
+    }
+
+    public <V> Collection<T> onChangeAttr(String attr, OnChangeAttrFunction<V> callback) {
+        return on("change:" + attr, callback);
+    }
+
+    public Collection<T> onDestroy(OnDestroyFunction callback) {
+        return on("destroy", callback);
+    }
+
+    public Collection<T> onInvalid(OnInvalidFunction callback) {
+        return on("invalid", callback);
+    }
+
+    public Collection<T> onSync(OnSyncFunction callback) {
+        return on("sync", callback);
+    }
+
+
+
+    public Collection<T> onceAdd(OnAddFunction callback) {
+        return once("add", callback);
+    }
+
+    public Collection<T> onceRemove(OnRemoveFunction callback) {
+        return once("remove", callback);
+    }
+
+    public Collection<T> onceReset(OnResetFunction callback) {
+        return once("reset", callback);
+    }
+
+    public Collection<T> onceSort(OnSortFunction callback) {
+        return once("sort", callback);
+    }
+
+    public Collection<T> onceUpdate(OnUpdateFunction callback) {
+        return once("update", callback);
+    }
+
+    public Collection<T> onceError(OnErrorFunction callback) {
+        return once("error", callback);
+    }
+
+    public Collection<T> onceChange(OnChangeFunction callback) {
+        return once("change", callback);
+    }
+
+    public <V> Collection<T> onceChangeAttr(String attr, OnChangeAttrFunction<V> callback) {
+        return once("change:" + attr, callback);
+    }
+
+    public Collection<T> onceDestroy(OnDestroyFunction callback) {
+        return once("destroy", callback);
+    }
+
+    public Collection<T> onceInvalid(OnInvalidFunction callback) {
+        return once("invalid", callback);
+    }
+
+    public Collection<T> onceSync(OnSyncFunction callback) {
+        return once("sync", callback);
+    }
+
+
+
+    public Collection<T> listenToAdd(Collection collection, OnAddFunction callback) {
+        return listenTo(collection, "add", callback);
+    }
+
+    public Collection<T> listenToRemove(Collection collection, OnRemoveFunction callback) {
+        return listenTo(collection, "remove", callback);
+    }
+
+    public Collection<T> listenToReset(Collection collection, OnResetFunction callback) {
+        return listenTo(collection, "reset", callback);
+    }
+
+    public Collection<T> listenToSort(Collection collection, OnSortFunction callback) {
+        return listenTo(collection, "sort", callback);
+    }
+
+    public Collection<T> listenToUpdate(Collection collection, OnUpdateFunction callback) {
+        return listenTo(collection, "update", callback);
+    }
+
+    public Collection<T> listenToError(Collection collection, OnErrorFunction callback) {
+        return listenTo(collection, "error", callback);
+    }
+
+    public Collection<T> listenToChange(Collection collection, OnChangeFunction callback) {
+        return listenTo(collection, "change", callback);
+    }
+
+    public <V> Collection<T> listenToChangeAttr(Collection collection, String attr, OnChangeAttrFunction<V> callback) {
+        return listenTo(collection, "change:" + attr, callback);
+    }
+
+    public Collection<T> listenToDestroy(Collection collection, OnDestroyFunction callback) {
+        return listenTo(collection, "destroy", callback);
+    }
+
+    public Collection<T> listenToInvalid(Collection collection, OnInvalidFunction callback) {
+        return listenTo(collection, "invalid", callback);
+    }
+
+    public Collection<T> listenToSync(Collection collection, OnSyncFunction callback) {
+        return listenTo(collection, "sync", callback);
     }
 }

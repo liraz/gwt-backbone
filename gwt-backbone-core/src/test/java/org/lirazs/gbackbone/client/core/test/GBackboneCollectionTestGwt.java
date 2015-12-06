@@ -23,6 +23,8 @@ import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
+import static org.lirazs.gbackbone.client.core.data.Options.O;
+import static org.lirazs.gbackbone.client.core.data.OptionsList.OL;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
 import org.lirazs.gbackbone.client.core.function.FilterFunction;
 import org.lirazs.gbackbone.client.core.function.MapFunction;
@@ -50,10 +52,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void gwtSetUp() {
-        a = new Model(new Options("id", 3, "label", "a"));
-        b = new Model(new Options("id", 2, "label", "b"));
-        c = new Model(new Options("id", 1, "label", "c"));
-        d = new Model(new Options("id", 0, "label", "d"));
+        a = new Model(O("id", 3, "label", "a"));
+        b = new Model(O("id", 2, "label", "b"));
+        c = new Model(O("id", 1, "label", "c"));
+        d = new Model(O("id", 0, "label", "d"));
 
         col = new Collection<Model>(a, b, c, d);
         otherCol = new Collection<Model>();
@@ -108,9 +110,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testIntegerComparator() {
         Collection<Model> collection = new Collection<Model>(
-                new Model(new Options("id", 3)),
-                new Model(new Options("id", 1)),
-                new Model(new Options("id", 2)));
+                new Model(O("id", 3)),
+                new Model(O("id", 1)),
+                new Model(O("id", 2)));
 
         collection.registerComparator(new Comparator<Model>() {
             @Override
@@ -159,7 +161,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                         if(object != null) {
                             if(object.get("a").isNumber().doubleValue() % 2 == 0) {
                                 Model model = GWT.create(Model.class);
-                                model.set(new Options(object), options);
+                                model.set(O(object), options);
 
                                 result.add(model);
                             }
@@ -210,7 +212,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(d, col.get(0));
         assertEquals(d, col.get(d.clone()));
         assertEquals(b, col.get(2));
-        assertEquals(c, col.get(new Options("id", 1)));
+        assertEquals(c, col.get(O("id", 1)));
         assertEquals(c, col.get(c.clone()));
         assertEquals(col.first(), col.get(col.first().getCid()));
     }
@@ -252,9 +254,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     public void testUpdateIndexWhenIdChanges() {
 
         final Collection<Model> col = new Collection<Model>();
-        col.add(new OptionsList(
-                new Options("id", 0, "name", "one"),
-                new Options("id", 1, "name", "two")
+        col.add(OL(
+                O("id", 0, "name", "one"),
+                O("id", 1, "name", "two")
         ));
 
         Model one = col.get(0);
@@ -267,7 +269,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertNotNull(col.get(model));
             }
         });
-        one.set(new Options("name", "dalmatians", "id", 101));
+        one.set(O("name", "dalmatians", "id", 101));
 
         assertEquals(null, col.get(0));
         assertEquals("dalmatians", col.get(101).get("name"));
@@ -298,7 +300,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         final Boolean[] secondAdded = new Boolean[1];
         final Options[] opts = new Options[1];
 
-        Model e = new Model(new Options("id", 10, "label", "e"));
+        Model e = new Model(O("id", 10, "label", "e"));
         otherCol.add(e);
         otherCol.on("add", new Function() {
             @Override
@@ -316,7 +318,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 opts[0] = options;
             }
         });
-        col.add(e, new Options("amazing", true));
+        col.add(e, O("amazing", true));
         assertEquals("e", added[0]);
         assertEquals(5, col.length());
         assertEquals(e, col.last());
@@ -324,13 +326,13 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(null, secondAdded[0]);
         assertTrue(opts[0].getBoolean("amazing"));
 
-        Model f = new Model(new Options("id", 20, "label", "f"));
-        Model g = new Model(new Options("id", 21, "label", "g"));
-        Model h = new Model(new Options("id", 22, "label", "h"));
+        Model f = new Model(O("id", 20, "label", "f"));
+        Model g = new Model(O("id", 21, "label", "g"));
+        Model h = new Model(O("id", 22, "label", "h"));
 
         Collection<Model> atCol = new Collection<Model>(f, g, h);
         assertEquals(3, atCol.length());
-        atCol.add(e, new Options("at", 1));
+        atCol.add(e, O("at", 1));
         assertEquals(4, atCol.length());
         assertEquals(e, atCol.at(1));
         assertEquals(h, atCol.last());
@@ -352,20 +354,20 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testAddMultipleModels() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("at", 0),
-                new Options("at", 1),
-                new Options("at", 9)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("at", 0),
+                O("at", 1),
+                O("at", 9)
         ));
-        col.add(new OptionsList(
-                new Options("at", 2),
-                new Options("at", 3),
-                new Options("at", 4),
-                new Options("at", 5),
-                new Options("at", 6),
-                new Options("at", 7),
-                new Options("at", 8)
-        ), new Options("at", 2));
+        col.add(OL(
+                O("at", 2),
+                O("at", 3),
+                O("at", 4),
+                O("at", 5),
+                O("at", 6),
+                O("at", 7),
+                O("at", 8)
+        ), O("at", 2));
 
         for (int i = 0; i < 5; i++) {
             assertEquals(i, col.at(i).get("at"));
@@ -380,50 +382,50 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         };
 
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 2),
-                new Options("id", 3)
-        ), new Options("comparator", colComparator));
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 2),
+                O("id", 3)
+        ), O("comparator", colComparator));
 
-        col.add(new Model(new Options("id", 1)), new Options("at", 1));
+        col.add(new Model(O("id", 1)), O("at", 1));
 
         assertEquals("3 1 2", col.jsPluck("id").join(" "));
     }
 
     public void testCantAddModelToCollectionTwice() {
         Collection<Model> col = new Collection<Model>(
-                new Options("id", 1),
-                new Options("id", 2),
-                new Options("id", 1),
-                new Options("id", 2),
-                new Options("id", 3)
+                O("id", 1),
+                O("id", 2),
+                O("id", 1),
+                O("id", 2),
+                O("id", 3)
         );
         assertEquals("1 2 3", col.jsPluck("id").join(" "));
     }
 
     public void testCantAddDifferentModelWithSameIdToCollectionTwice() {
         Collection<Model> col = new Collection<Model>();
-        col.unshift(new Options("id", 101));
-        col.add(new Options("id", 101));
+        col.unshift(O("id", 101));
+        col.add(O("id", 101));
 
         assertEquals(1, col.length());
     }
 
     public void testMergeInDuplicateModelsWithMergeTrue() {
         Collection<Model> col = new Collection<Model>();
-        col.add(new OptionsList(
-                new Options("id", 1, "name", "Moe"),
-                new Options("id", 2, "name", "Curly"),
-                new Options("id", 3, "name", "Larry")
+        col.add(OL(
+                O("id", 1, "name", "Moe"),
+                O("id", 2, "name", "Curly"),
+                O("id", 3, "name", "Larry")
         ));
 
-        col.add(new Options("id", 1, "name", "Moses"));
+        col.add(O("id", 1, "name", "Moses"));
         assertEquals("Moe", col.first().get("name"));
 
-        col.add(new Options("id", 1, "name", "Moses"), new Options("merge", true));
+        col.add(O("id", 1, "name", "Moses"), O("merge", true));
         assertEquals("Moses", col.first().get("name"));
 
-        col.add(new Options("id", 1, "name", "Tim"), new Options("merge", true, "silent", true));
+        col.add(O("id", 1, "name", "Tim"), O("merge", true, "silent", true));
         assertEquals("Tim", col.first().get("name"));
     }
 
@@ -432,7 +434,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         final Collection<Model> colF = new Collection<Model>();
         final Collection<Model> colE = new Collection<Model>();
 
-        final Model e = new Model(new Options("id", 10, "label", "e"));
+        final Model e = new Model(O("id", 10, "label", "e"));
         e.on("add", new Function() {
             @Override
             public void f() {
@@ -483,7 +485,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         JSONObject obj = new JSONObject();
         obj.put("value", new JSONNumber(1));
 
-        col.add(obj, new Options("parse", true));
+        col.add(obj, O("parse", true));
 
         assertEquals(2, col.at(0).get("value"));
     }
@@ -492,7 +494,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         class ParseCollection extends Collection<Model> {
             @Override
             public List<Model> parse(OptionsList models, Options options) {
-                OptionsList filtered = new OptionsList();
+                OptionsList filtered = OL();
                 for (Options model : models) {
                     if(model.containsKey("model"))
                         filtered.add(model.<Options>get("model"));
@@ -503,8 +505,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         }
 
         Collection<Model> collection = new ParseCollection();
-        collection.add(new Options("id", 1));
-        collection.add(new OptionsList(new Options("model", new Options("id", 1, "name", "Alf"))), new Options("parse", true, "merge", true));
+        collection.add(O("id", 1));
+        collection.add(OL(O("model", O("id", 1, "name", "Alf"))), O("parse", true, "merge", true));
 
         assertEquals("Alf", collection.first().get("name"));
     }
@@ -518,9 +520,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        Model tom = new Model(new Options("name", "Tom"));
-        Model rob = new Model(new Options("name", "Rob"));
-        Model tim = new Model(new Options("name", "Tim"));
+        Model tom = new Model(O("name", "Tom"));
+        Model rob = new Model(O("name", "Rob"));
+        Model tim = new Model(O("name", "Tim"));
 
         col.add(tom);
         col.add(rob);
@@ -560,10 +562,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         NegativeCollection col = new NegativeCollection();
         col.registerNegativeComparator();
-        col.add(new OptionsList(
-                new Options("id", 1),
-                new Options("id", 2),
-                new Options("id", 3)
+        col.add(OL(
+                O("id", 1),
+                O("id", 2),
+                O("id", 3)
         ));
         assertEquals(Arrays.asList(new Object[]{3, 2, 1}), Arrays.asList(col.pluck("id")));
 
@@ -603,9 +605,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testShiftAndPop() {
         Collection<Model> col = new Collection<Model>(
-                new Options("a", "a"),
-                new Options("b", "b"),
-                new Options("c", "c")
+                O("a", "a"),
+                O("b", "b"),
+                O("c", "c")
         );
         assertEquals("a", col.shift().get("a"));
         assertEquals("c", col.pop().get("c"));
@@ -613,9 +615,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testSlice() {
         Collection<Model> col = new Collection<Model>(
-                new Options("a", "a"),
-                new Options("b", "b"),
-                new Options("c", "c")
+                O("a", "a"),
+                O("b", "b"),
+                O("c", "c")
         );
         List<Model> array = col.slice(1, 3);
 
@@ -635,18 +637,18 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        dj.set(new Options("name", "Kool"));
+        dj.set(O("name", "Kool"));
         assertEquals(1, counter[0]);
 
         emcees.reset();
         assertEquals(null, dj.getCollection());
 
-        dj.set(new Options("name", "Shadow"));
+        dj.set(O("name", "Shadow"));
         assertEquals(1, counter[0]);
     }
 
     public void testRemoveInMultipleCollections() {
-        Options modelData = new Options("id", 5, "title", "Othello");
+        Options modelData = O("id", 5, "title", "Othello");
         final boolean[] passed = {false};
 
         Model e = new Model(modelData);
@@ -678,7 +680,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testRemoveSameModelInMultipleCollection() {
         final int[] counter = {0};
-        final Model e = new Model(new Options("id", 5, "title", "Othello"));
+        final Model e = new Model(O("id", 5, "title", "Othello"));
         final Collection<Model> colE = new Collection<Model>(e);
         final Collection<Model> colF = new Collection<Model>(e);
 
@@ -752,7 +754,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         }
 
-        LocalModel e = new LocalModel(new Options("id", 5, "title", "Othello"));
+        LocalModel e = new LocalModel(O("id", 5, "title", "Othello"));
 
         Collection<LocalModel> colE = new Collection<LocalModel>(e);
         Collection<LocalModel> colF = new Collection<LocalModel>(e);
@@ -776,7 +778,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 throw new Error("Should not be called");
             }
         }
-        LocalModel e = new LocalModel(new Options("title", "Othello"));
+        LocalModel e = new LocalModel(O("title", "Othello"));
 
         Collection<LocalModel> colE = new Collection<LocalModel>(e);
         Collection<LocalModel> colF = new Collection<LocalModel>(e);
@@ -827,7 +829,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         final Object errorObject = new Object();
 
-        Options options = new Options(
+        Options options = O(
                 "context", errorObject,
                 "error", new Function() {
                 @Override
@@ -871,7 +873,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Collection<TestSyncCreateModel> collection = new Collection<TestSyncCreateModel>(TestSyncCreateModel.class);
         collection.setUrl("/test");
 
-        TestSyncCreateModel model = collection.create(new Options("label", "f"), new Options("wait", true));
+        TestSyncCreateModel model = collection.create(O("label", "f"), O("wait", true));
 
         assertEquals("create", model.getLastSyncMethod());
         assertEquals("f", model.get("label"));
@@ -891,12 +893,12 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        ValidatingModel validatingModel = col.create(new Options("foo", "bar"), new Options("validate", true));
+        ValidatingModel validatingModel = col.create(O("foo", "bar"), O("validate", true));
         assertEquals(false, validatingModel.isValid());
     }
 
     public void testCreateWillPassExtraOptionsToSuccessCallback() {
-        Collection<ExtendedOptionsSyncModel> collection = new Collection<ExtendedOptionsSyncModel>(ExtendedOptionsSyncModel.class, new Options("url", "/test"));
+        Collection<ExtendedOptionsSyncModel> collection = new Collection<ExtendedOptionsSyncModel>(ExtendedOptionsSyncModel.class, O("url", "/test"));
 
         Function success = new Function() {
             @Override
@@ -905,12 +907,12 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertTrue(options.getBoolean("specialSync"));
             }
         };
-        collection.create(new Options(), new Options("success", success));
+        collection.create(O(), O("success", success));
     }
 
     public void testAFailingCreateReturnsModelWithErrors() {
         Collection<ValidatingModel> col = new Collection<ValidatingModel>(ValidatingModel.class);
-        ValidatingModel model = col.create(new Options("foo", "bar"));
+        ValidatingModel model = col.create(O("foo", "bar"));
 
         assertFalse(model.isValid());
         assertEquals(1, col.length());
@@ -939,26 +941,26 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testWhereAndFindWhere() {
-        Model model = new Model(new Options("a", 1));
+        Model model = new Model(O("a", 1));
         Collection<Model> coll = new Collection<Model>();
         coll.add(model);
         coll.add(
-                new OptionsList(
-                        new Options("a", 1),
-                        new Options("a", 1, "b", 2),
-                        new Options("a", 2, "b", 2),
-                        new Options("a", 3)
+                OL(
+                        O("a", 1),
+                        O("a", 1, "b", 2),
+                        O("a", 2, "b", 2),
+                        O("a", 3)
                 )
         );
 
-        assertEquals(3, coll.where(new Options("a", 1)).size());
-        assertEquals(1, coll.where(new Options("a", 2)).size());
-        assertEquals(1, coll.where(new Options("a", 3)).size());
-        assertEquals(0, coll.where(new Options("b", 1)).size());
-        assertEquals(2, coll.where(new Options("b", 2)).size());
-        assertEquals(1, coll.where(new Options("a", 1, "b", 2)).size());
-        assertEquals(model, coll.findWhere(new Options("a", 1)));
-        assertEquals(null, coll.findWhere(new Options("a", 4)));
+        assertEquals(3, coll.where(O("a", 1)).size());
+        assertEquals(1, coll.where(O("a", 2)).size());
+        assertEquals(1, coll.where(O("a", 3)).size());
+        assertEquals(0, coll.where(O("b", 1)).size());
+        assertEquals(2, coll.where(O("b", 2)).size());
+        assertEquals(1, coll.where(O("a", 1, "b", 2)).size());
+        assertEquals(model, coll.findWhere(O("a", 1)));
+        assertEquals(null, coll.findWhere(O("a", 4)));
     }
 
     public void testUnderscoreMethods() {
@@ -1042,7 +1044,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(4, col.length());
         assertEquals(d, col.last());
 
-        col.reset(new OptionsList(col.map(new MapFunction<Options, Model>() {
+        col.reset(OL(col.map(new MapFunction<Options, Model>() {
             @Override
             public Options f(Model model, int index, List<Model> models) {
                 return model.getAttributes();
@@ -1058,7 +1060,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(0, col.length());
         assertEquals(4, resetCount[0]);
 
-        Model f = new Model(new Options("id", 20, "label", "f"));
+        Model f = new Model(O("id", 20, "label", "f"));
         col.reset(Arrays.asList(null, f));
         assertEquals(2, col.length());
         assertEquals(5, resetCount[0]);
@@ -1069,15 +1071,15 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testWithDifferentValues() {
-        Collection<Model> col = new Collection<Model>(new Options("id", 1));
-        col.reset(new Options("id", 1, "a", 1));
+        Collection<Model> col = new Collection<Model>(O("id", 1));
+        col.reset(O("id", 1, "a", 1));
 
         assertEquals(1, col.get(1).get("a"));
     }
 
     public void testSameReferencesInReset() {
-        Model model = new Model(new Options("id", 1));
-        Collection<Model> collection = new Collection<Model>(new Options("id", 1));
+        Model model = new Model(O("id", 1));
+        Collection<Model> collection = new Collection<Model>(O("id", 1));
 
         collection.reset(model);
 
@@ -1086,10 +1088,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testResetPassesCallerOptions() {
         Collection<ParameterModel> col = new Collection<ParameterModel>(ParameterModel.class);
-        col.reset(new OptionsList(
-                new Options("astring", "green", "anumber", 1),
-                new Options("astring", "blue", "anumber", 2)
-        ), new Options("model_parameter", "model parameter"));
+        col.reset(OL(
+                O("astring", "green", "anumber", 1),
+                O("astring", "blue", "anumber", 2)
+        ), O("model_parameter", "model parameter"));
 
         assertEquals(2, col.length());
 
@@ -1099,10 +1101,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testResetDoesNotAlterOptionsByReference() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 1)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 1)
         ));
-        final Options origOpts = new Options();
+        final Options origOpts = O();
 
         col.on("reset", new Function() {
             @Override
@@ -1131,8 +1133,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testAddDoesNotAlterArguments() {
-        Options attrs = new Options();
-        OptionsList models = new OptionsList(attrs);
+        Options attrs = O();
+        OptionsList models = OL(attrs);
 
         new Collection().add(models);
         assertEquals(1, models.size());
@@ -1144,17 +1146,17 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         Collection<TestAccessModel> collection = new Collection<TestAccessModel>(TestAccessModel.class);
         collection.setUrl("/test");
 
-        collection.create(new Options("prop", "value"));
+        collection.create(O("prop", "value"));
     }
 
     public void testRemoveItsOwnReferenceToTheModelsArray() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 1),
-                new Options("id", 2),
-                new Options("id", 3),
-                new Options("id", 4),
-                new Options("id", 5),
-                new Options("id", 6)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 1),
+                O("id", 2),
+                O("id", 3),
+                O("id", 4),
+                O("id", 5),
+                O("id", 6)
         ));
 
         assertEquals(6, col.length());
@@ -1174,14 +1176,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        collection.add(new OptionsList(
-                new Options("id", 1),
-                new Options("id", 2),
-                new Options("id", 3),
-                new Options("id", 4),
-                new Options("id", 5),
-                new Options("id", 6)
-        ), new Options("validate", true));
+        collection.add(OL(
+                O("id", 1),
+                O("id", 2),
+                O("id", 3),
+                O("id", 4),
+                O("id", 5),
+                O("id", 6)
+        ), O("validate", true));
 
         assertTrue(invalidCalled[0]);
         assertEquals(Arrays.asList(1, 2, 4, 5, 6), Arrays.asList(collection.pluck("id")));
@@ -1198,9 +1200,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        ValidatingInvalidModel model = new ValidatingInvalidModel(new Options("id", 1, "valid", true));
-        collection.add(model, new Options("validate", true));
-        collection.add(new Options("id", 2), new Options("validate", true));
+        ValidatingInvalidModel model = new ValidatingInvalidModel(O("id", 1, "valid", true));
+        collection.add(model, O("validate", true));
+        collection.add(O("id", 2), O("validate", true));
 
         model.trigger("test");
         assertTrue(testWasTriggered[0]);
@@ -1219,31 +1221,31 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         col.add(Arrays.asList(model, model));
         assertEquals(1, col.length());
 
-        col.add(new OptionsList(
-                new Options("id", 1),
-                new Options("id", 1)
+        col.add(OL(
+                O("id", 1),
+                O("id", 1)
         ));
         assertEquals(2, col.length());
         assertEquals(1, col.last().getIdAsInt());
     }
 
     public void testPassingOptionsModelSetsCollectionModel() {
-        Collection<TestModel> col = new Collection<TestModel>(TestModel.class, new OptionsList(
-                new Options("id", 1)
+        Collection<TestModel> col = new Collection<TestModel>(TestModel.class, OL(
+                O("id", 1)
         ));
         assertFalse(col.registerModelClass(TestModel.class));
         assertTrue(col.at(0) != null);
     }
 
     public void testNullAndUndefinedAreInvalidIds() {
-        Model model = new Model(new Options("id", 1));
+        Model model = new Model(O("id", 1));
         Collection<Model> collection = new Collection<Model>(model);
 
-        model.set(new Options("id", null));
+        model.set(O("id", null));
         assertNull(collection.get("null"));
 
-        model.set(new Options("id", 1));
-        model.set(new Options("id", null));
+        model.set(O("id", 1));
+        model.set(O("id", null));
 
         assertNull(collection.get("null"));
     }
@@ -1259,10 +1261,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         }
 
-        SimpleSyncModel m = new SimpleSyncModel(new Options("x", 1));
+        SimpleSyncModel m = new SimpleSyncModel(O("x", 1));
         LocalCollection col = new LocalCollection();
 
-        Options opts = new Options(
+        Options opts = O(
                 "opts", true,
                 "success", new Function() {
             @Override
@@ -1333,7 +1335,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertEquals(collection.get(1), obj);
             }
         });
-        collection.create(new Options("id", 1));
+        collection.create(O("id", 1));
         collection.off();
     }
 
@@ -1350,14 +1352,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        collection.create(model, new Options("wait", true));
+        collection.create(model, O("wait", true));
         assertEquals(1, addCount[0]);
     }
 
     public void testAddSortsCollectionAfterMerge() {
-        Collection<Model> collection = new Collection<Model>(new OptionsList(
-                new Options("id", 1, "x", 1),
-                new Options("id", 2, "x", 2)
+        Collection<Model> collection = new Collection<Model>(OL(
+                O("id", 1, "x", 1),
+                O("id", 2, "x", 2)
         ));
 
         collection.registerComparator(new Comparator<Model>() {
@@ -1366,15 +1368,15 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 return o1.get("x");
             }
         });
-        collection.add(new Options("id", 1, "x", 3), new Options("merge", true));
+        collection.add(O("id", 1, "x", 3), O("merge", true));
 
         assertEquals(Arrays.asList(collection.pluck("id")), Arrays.asList(new Object[]{2, 1}));
     }
 
     public void testGroupByCanBeUsedWithAStringArgument() {
-        Collection<Model> collection = new Collection<Model>(new OptionsList(
-                new Options("x", 1),
-                new Options("x", 2)
+        Collection<Model> collection = new Collection<Model>(OL(
+                O("x", 1),
+                O("x", 2)
         ));
         Map<Integer, List<Model>> grouped = collection.groupBy("x");
 
@@ -1384,10 +1386,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testSortByCanBeUsedWithAStringArgument() {
-        Collection<Model> collection = new Collection<Model>(new OptionsList(
-                new Options("x", 3),
-                new Options("x", 1),
-                new Options("x", 2)
+        Collection<Model> collection = new Collection<Model>(OL(
+                O("x", 3),
+                O("x", 1),
+                O("x", 2)
         ));
 
         List<Model> sortBy = collection.sortBy("x");
@@ -1398,8 +1400,8 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testRemovalDuringIteration() {
-        final Collection<Model> collection = new Collection<Model>(new OptionsList(
-                new Options(), new Options()
+        final Collection<Model> collection = new Collection<Model>(OL(
+                O(), O()
         ));
         collection.on("add", new Function() {
             @Override
@@ -1408,7 +1410,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
         assertEquals(2, collection.length());
-        collection.add(new Options(), new Options("at", 0));
+        collection.add(O(), O("at", 0));
 
         assertEquals(2, collection.length());
     }
@@ -1434,17 +1436,17 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        collection.add(new OptionsList(new Options("id", 1, "x", 1), new Options("id", 2, "x", 2)));
+        collection.add(OL(O("id", 1, "x", 1), O("id", 2, "x", 2)));
         assertEquals(Arrays.asList(1, 2), added);
     }
 
     public void testSortShouldntAlwaysFireOnAdd() {
         final int[] sortCount = {0};
 
-        Collection<Model> c = new Collection<Model>(new OptionsList(
-                new Options("id", 1),
-                new Options("id", 2),
-                new Options("id", 3)
+        Collection<Model> c = new Collection<Model>(OL(
+                O("id", 1),
+                O("id", 2),
+                O("id", 3)
         ));
         c.registerComparator(new Comparator<Model>() {
             @Override
@@ -1460,10 +1462,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         });
 
         c.sort(); // triggers sort
-        c.add(new OptionsList()); // doesn't triggers sort (empty list)
-        c.add(new Options("id", 1)); // doesn't triggers sort (object already exists)
-        c.add(new OptionsList(new Options("id", 2), new Options("id", 3))); // doesn't triggers sort (objects already exists)
-        c.add(new Options("id", 4)); // triggers sort
+        c.add(OL()); // doesn't triggers sort (empty list)
+        c.add(O("id", 1)); // doesn't triggers sort (object already exists)
+        c.add(OL(O("id", 2), O("id", 3))); // doesn't triggers sort (objects already exists)
+        c.add(O("id", 4)); // triggers sort
 
         assertEquals(2, sortCount[0]);
     }
@@ -1513,7 +1515,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testSet() {
         final Model m1 = new Model();
-        final Model m2 = new Model(new Options("id", 2));
+        final Model m2 = new Model(O("id", 2));
         final Model m3 = new Model();
 
         Collection<Model> c = new Collection<Model>(m1, m2);
@@ -1542,24 +1544,24 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         });
 
         // remove: false doesn't remove any models
-        c.set(Collections.<Model>emptyList(), new Options("remove", false));
+        c.set(Collections.<Model>emptyList(), O("remove", false));
         assertEquals(2, c.length());
 
         // add: false doesn't add any models
-        c.set(Arrays.asList(m1, m2, m3), new Options("add", false));
+        c.set(Arrays.asList(m1, m2, m3), O("add", false));
         assertEquals(2, c.length());
 
         // merge: false doesn't change any models
-        c.set(Arrays.asList( m1, new Model(new Options("id", 2, "a", 1)) ), new Options("merge", false));
+        c.set(Arrays.asList( m1, new Model(O("id", 2, "a", 1)) ), O("merge", false));
         assertFalse(m2.has("a"));
 
         // add: false, remove: false only merges existing models
-        c.set(Arrays.asList( m1, new Model(new Options("id", 2, "a", 0)), m3, new Model(new Options("id", 4)) ), new Options("add", false, "remove", false));
+        c.set(Arrays.asList( m1, new Model(O("id", 2, "a", 0)), m3, new Model(O("id", 4)) ), O("add", false, "remove", false));
         assertEquals(2, c.length());
         assertEquals(0, m2.get("a"));
 
         // default options add/remove/merge as appropriate
-        c.set(Arrays.asList(new Model(new Options("id", 2, "a", 1)), m3));
+        c.set(Arrays.asList(new Model(O("id", 2, "a", 1)), m3));
         assertEquals(2, c.length());
         assertEquals(1, m2.get("a"));
 
@@ -1576,7 +1578,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
         // Test null models on set doesn't clear collection
         c.off();
-        c.set(new Options[]{new Options("id", 1) });
+        c.set(O("id", 1));
         c.set();
         assertEquals(1, c.length());
     }
@@ -1590,50 +1592,50 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
         assertEquals(2, c.length());
         c.set(m1);
         assertEquals(1, c.length());
-        c.set(Arrays.asList(m1, m1, m1, m2, m2), new Options("remove", false));
+        c.set(Arrays.asList(m1, m1, m1, m2, m2), O("remove", false));
         assertEquals(2, c.length());
     }
 
     public void testSetWithOnlyIdAttribute() {
-        Options m1 = new Options("_id", 1);
-        Options m2 = new Options("_id", 2);
+        Options m1 = O("_id", 1);
+        Options m2 = O("_id", 2);
 
         Collection<MongoModel> c = new Collection<MongoModel>();
         c.set(m1, m2);
         assertEquals(2, c.length());
         c.set(m1);
         assertEquals(1, c.length());
-        c.set(new OptionsList(m1, m1, m1, m2, m2), new Options("remove", false));
+        c.set(OL(m1, m1, m1, m2, m2), O("remove", false));
     }
 
     public void testSetPlusMergeWithDefaultValuesDefined() {
-        DefaultKeyModel m = new DefaultKeyModel(new Options("id", 1));
+        DefaultKeyModel m = new DefaultKeyModel(O("id", 1));
         Collection<DefaultKeyModel> col = new Collection<DefaultKeyModel>(DefaultKeyModel.class, m);
         assertEquals("value", col.first().get("key"));
 
-        col.set(new Options("id", 1, "key", "other"));
+        col.set(O("id", 1, "key", "other"));
         assertEquals("other", col.first().get("key"));
 
-        col.set(new Options("id", 1, "other", "value"));
+        col.set(O("id", 1, "other", "value"));
         assertEquals("other", col.first().get("key"));
         assertEquals(1, col.length());
     }
 
     public void testMergeWithoutMutation() {
-        OptionsList data = new OptionsList(new Options("id", 1, "child", new Options("id", 2)));
+        OptionsList data = OL(O("id", 1, "child", O("id", 2)));
         Collection<CreateChildModel> collection = new Collection<CreateChildModel>(
                 CreateChildModel.class, data);
 
         assertEquals(1, collection.first().getIdAsInt());
         collection.set(data);
         assertEquals(1, collection.first().getIdAsInt());
-        collection.set(new OptionsList(new Options("id", 2, "child", new Options("id", 2))).concat(data));
+        collection.set(OL(O("id", 2, "child", O("id", 2))).concat(data));
 
         assertEquals(Arrays.asList(collection.pluck("id")), Arrays.asList(2, 1));
     }
 
     public void testSetAndModelLevelParse() {
-        Model model = new Model(new Options("id", 1));
+        Model model = new Model(O("id", 1));
 
         Collection<Model> collection = new Collection<Model>(model) {
             @Override
@@ -1648,7 +1650,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                             JSONObject jsonModel = object.get("model").isObject();
                             if(jsonModel != null) {
                                 Model model = GWT.create(Model.class);
-                                model.set(new Options(jsonModel), options);
+                                model.set(O(jsonModel), options);
 
                                 result.add(model);
                             }
@@ -1687,27 +1689,27 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testSetMatchesInputOrderInTheAbsenceOfAComparator() {
-        Model one = new Model(new Options("id", 1));
-        Model two = new Model(new Options("id", 2));
-        Model three = new Model(new Options("id", 3));
+        Model one = new Model(O("id", 1));
+        Model two = new Model(O("id", 2));
+        Model three = new Model(O("id", 3));
 
         Collection<Model> collection = new Collection<Model>(one, two, three);
-        collection.set(new OptionsList(new Options("id", 3), new Options("id", 2), new Options("id", 1)));
+        collection.set(OL(O("id", 3), O("id", 2), O("id", 1)));
         assertEquals(collection.toList(), Arrays.asList(three, two, one));
 
-        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2)));
+        collection.set(OL(O("id", 1), O("id", 2)));
         assertEquals(collection.toList(), Arrays.asList(one, two));
 
         collection.set(two, three, one);
         assertEquals(collection.toList(), Arrays.asList(two, three, one));
 
-        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2)), new Options("remove", false));
+        collection.set(OL(O("id", 1), O("id", 2)), O("remove", false));
         assertEquals(collection.toList(), Arrays.asList(two, three, one));
 
-        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3)), new Options("merge", false));
+        collection.set(OL(O("id", 1), O("id", 2), O("id", 3)), O("merge", false));
         assertEquals(collection.toList(), Arrays.asList(one, two, three));
 
-        collection.set(Arrays.asList(three, two, one, new Model(new Options("id", 4))), new Options("add", false));
+        collection.set(Arrays.asList(three, two, one, new Model(O("id", 4))), O("add", false));
         assertEquals(collection.toList(), Arrays.asList(one, two, three));
     }
 
@@ -1726,13 +1728,13 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 return Integer.compare(o1.getIdAsInt(), o2.getIdAsInt());
             }
         });
-        collection.push(new Options("id", 1));
+        collection.push(O("id", 1));
     }
 
     public void testPushDuplicateModelsReturnTheCorrectOne() {
         Collection<Model> col = new Collection<Model>();
-        Model model1 = col.push(new Options("id", 101));
-        Model model2 = col.push(new Options("id", 101));
+        Model model1 = col.push(O("id", 101));
+        Model model2 = col.push(O("id", 101));
 
         assertEquals(model2.getCid(), model1.getCid());
     }
@@ -1740,9 +1742,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     public void testSetWithNonNormalId() {
         Collection<MongoModel> collection = new Collection<MongoModel>(
                 MongoModel.class,
-                new OptionsList(new Options("_id", 1))
+                OL(O("_id", 1))
         );
-        collection.set(new OptionsList(new Options("_id", 1, "a", 1)), new Options("add", false));
+        collection.set(OL(O("_id", 1, "a", 1)), O("add", false));
         assertEquals(1, collection.first().get("a"));
     }
 
@@ -1760,7 +1762,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 return Integer.compare(o1.getIdAsInt(), o2.getIdAsInt());
             }
         });
-        collection.add(new OptionsList(new Options("id", 1)), new Options("sort", false));
+        collection.add(OL(O("id", 1)), O("sort", false));
     }
 
     public void testParseDataInTheRightOrderInSet() {
@@ -1804,9 +1806,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertTrue(true);
             }
         });
-        collection.add(new Options("id", 4));
-        collection.add(new Options("id", 1, "a", 1), new Options("merge", true)); // do sort, comparator change
-        collection.add(new Options("id", 1, "b", 1), new Options("merge", true)); // do sort, comparator change
+        collection.add(O("id", 4));
+        collection.add(O("id", 1, "a", 1), O("merge", true)); // do sort, comparator change
+        collection.add(O("id", 1, "b", 1), O("merge", true)); // do sort, comparator change
 
         collection.on("sort", new Function() {
             @Override
@@ -1814,9 +1816,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertTrue(false); // function should not be called
             }
         });
-        collection.add(new Options("id", 1, "a", 1), new Options("merge", true)); // don't sort, no comparator change
+        collection.add(O("id", 1, "a", 1), O("merge", true)); // don't sort, no comparator change
         collection.add(collection.toList()); // don't sort, nothing new
-        collection.add(collection.toList(), new Options("merge", true));  // don't sort
+        collection.add(collection.toList(), O("merge", true));  // don't sort
     }
 
     public void testAttachOptionsToCollection() {
@@ -1827,13 +1829,21 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         };
 
-        Collection<TestModel> collection = new Collection<TestModel>(new OptionsList(new Options("id", 1), new Options("id", 2)), new Options(
+        Collection<TestModel> collection = new Collection<TestModel>(OL(O("id", 1), O("id", 2)), O(
                 "model", TestModel.class,
                 "comparator", comparator
         ));
 
         assertEquals(TestModel.class, collection.first().getClass());
         assertEquals(2, collection.first().getIdAsInt());
+
+        // also testing attribute comparator
+        collection = new Collection<TestModel>(OL(O("id", 2), O("id", 1)), O(
+                "model", TestModel.class,
+                "comparator", "id"
+        ));
+
+        assertEquals(1, collection.first().getIdAsInt());
     }
 
     public void testAddOverridesSetFlags() {
@@ -1842,10 +1852,10 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             @Override
             public void f() {
                 Options options = getArgument(3);
-                collection.add(new Options("id", 2), options);
+                collection.add(O("id", 2), options);
             }
         });
-        collection.set(new Options("id", 1));
+        collection.set(O("id", 1));
         assertEquals(2, collection.length());
     }
 
@@ -1862,7 +1872,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         };
         collection.setUrl("test");
-        collection.create(new Options(), new Options(
+        collection.create(O(), O(
                 "success", new Function() {
             @Override
             public void f() {
@@ -1951,7 +1961,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     public void testRemoveReferenceUnbindsAllCollectionEventsAndTies() {
         final int[] remove = {0};
 
-        Model model = new Model(new Options("id", 1));
+        Model model = new Model(O("id", 1));
         Collection<Model> collection = new Collection<Model>(model) {
             @Override
             protected void removeReference(Model model) {
@@ -1970,18 +1980,18 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     public void testDoNotAllowDuplicateModelsToBeAddedOrSet() {
         Collection c = new Collection();
 
-        c.add(new OptionsList(new Options("id", 1), new Options("id", 1)));
+        c.add(OL(O("id", 1), O("id", 1)));
         assertEquals(1, c.length());
         assertEquals(1, c.toList().size());
 
-        c.set(new OptionsList(new Options("id", 1), new Options("id", 1)));
+        c.set(OL(O("id", 1), O("id", 1)));
         assertEquals(1, c.length());
         assertEquals(1, c.toList().size());
     }
 
     public void testSetWithAddFalseShouldNotGrow() {
         Collection collection = new Collection();
-        collection.set(new OptionsList(new Options("id", 1)), new Options("add", false));
+        collection.set(OL(O("id", 1)), O("add", false));
 
         assertEquals(0, collection.size());
         assertEquals(0, collection.toList().size());
@@ -1989,17 +1999,17 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
 
     public void testCreateWithWaitModelInstance() {
         Collection<TestSyncCollectionModel> collection = new Collection<TestSyncCollectionModel>();
-        TestSyncCollectionModel model = new TestSyncCollectionModel(new Options("id", 1));
+        TestSyncCollectionModel model = new TestSyncCollectionModel(O("id", 1));
         model.setCollectionToTest(collection);
 
-        collection.create(model, new Options("wait", true));
+        collection.create(model, O("wait", true));
     }
 
     public void testPolymorphicModelsWorkWithSimpleConstructors() {
 
-        Collection<Model> collection = new Collection<Model>(new OptionsList(
-                new Options("id", 1, "type", "a"), new Options("id", 2, "type", "b")
-        ), new Options("model", new ModelClassFunction<Model>() {
+        Collection<Model> collection = new Collection<Model>(OL(
+                O("id", 1, "type", "a"), O("id", 2, "type", "b")
+        ), O("model", new ModelClassFunction<Model>() {
             @Override
             public Class<? extends Model> f(Options attributes) {
                 String type = attributes.get("type");
@@ -2015,9 +2025,9 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
     }
 
     public void testAddingAtIndexFiresWithCorrectAt() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("at", 0),
-                new Options("at", 4)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("at", 0),
+                O("at", 4)
         ));
         col.on("add", new Function() {
             @Override
@@ -2028,11 +2038,11 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertEquals(options.getInt("index").intValue(), model.getInt("at"));
             }
         });
-        col.add(new OptionsList(new Options("at", 1), new Options("at", 2), new Options("at", 3)), new Options("at", 1));
+        col.add(OL(O("at", 1), O("at", 2), O("at", 3)), O("at", 1));
     }
 
     public void testIndexIsNotSentWhenAtIsNotSpecified() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(new Options("at", 0)));
+        Collection<Model> col = new Collection<Model>(OL(O("at", 0)));
         col.on("add", new Function() {
             @Override
             public void f() {
@@ -2040,13 +2050,13 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 assertNull(options.get("index"));
             }
         });
-        col.add(new OptionsList(new Options("at", 1), new Options("at", 2)));
+        col.add(OL(O("at", 1), O("at", 2)));
     }
 
     public void testOrderChangingShouldTriggerASort() {
-        Model one = new Model(new Options("id", 1));
-        Model two = new Model(new Options("id", 2));
-        Model three = new Model(new Options("id", 3));
+        Model one = new Model(O("id", 1));
+        Model two = new Model(O("id", 2));
+        Model three = new Model(O("id", 3));
 
         final int[] sortCallCount = {0};
 
@@ -2057,14 +2067,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 sortCallCount[0]++;
             }
         });
-        collection.set(new OptionsList(new Options("id", 3), new Options("id", 2), new Options("id", 1)));
+        collection.set(OL(O("id", 3), O("id", 2), O("id", 1)));
         assertEquals(1, sortCallCount[0]);
     }
 
     public void testAddingAModelShouldTriggerASort() {
-        Model one = new Model(new Options("id", 1));
-        Model two = new Model(new Options("id", 2));
-        Model three = new Model(new Options("id", 3));
+        Model one = new Model(O("id", 1));
+        Model two = new Model(O("id", 2));
+        Model three = new Model(O("id", 3));
 
         final int[] sortCallCount = {0};
 
@@ -2075,14 +2085,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 sortCallCount[0]++;
             }
         });
-        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3), new Options("id", 0)));
+        collection.set(OL(O("id", 1), O("id", 2), O("id", 3), O("id", 0)));
         assertEquals(1, sortCallCount[0]);
     }
 
     public void testOrderNotChangingShouldNotTriggerASort() {
-        Model one = new Model(new Options("id", 1));
-        Model two = new Model(new Options("id", 2));
-        Model three = new Model(new Options("id", 3));
+        Model one = new Model(O("id", 1));
+        Model two = new Model(O("id", 2));
+        Model three = new Model(O("id", 3));
 
         final int[] sortCallCount = {0};
 
@@ -2093,22 +2103,22 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
                 sortCallCount[0]++;
             }
         });
-        collection.set(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3)));
+        collection.set(OL(O("id", 1), O("id", 2), O("id", 3)));
         assertEquals(0, sortCallCount[0]);
     }
 
     public void testAddSupportsNegativeIndexes() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(new Options("id", 1)));
-        col.add(new OptionsList(new Options("id", 2), new Options("id", 3)), new Options("at", -1));
-        col.add(new OptionsList(new Options("id", 2.5)), new Options("at", -2));
-        col.add(new OptionsList(new Options("id", 0.5)), new Options("at", -6));
+        Collection<Model> col = new Collection<Model>(OL(O("id", 1)));
+        col.add(OL(O("id", 2), O("id", 3)), O("at", -1));
+        col.add(OL(O("id", 2.5)), O("at", -2));
+        col.add(OL(O("id", 0.5)), O("at", -6));
 
         assertEquals("0.5,1,2,2.5,3", col.jsPluck("id").join(","));
     }
 
     public void testSetAcceptsOptionsAtAsAString() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(new Options("id", 1), new Options("id", 2)));
-        col.add(new OptionsList(new Options("id", 3)), new Options("at", "1"));
+        Collection<Model> col = new Collection<Model>(OL(O("id", 1), O("id", 2)));
+        col.add(OL(O("id", 3)), O("at", "1"));
 
         assertEquals(Arrays.asList(1, 3, 2), Arrays.asList(col.pluck("id")));
     }
@@ -2124,14 +2134,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        col.add(new OptionsList(new Options("id", 1), new Options("id", 2), new Options("id", 3)));
+        col.add(OL(O("id", 1), O("id", 2), O("id", 3)));
 
         assertEquals(1, updateCallCount[0]);
     }
 
     public void testRemovingModelsTriggersUpdateEventOnce() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 1), new Options("id", 2), new Options("id", 3)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 1), O("id", 2), O("id", 3)
         ));
 
         final int[] updateCallCount = {0};
@@ -2142,14 +2152,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        col.remove(new OptionsList(new Options("id", 1), new Options("id", 2)));
+        col.remove(OL(O("id", 1), O("id", 2)));
 
         assertEquals(1, updateCallCount[0]);
     }
 
     public void testRemoveDoesNotTriggerSetWhenNothingRemoved() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 1), new Options("id", 2)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 1), O("id", 2)
         ));
 
         final int[] updateCallCount = {0};
@@ -2160,14 +2170,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        col.remove(new OptionsList(new Options("id", 3)));
+        col.remove(OL(O("id", 3)));
 
         assertEquals(0, updateCallCount[0]);
     }
 
     public void testSetTriggersSetEventOnce() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 1), new Options("id", 2)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 1), O("id", 2)
         ));
 
         final int[] updateCallCount = {0};
@@ -2178,14 +2188,14 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        col.set(new OptionsList(new Options("id", 1), new Options("id", 3)));
+        col.set(OL(O("id", 1), O("id", 3)));
 
         assertEquals(1, updateCallCount[0]);
     }
 
     public void testSetDoesNotTriggerUpdateEventWhenNothingAddedNorRemoved() {
-        Collection<Model> col = new Collection<Model>(new OptionsList(
-                new Options("id", 1), new Options("id", 2)
+        Collection<Model> col = new Collection<Model>(OL(
+                O("id", 1), O("id", 2)
         ));
 
         final int[] updateCallCount = {0};
@@ -2196,7 +2206,7 @@ public class GBackboneCollectionTestGwt extends GWTTestCase {
             }
         });
 
-        col.set(new OptionsList(new Options("id", 1), new Options("id", 2)));
+        col.set(OL(O("id", 1), O("id", 2)));
 
         assertEquals(0, updateCallCount[0]);
     }

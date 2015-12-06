@@ -24,6 +24,16 @@ import java.util.LinkedHashMap;
 
 public class Options extends LinkedHashMap<String, Object> implements JsonSerializable {
 
+    public static Options O() {
+        return new Options();
+    }
+    public static Options O(JSONValue jsonObject) {
+        return new Options(jsonObject);
+    }
+    public static Options O(Object ...keyValue) {
+        return new Options(keyValue);
+    }
+
     public Options() {
         super();
     }

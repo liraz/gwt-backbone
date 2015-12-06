@@ -7,7 +7,9 @@ import com.google.gwt.query.client.Promise;
 import com.google.gwt.user.client.Timer;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
+import static org.lirazs.gbackbone.client.core.data.Options.O;
 import org.lirazs.gbackbone.client.core.data.OptionsList;
+import static org.lirazs.gbackbone.client.core.data.OptionsList.OL;
 import org.lirazs.gbackbone.client.core.function.MatchesFunction;
 import org.lirazs.gbackbone.client.core.function.UrlRootFunction;
 import org.lirazs.gbackbone.client.core.model.Model;
@@ -32,7 +34,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     }
 
     public void gwtSetUp() {
-        doc = new Model(new Options(
+        doc = new Model(O(
                 "id"     , "1-the-tempest",
                 "title"  , "The Tempest",
                 "author" , "Bill Shakespeare",
@@ -48,13 +50,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     }
 
     public void testInitialize() {
-        ModelOne model = new ModelOne(new Options(), new Options("collection", collection));
+        ModelOne model = new ModelOne(O(), O("collection", collection));
         assertEquals(1, model.getOne());
         assertEquals(collection, model.getCollection());
     }
 
     public void testInitializeWithAttributesAndOptions() {
-        ModelOneFromOptions model = new ModelOneFromOptions(new Options(), new Options("one", 1));
+        ModelOneFromOptions model = new ModelOneFromOptions(O(), O("one", 1));
         assertEquals(1, model.getOne());
     }
 
@@ -74,13 +76,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             protected Options defaults() {
-                return new Options(
+                return O(
                         "first_name", "Unknown",
                         "last_name", "Unknown"
                 );
             }
         }
-        DefaultsModel model = new DefaultsModel(new Options("first_name", "John"));
+        DefaultsModel model = new DefaultsModel(O("first_name", "John"));
         assertEquals("John", model.get("first_name"));
         assertEquals("Unknown", model.get("last_name"));
     }
@@ -130,7 +132,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     }
 
     public void testUrlWhenUsingUrlRootAsAFunctionToDetermineUrlRootAtRuntime() {
-        Model model = new Model(new Options("parent_id", 1));
+        Model model = new Model(O("parent_id", 1));
         model.setUrlRoot(new UrlRootFunction() {
             @Override
             public String f(Model model) {
@@ -138,28 +140,28 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         });
         assertEquals("/nested/1/collection", model.getUrl());
-        model.set(new Options("id", 2));
+        model.set(O("id", 2));
         assertEquals("/nested/1/collection/2", model.getUrl());
     }
 
     public void testUnderscoreMethods() {
-        Model model = new Model(new Options("foo", "a", "bar", "b", "baz", "c"));
+        Model model = new Model(O("foo", "a", "bar", "b", "baz", "c"));
         Model model2 = model.clone();
 
         assertEquals(Arrays.asList("foo", "bar", "baz"), Arrays.asList(model.keys()));
         assertEquals(Arrays.asList("a", "b", "c"), Arrays.asList(model.values()));
-        assertEquals(new Options("a", "foo", "b", "bar", "c", "baz"), model.invert());
-        assertEquals(new Options("foo", "a", "baz", "c"), model.pick("foo", "baz"));
-        assertEquals(new Options("baz", "c"), model.omit("foo", "bar"));
+        assertEquals(O("a", "foo", "b", "bar", "c", "baz"), model.invert());
+        assertEquals(O("foo", "a", "baz", "c"), model.pick("foo", "baz"));
+        assertEquals(O("baz", "c"), model.omit("foo", "bar"));
     }
 
     public void testChain() {
-        Model model = new Model(new Options("a", 0, "b", 1, "c", 2));
+        Model model = new Model(O("a", 0, "b", 1, "c", 2));
         assertEquals(Arrays.asList(1, 2), model.chain().pick("a", "b", "c").values().compact().getListValue());
     }
 
     public void testClone() {
-        Model a = new Model(new Options("foo", 1, "bar", 2, "baz", 3));
+        Model a = new Model(O("foo", 1, "bar", 2, "baz", 3));
         Model b = a.clone();
 
         assertEquals(1, a.get("foo"));
@@ -169,31 +171,31 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         assertEquals(a.get("bar"), b.get("bar")); // Bar should be the same on the clone.
         assertEquals(a.get("baz"), b.get("baz")); // Baz should be the same on the clone.
 
-        a.set(new Options("foo", 100));
+        a.set(O("foo", 100));
         assertEquals(100, a.get("foo"));
         assertEquals(1, b.get("foo")); // Changing a parent attribute does not change the clone.
 
-        Model foo = new Model(new Options("p", 1));
-        Model bar = new Model(new Options("p", 2));
+        Model foo = new Model(O("p", 1));
+        Model bar = new Model(O("p", 2));
 
-        bar.set(foo.clone().getAttributes(), new Options("unset", true));
+        bar.set(foo.clone().getAttributes(), O("unset", true));
         assertEquals(1, foo.get("p"));
         assertEquals(null, bar.get("p"));
     }
 
     public void testIsNew() {
-        Model a = new Model(new Options("foo", 1, "bar", 2, "baz", 3));
+        Model a = new Model(O("foo", 1, "bar", 2, "baz", 3));
         assertTrue("It should be new", a.isNew());
 
-        a = new Model(new Options("foo", 1, "bar", 2, "baz", 3, "id", -5));
+        a = new Model(O("foo", 1, "bar", 2, "baz", 3, "id", -5));
         assertFalse("any defined ID is legal, negative or positive", a.isNew());
 
-        a = new Model(new Options("foo", 1, "bar", 2, "baz", 3, "id", 0));
+        a = new Model(O("foo", 1, "bar", 2, "baz", 3, "id", 0));
         assertFalse("any defined ID is legal, including zero", a.isNew());
 
         assertTrue("is true when there is no id", new Model().isNew());
-        assertFalse("is false for a positive integer", new Model(new Options("id", 2)).isNew());
-        assertFalse("is false for a negative integer", new Model(new Options("id", -5)).isNew());
+        assertFalse("is false for a positive integer", new Model(O("id", 2)).isNew());
+        assertFalse("is false for a negative integer", new Model(O("id", -5)).isNew());
     }
 
     public void testGet() {
@@ -204,13 +206,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testEscape() {
         assertEquals("The Tempest", doc.escape("title"));
 
-        doc.set(new Options("audience", "Bill & Bob"));
+        doc.set(O("audience", "Bill & Bob"));
         assertEquals("Bill &amp; Bob", doc.escape("audience"));
 
-        doc.set(new Options("audience", "Tim > Joan"));
+        doc.set(O("audience", "Tim > Joan"));
         assertEquals("Tim &gt; Joan", doc.escape("audience"));
 
-        doc.set(new Options("audience", 10101));
+        doc.set(O("audience", 10101));
         assertEquals("10101", doc.escape("audience"));
 
         doc.unset("audience");
@@ -221,7 +223,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         Model model = new Model();
         assertFalse(model.has("name"));
 
-        model.set(new Options(
+        model.set(O(
                 "0", 0,
                 "1", 1,
                 "true", true,
@@ -247,17 +249,17 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testMatches() {
         Model model = new Model();
 
-        assertFalse(model.matches(new Options("name", "Jonas", "cool", true)));
+        assertFalse(model.matches(O("name", "Jonas", "cool", true)));
 
-        model.set(new Options("name", "Jonas", "cool", true));
+        model.set(O("name", "Jonas", "cool", true));
 
-        assertTrue(model.matches(new Options("name", "Jonas")));
-        assertTrue(model.matches(new Options("name", "Jonas", "cool", true)));
-        assertFalse(model.matches(new Options("name", "Jonas", "cool", false)));
+        assertTrue(model.matches(O("name", "Jonas")));
+        assertTrue(model.matches(O("name", "Jonas", "cool", true)));
+        assertFalse(model.matches(O("name", "Jonas", "cool", false)));
     }
 
     public void testMatchesWithPredicate() {
-        Model model = new Model(new Options("a", 0));
+        Model model = new Model(O("a", 0));
 
         assertFalse(model.matches(new MatchesFunction() {
             @Override
@@ -266,7 +268,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }));
 
-        model.set(new Options("a", 3, "b", true));
+        model.set(O("a", 3, "b", true));
 
         assertTrue(model.matches(new MatchesFunction() {
             @Override
@@ -290,7 +292,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        ValidateModel a = new ValidateModel(new Options("id", "id", "foo", 1, "bar", 2, "baz", 3));
+        ValidateModel a = new ValidateModel(O("id", "id", "foo", 1, "bar", 2, "baz", 3));
         final int[] changeCount = {0};
 
         a.on("change:foo", new Function() {
@@ -299,16 +301,16 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 changeCount[0] += 1;
             }
         });
-        a.set(new Options("foo", 2));
+        a.set(O("foo", 2));
         assertTrue("Foo should have changed.", a.get("foo").equals(2));
         assertTrue("Change count should have incremented.", changeCount[0] == 1);
 
         // set with value that is not new shouldn't fire change event
-        a.set(new Options("foo", 2));
+        a.set(O("foo", 2));
         assertTrue("Foo should NOT have changed, still 2", a.get("foo").equals(2));
         assertTrue("Change count should NOT have incremented.", changeCount[0] == 1);
 
-        a.unset("foo", new Options("validate", true));
+        a.unset("foo", O("validate", true));
         assertFalse("Foo should have changed", a.has("foo"));
         assertTrue("Change count should have incremented for unset.", changeCount[0] == 2);
 
@@ -336,7 +338,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 return super.validate(attributes, options);
             }
         }
-        ValidateModel model = new ValidateModel(new Options("x", 0));
+        ValidateModel model = new ValidateModel(O("x", 0));
         model.on("change:x", new Function() {
             @Override
             public void f() {
@@ -349,8 +351,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 main[0] += 1;
             }
         });
-        model.set(new Options("x", 2), new Options("validate", true));
-        model.set(new Options("x", 1), new Options("validate", true));
+        model.set(O("x", 2), O("validate", true));
+        model.set(O("x", 1), O("validate", true));
 
         assertEquals(Arrays.asList(attr[0], main[0], error[0]), Arrays.asList(1, 1, 1));
     }
@@ -381,7 +383,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
 
     public void testSetFalsyValuesInTheCorrectOrder() {
-        final Model model = new Model(new Options("result", "result"));
+        final Model model = new Model(O("result", "result"));
         model.on("change", new Function() {
             @Override
             public void f() {
@@ -390,17 +392,17 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 assertTrue(result == null || !result);
             }
         });
-        model.set(new Options("result", null), new Options("silent", true));
-        model.set(new Options("result", false), new Options("silent", true));
-        model.set(new Options("result", null));
+        model.set(O("result", null), O("silent", true));
+        model.set(O("result", false), O("silent", true));
+        model.set(O("result", null));
     }
 
 
     public void testNestedSetTriggersWithTheCorrectOptions() {
-        final Model model = new Model(new Options("result", "result"));
-        final Options o1 = new Options();
-        final Options o2 = new Options();
-        final Options o3 = new Options();
+        final Model model = new Model(O("result", "result"));
+        final Options o1 = O();
+        final Options o2 = O();
+        final Options o3 = O();
 
         model.on("change", new Function() {
             @Override
@@ -435,7 +437,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 i[0]++;
             }
         };
-        final Model model = new Model(new Options("a", 1));
+        final Model model = new Model(O("a", 1));
         model.on("change:a", counter);
         model.set("a", 2);
         model.unset("a");
@@ -446,7 +448,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     }
 
     public void testUnsetAndChangedAttributes() {
-        final Model model = new Model(new Options("a", 1));
+        final Model model = new Model(O("a", 1));
         model.on("change", new Function() {
             @Override
             public void f() {
@@ -457,8 +459,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     }
 
     public void testUsingANonDefaultIdAttribute() {
-        Model model = new Model(new Options(), new Options("idAttribute", "_id"));
-        model.set(new Options("id", "eye-dee", "_id", 25, "title", "Model"));
+        Model model = new Model(O(), O("idAttribute", "_id"));
+        model.set(O("id", "eye-dee", "_id", 25, "title", "Model"));
 
         assertEquals("eye-dee", model.get("id"));
         assertEquals(25, model.getIdAsInt());
@@ -480,13 +482,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
         Collection<PrefixedModel> collection = new Collection<PrefixedModel>(
                 PrefixedModel.class,
-                new Options("id", "c5"),
-                new Options("id", "c6"),
-                new Options("id", "c7")
+                O("id", "c5"),
+                O("id", "c6"),
+                O("id", "c7")
         );
 
         assertEquals('m', collection.get("c6").getCid().charAt(0));
-        collection.set(new OptionsList(new Options("id", "c6", "value", "test")), new Options(
+        collection.set(OL(O("id", "c6", "value", "test")), O(
                 "merge", true,
                 "add", true,
                 "remove", false
@@ -495,8 +497,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     }
 
     public void testSetAnEmptyString() {
-        Model model = new Model(new Options("name", "Model"));
-        model.set(new Options("name", ""));
+        Model model = new Model(O("name", "Model"));
+        model.set(O("name", ""));
         assertEquals("", model.get("name"));
     }
 
@@ -504,8 +506,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testSettingAnObject() {
         final int[] count = {0};
 
-        Model model = new Model(new Options(
-                "custom", new Options("foo", 1)
+        Model model = new Model(O(
+                "custom", O("foo", 1)
         ));
         model.on("change", new Function() {
             @Override
@@ -513,11 +515,11 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 count[0]++;
             }
         });
-        model.set(new Options(
-                "custom", new Options("foo", 1) // no change should be fired
+        model.set(O(
+                "custom", O("foo", 1) // no change should be fired
         ));
-        model.set(new Options(
-                "custom", new Options("foo", 2) // change event should be fired
+        model.set(O(
+                "custom", O("foo", 2) // change event should be fired
         ));
         assertEquals(1, count[0]);
     }
@@ -525,7 +527,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testClear() {
         final boolean[] changed = {false};
 
-        final Model model = new Model(new Options(
+        final Model model = new Model(O(
                 "id", 1,
                 "name", "Model"
         ));
@@ -555,13 +557,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             protected Options defaults() {
-                return new Options(
+                return O(
                         "one", 1,
                         "two", 2
                 );
             }
         }
-        Model model = new Defaulted(new Options("two", null));
+        Model model = new Defaulted(O("two", null));
         assertEquals(1, model.get("one"));
         assertEquals(2, model.get("two"));
 
@@ -572,20 +574,20 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             protected Options defaults() {
-                return new Options(
+                return O(
                         "one", 3,
                         "two", 4
                 );
             }
         }
-        model = new Defaulted2(new Options("two", null));
+        model = new Defaulted2(O("two", null));
         assertEquals(3, model.get("one"));
         assertEquals(4, model.get("two"));
     }
 
 
     public void testChangeHasChangedChangedAttributesPreviousPreviousAttributes() {
-        final Model model = new Model(new Options("name", "Tim", "age", 10));
+        final Model model = new Model(O("name", "Tim", "age", 10));
         assertNull(model.changedAttributes());
 
         model.on("change", new Function() {
@@ -593,30 +595,30 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             public void f() {
                 assertTrue("name changed", model.hasChanged("name"));
                 assertFalse("age did not", model.hasChanged("age"));
-                assertEquals(new Options("name", "Rob"), model.changedAttributes()); // changedAttributes returns the changed attrs
+                assertEquals(O("name", "Rob"), model.changedAttributes()); // changedAttributes returns the changed attrs
                 assertEquals("Tim", model.previous("name"));
-                assertEquals(new Options("name", "Tim", "age", 10), model.previousAttributes()); // previousAttributes is correct
+                assertEquals(O("name", "Tim", "age", 10), model.previousAttributes()); // previousAttributes is correct
             }
         });
         assertFalse(model.hasChanged());
         assertFalse(model.hasChanged(null));
 
-        model.set(new Options("name", "Rob"));
+        model.set(O("name", "Rob"));
         assertEquals("Rob", model.get("name"));
     }
 
     public void testChangedAttributes() {
-        Model model = new Model(new Options("a", "a", "b", "b"));
+        Model model = new Model(O("a", "a", "b", "b"));
         assertNull(model.changedAttributes());
-        assertNull(model.changedAttributes(new Options("a", "a")));
-        assertEquals("b", model.changedAttributes(new Options("a", "b")).get("a"));
+        assertNull(model.changedAttributes(O("a", "a")));
+        assertEquals("b", model.changedAttributes(O("a", "b")).get("a"));
     }
 
 
     public void testChangeWithOptions() {
         final String[] value = {null};
 
-        Model model = new Model(new Options("name", "Rob"));
+        Model model = new Model(O("name", "Rob"));
         model.on("change", new Function() {
             @Override
             public void f() {
@@ -626,16 +628,16 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 value[0] = options.get("prefix").toString() + model.get("name");
             }
         });
-        model.set(new Options("name", "Bob"), new Options("prefix", "Mr. "));
+        model.set(O("name", "Bob"), O("prefix", "Mr. "));
         assertEquals("Mr. Bob", value[0]);
-        model.set(new Options("name", "Sue"), new Options("prefix", "Ms. "));
+        model.set(O("name", "Sue"), O("prefix", "Ms. "));
         assertEquals("Ms. Sue", value[0]);
     }
 
 
     public void testChangeAfterInitialize() {
         final int[] changed = {0};
-        Options attrs = new Options("id", 1, "label", "c");
+        Options attrs = O("id", 1, "label", "c");
 
         Model obj = new Model(attrs);
         obj.on("change", new Function() {
@@ -650,7 +652,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
 
     public void testSaveWithinChangeEvent() {
-        final Model model = new Model(new Options("firstName", "Taylor", "lastName", "Swift"));
+        final Model model = new Model(O("firstName", "Taylor", "lastName", "Swift"));
         model.setUrlRoot("/test");
         model.on("change", new Function() {
             @Override
@@ -658,7 +660,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 model.save();
             }
         });
-        model.set(new Options("lastName", "Hicks"));
+        model.set(O("lastName", "Hicks"));
     }
 
 
@@ -724,14 +726,14 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        TestSyncUpdateModel model = new TestSyncUpdateModel(new Options(
+        TestSyncUpdateModel model = new TestSyncUpdateModel(O(
                 "id"     , "1-the-tempest",
                 "title"  , "The Tempest",
                 "author" , "Bill Shakespeare",
                 "length" , 123
         ));
 
-        model.save(new Options("title", "Henry V"));
+        model.save(O("title", "Henry V"));
         assertEquals("update", model.getLastSyncMethod());
     }
 
@@ -760,7 +762,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 count[0]++;
             }
         });
-        model.save(new Options("data", 2, "id", 1));
+        model.save(O("data", 2, "id", 1));
         model.fetch();
         model.destroy();
 
@@ -786,8 +788,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        final Options obj = new Options();
-        Options options = new Options(
+        final Options obj = O();
+        Options options = O(
                 "context", obj,
                 "success", new Function() {
                 @Override
@@ -801,7 +803,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         );
 
         TestSyncSuccessModel model = new TestSyncSuccessModel();
-        model.save(new Options("data", 2, "id", 1), options);
+        model.save(O("data", 2, "id", 1), options);
         model.fetch(options);
         model.destroy(options);
 
@@ -826,8 +828,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        final Options obj = new Options();
-        Options options = new Options(
+        final Options obj = O();
+        Options options = O(
                 "context", obj,
                 "error", new Function() {
             @Override
@@ -841,7 +843,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         );
 
         TestSyncErrorModel model = new TestSyncErrorModel();
-        model.save(new Options("data", 2, "id", 1), options);
+        model.save(O("data", 2, "id", 1), options);
         model.fetch(options);
         model.destroy(options);
 
@@ -876,19 +878,19 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        TestSyncUpdateModel model = new TestSyncUpdateModel(new Options(
+        TestSyncUpdateModel model = new TestSyncUpdateModel(O(
                 "id"     , "1-the-tempest",
                 "title"  , "The Tempest",
                 "author" , "Bill Shakespeare",
                 "length" , 123
         ));
 
-        model.clear().set(new Options("id", 1, "a", 1, "b", 2, "c", 3, "d", 4));
+        model.clear().set(O("id", 1, "a", 1, "b", 2, "c", 3, "d", 4));
         model.save();
         assertEquals("update", model.getLastSyncMethod());
         assertNull(model.getLastAttributes());
 
-        model.save(new Options("b", 2, "d", 4), new Options("patch", true));
+        model.save(O("b", 2, "d", 4), O("patch", true));
         assertEquals("patch", model.getLastSyncMethod());
         assertEquals(2, model.getLastAttributes().size());
         assertEquals(4, model.getLastAttributes().get("d"));
@@ -915,17 +917,17 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        TestSyncUpdateModel model = new TestSyncUpdateModel(new Options(
+        TestSyncUpdateModel model = new TestSyncUpdateModel(O(
                 "id"     , "1-the-tempest",
                 "title"  , "The Tempest",
                 "author" , "Bill Shakespeare",
                 "length" , 123
         ));
 
-        model.clear().save(new Options("b", 2, "d", 4), new Options("patch", true, "attrs", new Options("B", 1, "D", 3)));
+        model.clear().save(O("b", 2, "d", 4), O("patch", true, "attrs", O("B", 1, "D", 3)));
         assertEquals(3, model.getLastAttributes().get("D"));
         assertEquals(null, model.getLastAttributes().get("d"));
-        assertEquals(new Options("b", 2, "d", 4), model.getAttributes());
+        assertEquals(O("b", 2, "d", 4), model.getAttributes());
     }
 
     public void testSaveInPositionalStyle() {
@@ -966,12 +968,12 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         }
 
         Model model = new TestSyncModel();
-        model.save(new Options("testing", "empty"), new Options(
+        model.save(O("testing", "empty"), O(
                 "success", new Function() {
                 @Override
                 public void f() {
                     Model model = getArgument(0);
-                    assertEquals(new Options("testing", "empty"), model.getAttributes());
+                    assertEquals(O("testing", "empty"), model.getAttributes());
                 }
             }
         ));
@@ -996,7 +998,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         final Model model = new TestSyncModel();
         model.setUrlRoot("/collection");
 
-        model.save(new Options("id", 42), new Options("wait", true));
+        model.save(O("id", 42), O("wait", true));
         assertEquals("/collection/42", model.getUrl());
     }
 
@@ -1016,7 +1018,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             public Promise sync(String method, final Options options) {
-                options.extend(new Options("specialSync", true));
+                options.extend(O("specialSync", true));
                 Promise promise = super.sync(method, options);
 
                 Function success = options.get("success");
@@ -1038,7 +1040,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         };
 
-        model.save(null, new Options("success", onSuccess));
+        model.save(null, O("success", onSuccess));
         assertEquals(1, count[0]);
     }
 
@@ -1062,7 +1064,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        TestSyncUpdateModel model = new TestSyncUpdateModel(new Options(
+        TestSyncUpdateModel model = new TestSyncUpdateModel(O(
                 "id"     , "1-the-tempest",
                 "title"  , "The Tempest",
                 "author" , "Bill Shakespeare",
@@ -1088,7 +1090,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             public Promise sync(String method, final Options options) {
-                options.extend(new Options("specialSync", true));
+                options.extend(O("specialSync", true));
                 Promise promise = super.sync(method, options);
 
                 Function success = options.get("success");
@@ -1110,7 +1112,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         };
 
-        model.fetch(new Options("success", onSuccess));
+        model.fetch(O("success", onSuccess));
         assertEquals(1, count[0]);
     }
 
@@ -1134,7 +1136,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        TestSyncUpdateModel model = new TestSyncUpdateModel(new Options(
+        TestSyncUpdateModel model = new TestSyncUpdateModel(O(
                 "id"     , "1-the-tempest",
                 "title"  , "The Tempest",
                 "author" , "Bill Shakespeare",
@@ -1163,7 +1165,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             public Promise sync(String method, final Options options) {
-                options.extend(new Options("specialSync", true));
+                options.extend(O("specialSync", true));
                 Promise promise = super.sync(method, options);
 
                 Function success = options.get("success");
@@ -1173,7 +1175,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        Model model = new SpecialSyncModel(new Options("id", "id"));
+        Model model = new SpecialSyncModel(O("id", "id"));
 
         Function onSuccess = new Function() {
             @Override
@@ -1185,7 +1187,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         };
 
-        model.destroy(new Options("success", onSuccess));
+        model.destroy(O("success", onSuccess));
         assertEquals(1, count[0]);
     }
 
@@ -1202,7 +1204,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        Model a = new SyncModel(new Options("foo", 1, "bar", 2, "baz", 3));
+        Model a = new SyncModel(O("foo", 1, "bar", 2, "baz", 3));
         a.destroy();
 
         assertTrue("non-persisted model should not call sync", true);
@@ -1231,15 +1233,15 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 lastError[0] = error;
             }
         });
-        Model result = model.set(new Options("a", 100));
+        Model result = model.set(O("a", 100));
         assertEquals(result, model);
         assertEquals(100, model.get("a"));
         assertNull(lastError[0]);
 
-        model.set(new Options("admin", true));
+        model.set(O("admin", true));
         assertTrue(model.getBoolean("admin"));
 
-        model.set(new Options("a", 200, "admin", false), new Options("validate", true));
+        model.set(O("a", 200, "admin", false), O("validate", true));
         assertEquals("Can't change admin status.", lastError[0]);
         assertEquals("Can't change admin status.", model.getValidationError());
         assertEquals(100, model.get("a"));
@@ -1264,17 +1266,17 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 return super.validate(attributes, options);
             }
         }
-        Model model = new ValidateModel(new Options("name", "One"));
+        Model model = new ValidateModel(O("name", "One"));
 
-        model.set(new Options("name", "Two"));
+        model.set(O("name", "Two"));
         assertEquals("Two", model.get("name"));
         assertFalse(error[0]);
 
-        model.unset("name", new Options("validate", true));
+        model.unset("name", O("validate", true));
         assertTrue(error[0]);
         assertEquals("Two", model.get("name"));
 
-        model.clear(new Options("validate", true));
+        model.clear(O("validate", true));
         assertEquals("Two", model.get("name"));
 
         model.clear();
@@ -1314,13 +1316,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 boundError[0] = true;
             }
         });
-        Model result = model.set(new Options("a", 100), new Options("validate", true));
+        Model result = model.set(O("a", 100), O("validate", true));
         assertEquals(result, model);
         assertEquals(100, model.get("a"));
         assertNull(model.getValidationError());
         assertFalse(boundError[0]);
 
-        model.set(new Options("a", 200, "admin", true), new Options("validate", true));
+        model.set(O("a", 200, "admin", true), O("validate", true));
         assertEquals(100, model.get("a"));
         assertTrue(boundError[0]);
         assertEquals("Can't change admin status.", model.getValidationError());
@@ -1345,12 +1347,12 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             protected Options defaults() {
-                return new Options(
+                return O(
                         "one", 1
                 );
             }
         }
-        new Defaulted(new Options());
+        new Defaulted(O());
         new Defaulted();
 
         assertEquals(2, count[0]);
@@ -1373,7 +1375,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 count[0]++;
 
                 // Fire a nested change event.
-                model.set(new Options("other", "whatever"));
+                model.set(O("other", "whatever"));
             }
         }).on("change:state", new Function() {
             @Override
@@ -1387,7 +1389,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 count[0]++;
             }
         });
-        model.set(new Options("state", "hello"));
+        model.set(O("state", "hello"));
 
         assertEquals(2, count[0]);
     }
@@ -1396,7 +1398,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testHasChangedSetShouldUseSameComparison() {
         final int[] changed = {0};
 
-        final Model model = new Model(new Options("a", null));
+        final Model model = new Model(O("a", null));
         model.on("change", new Function() {
             @Override
             public void f() {
@@ -1408,7 +1410,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 changed[0]++;
             }
         });
-        model.set(new Options("a", 0));
+        model.set(O("a", 0));
 
         assertEquals(1, changed[0]);
     }
@@ -1430,22 +1432,22 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change:b", assertion);
         model.on("change:c", assertion);
 
-        model.set(new Options("a", "a", "b", "b", "c", "c"));
+        model.set(O("a", "a", "b", "b", "c", "c"));
     }
 
 
     public void testSetWithAttributesProperty() {
         Model model = new Model();
-        model.set(new Options("attributes", true));
+        model.set(O("attributes", true));
 
         assertTrue(model.has("attributes"));
     }
 
 
     public void testSetValueRegardlessOfEqualityOrChange() {
-        Model model = new Model(new Options("x", new OptionsList()));
-        OptionsList a = new OptionsList();
-        model.set(new Options("x", a));
+        Model model = new Model(O("x", OL()));
+        OptionsList a = OL();
+        model.set(O("x", a));
 
         assertEquals(a, model.get("x"));
     }
@@ -1454,15 +1456,15 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testSameValueDoesNotTriggerChange() {
         final int[] count = {0};
 
-        Model model = new Model(new Options("x", 1));
+        Model model = new Model(O("x", 1));
         model.on("change change:x", new Function() {
             @Override
             public void f() {
                 count[0]++;
             }
         });
-        model.set(new Options("x", 1));
-        model.set(new Options("x", 1));
+        model.set(O("x", 1));
+        model.set(O("x", 1));
 
         assertEquals(0, count[0]);
     }
@@ -1471,7 +1473,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testUnsetDoesNotFireAChangeForUndefinedAttributes() {
         final int[] count = {0};
 
-        Model model = new Model(new Options("x", null));
+        Model model = new Model(O("x", null));
         model.on("change:x", new Function() {
             @Override
             public void f() {
@@ -1485,7 +1487,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
 
     public void testSetUndefinedValues() {
-        Model model = new Model(new Options("x", null));
+        Model model = new Model(O("x", null));
         assertTrue(model.getAttributes().containsKey("x"));
     }
 
@@ -1493,7 +1495,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testHasChangedWorksOutsideOfChangeEventsAndTrueWithin() {
         final int[] count = {0};
 
-        final Model model = new Model(new Options("x", 1));
+        final Model model = new Model(O("x", 1));
         model.on("change:x", new Function() {
             @Override
             public void f() {
@@ -1502,11 +1504,11 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 count[0]++;
             }
         });
-        model.set(new Options("x", 2), new Options("silent", true));
+        model.set(O("x", 2), O("silent", true));
         assertTrue(model.hasChanged());
         assertTrue(model.hasChanged("x"));
 
-        model.set(new Options("x", 1));
+        model.set(O("x", 1));
         assertTrue(model.hasChanged());
         assertTrue(model.hasChanged("x"));
 
@@ -1516,16 +1518,16 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
     public void testHasChangedGetsClearedOnTheFollowingSet() {
         Model model = new Model();
-        model.set(new Options("x", 1));
+        model.set(O("x", 1));
         assertTrue(model.hasChanged());
 
-        model.set(new Options("x", 1));
+        model.set(O("x", 1));
         assertFalse(model.hasChanged());
 
-        model.set(new Options("x", 2));
+        model.set(O("x", 2));
         assertTrue(model.hasChanged());
 
-        model.set(new Options());
+        model.set(O());
         assertFalse(model.hasChanged());
     }
 
@@ -1533,7 +1535,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testSaveWithWaitSucceedsWithoutValidate() {
         Model model = new Model();
         model.setUrlRoot("/test");
-        model.save(new Options("x", 1), new Options("wait", true));
+        model.save(O("x", 1), O("wait", true));
     }
 
     public void testSaveWithoutWaitDoesntSetInvalidAttributes() {
@@ -1545,13 +1547,13 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         }
 
         Model model = new ValidateModel();
-        model.save(new Options("a", 1));
+        model.save(O("a", 1));
         assertNull(model.get("a"));
     }
 
     public void testHasChangedForFalsyKeys() {
         Model model = new Model();
-        model.set(new Options("x", true), new Options("silent", true));
+        model.set(O("x", true), O("silent", true));
 
         assertFalse(model.hasChanged(""));
         assertFalse(model.hasChanged("0"));
@@ -1559,8 +1561,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
 
     public void testPreviousForFalsyKeys() {
-        Model model = new Model(new Options(0, true, "", true));
-        model.set(new Options(0, false, "", false), new Options("silent", true));
+        Model model = new Model(O(0, true, "", true));
+        model.set(O(0, false, "", false), O("silent", true));
 
         assertTrue((Boolean) model.previous("0"));
         assertTrue((Boolean) model.previous(""));
@@ -1570,7 +1572,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testSaveWithWaitSendsCorrectAttributes() {
         final int[] changed = {0};
 
-        Model model = new Model(new Options("x", 1, "y", 2));
+        Model model = new Model(O("x", 1, "y", 2));
         model.setUrlRoot("/test");
         model.on("change:x", new Function() {
             @Override
@@ -1578,10 +1580,10 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 changed[0]++;
             }
         });
-        model.save(new Options("x", 3), new Options("wait", true));
+        model.save(O("x", 3), O("wait", true));
 
         JSONValue jsonValue = JSONParser.parseStrict(String.valueOf(Sync.get().getSyncArgs().get("data")));
-        assertEquals(new Options(jsonValue), new Options("x", 3, "y", 2));
+        assertEquals(O(jsonValue), O("x", 3, "y", 2));
 
         assertEquals(1, model.get("x"));
         assertEquals(0, changed[0]);
@@ -1596,7 +1598,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testAFailedSaveWithWaitDoesntLeaveAttributesBehind() {
         Model model = new Model();
         model.setUrlRoot("/test");
-        model.save(new Options("x", 1), new Options("wait", true));
+        model.save(O("x", 1), O("wait", true));
 
         assertNull(model.get("x"));
     }
@@ -1619,7 +1621,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        final Model model = new TestSyncModel(new Options("x", 1, "y", 2));
+        final Model model = new TestSyncModel(O("x", 1, "y", 2));
         model.on("change:x", new Function() {
             @Override
             public void f() {
@@ -1627,7 +1629,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         });
 
-        model.save(new Options("x", 3), new Options("wait", true));
+        model.save(O("x", 3), O("wait", true));
         assertEquals(3, model.get("x"));
         assertEquals(1, count[0]);
     }
@@ -1647,7 +1649,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
         Model model = new ValidateModel();
         model.setUrlRoot("/test");
-        model.save(new Options("x", 1), new Options("wait", true));
+        model.save(O("x", 1), O("wait", true));
 
         assertEquals(1, count[0]);
     }
@@ -1683,20 +1685,20 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change", new Function() {
             @Override
             public void f() {
-                model.set(new Options("z", true), new Options("silent", true));
+                model.set(O("z", true), O("silent", true));
             }
         });
         model.on("change:x", new Function() {
             @Override
             public void f() {
-                model.set(new Options("y", true));
+                model.set(O("y", true));
             }
         });
-        model.set(new Options("x", true));
+        model.set(O("x", true));
         assertEquals(events, Arrays.asList("change:y", "change:x", "change"));
 
         events.clear();
-        model.set(new Options("z", true));
+        model.set(O("z", true));
         assertTrue(events.isEmpty());
     }
 
@@ -1708,10 +1710,10 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             @Override
             public void f() {
                 count[0]++;
-                model.set(new Options("x", true));
+                model.set(O("x", true));
             }
         });
-        model.set(new Options("x", true));
+        model.set(O("x", true));
 
         assertEquals(1, count[0]);
     }
@@ -1726,24 +1728,24 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             public void f() {
                 switch(count[0]++) {
                     case 0:
-                        assertEquals(model.changedAttributes(), new Options("x", true));
+                        assertEquals(model.changedAttributes(), O("x", true));
                         assertNull(model.previous("x"));
-                        model.set(new Options("y", true));
+                        model.set(O("y", true));
                         break;
                     case 1:
-                        assertEquals(model.changedAttributes(), new Options("x", true, "y", true));
+                        assertEquals(model.changedAttributes(), O("x", true, "y", true));
                         assertNull(model.previous("x"));
-                        model.set(new Options("z", true));
+                        model.set(O("z", true));
                         break;
                     case 2:
-                        assertEquals(model.changedAttributes(), new Options("x", true, "y", true, "z", true));
+                        assertEquals(model.changedAttributes(), O("x", true, "y", true, "z", true));
                         assertNull(model.previous("y"));
                         break;
                 }
 
             }
         });
-        model.set(new Options("x", true));
+        model.set(O("x", true));
 
         assertEquals(3, count[0]);
     }
@@ -1764,22 +1766,22 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             public void f() {
                 switch(count[0]++) {
                     case 0:
-                        assertEquals(model.changedAttributes(), new Options("x", true));
-                        model.set(new Options("y", true), new Options("silent", true));
-                        model.set(new Options("z", true));
+                        assertEquals(model.changedAttributes(), O("x", true));
+                        model.set(O("y", true), O("silent", true));
+                        model.set(O("z", true));
                         break;
                     case 1:
-                        assertEquals(model.changedAttributes(), new Options("x", true, "y", true, "z", true));
+                        assertEquals(model.changedAttributes(), O("x", true, "y", true, "z", true));
                         break;
                     case 2:
-                        assertEquals(model.changedAttributes(), new Options("z", false));
+                        assertEquals(model.changedAttributes(), O("z", false));
                         break;
                 }
 
             }
         });
-        model.set(new Options("x", true));
-        model.set(new Options("z", false));
+        model.set(O("x", true));
+        model.set(O("z", false));
 
         assertEquals(3, count[0]);
     }
@@ -1798,11 +1800,11 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change", new Function() {
             @Override
             public void f() {
-                model.set(new Options("y", true), new Options("silent", true));
-                model.set(new Options("z", true));
+                model.set(O("y", true), O("silent", true));
+                model.set(O("z", true));
             }
         });
-        model.set(new Options("x", true));
+        model.set(O("x", true));
 
         assertEquals(0, count[0]);
     }
@@ -1816,8 +1818,8 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change:x", new Function() {
             @Override
             public void f() {
-                model.set(new Options("y", 1), new Options("silent", true));
-                model.set(new Options("y", 2));
+                model.set(O("y", 1), O("silent", true));
+                model.set(O("y", 2));
             }
         });
         model.on("change:y", new Function() {
@@ -1829,7 +1831,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 count[0]++;
             }
         });
-        model.set(new Options("x", true));
+        model.set(O("x", true));
 
         assertEquals(1, count[0]);
     }
@@ -1849,11 +1851,11 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change", new Function() {
             @Override
             public void f() {
-                model.set(new Options("b", 1));
+                model.set(O("b", 1));
             }
         });
 
-        model.set(new Options("b", 0));
+        model.set(O("b", 0));
         assertEquals(Arrays.asList(0, 1), changes);
     }
 
@@ -1863,15 +1865,15 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
         final Model model = new Model();
 
-        model.set(new Options("x", 1));
+        model.set(O("x", 1));
         model.on("change", new Function() {
             @Override
             public void f() {
                 count[0]++;
             }
         });
-        model.set(new Options("x", 2), new Options("silent", true));
-        model.set(new Options("x", 1));
+        model.set(O("x", 2), O("silent", true));
+        model.set(O("x", 1));
 
         assertEquals(1, count[0]);
     }
@@ -1891,11 +1893,11 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change:a", new Function() {
             @Override
             public void f() {
-                model.set(new Options("b", true));
-                model.set(new Options("b", true));
+                model.set(O("b", true));
+                model.set(O("b", true));
             }
         });
-        model.set(new Options("a", true));
+        model.set(O("a", true));
 
         assertEquals(1, count[0]);
     }
@@ -1903,7 +1905,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
     public void testClearDoesNotAlterOptions() {
         Model model = new Model();
-        Options options = new Options();
+        Options options = O();
 
         model.clear(options);
         assertFalse(options.containsKey("unset"));
@@ -1912,7 +1914,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
     public void testUnsetDoesNotAlterOptions() {
         Model model = new Model();
-        Options options = new Options();
+        Options options = O();
 
         model.unset("x", options);
         assertFalse(options.containsKey("unset"));
@@ -1937,7 +1939,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         }
 
         Model model = new SyncModel();
-        Options opts = new Options(
+        Options opts = O(
                 "success", new Function() {
             @Override
             public void f() {
@@ -1946,7 +1948,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         }
         );
 
-        model.save(new Options("id", 1), opts);
+        model.save(O("id", 1), opts);
         model.fetch(opts);
         model.destroy(opts);
 
@@ -1971,7 +1973,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        Model model = new SyncModel(new Options("id", 1));
+        Model model = new SyncModel(O("id", 1));
         model.on("sync", new Function() {
             @Override
             public void f() {
@@ -2000,7 +2002,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             public void f() {
                 count[0]++;
             }
-        }).destroy(new Options("success", new Function() {
+        }).destroy(O("success", new Function() {
             @Override
             public void f() {
                 count[0]++;
@@ -2056,7 +2058,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        Model model = new ValidateModel(new Options("id", 1));
+        Model model = new ValidateModel(O("id", 1));
         model.on("invalid", new Function() {
             @Override
             public void f() {
@@ -2090,7 +2092,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
 
             @Override
             protected Options defaults() {
-                return new Options("one", 1);
+                return O("one", 1);
             }
         }
         new UndefinedModel();
@@ -2116,14 +2118,14 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        Model model = new ChangeModel(new Options("x", true));
+        Model model = new ChangeModel(O("x", true));
         model.on("change:x", new Function() {
             @Override
             public void f() {
                 count[0]++;
             }
         });
-        model.save(null, new Options("wait", true));
+        model.save(null, O("wait", true));
 
         assertEquals(0, count[0]);
     }
@@ -2132,16 +2134,16 @@ public class GBackboneModelTestGwt extends GWTTestCase {
     public void testChangingFromOneValueSilentlyToAnotherBackToOriginalTriggersAChange() {
         final int[] count = {0};
 
-        Model model = new Model(new Options("x", 1));
+        Model model = new Model(O("x", 1));
         model.on("change:x", new Function() {
             @Override
             public void f() {
                 count[0]++;
             }
         });
-        model.set(new Options("x", 2), new Options("silent", true));
-        model.set(new Options("x", 3), new Options("silent", true));
-        model.set(new Options("x", 1));
+        model.set(O("x", 2), O("silent", true));
+        model.set(O("x", 3), O("silent", true));
+        model.set(O("x", 1));
 
         assertEquals(1, count[0]);
     }
@@ -2154,9 +2156,9 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change", new Function() {
             @Override
             public void f() {
-                model.set(new Options("a", "c"), new Options("silent", true));
-                model.set(new Options("b", 2), new Options("silent", true));
-                model.unset("c", new Options("silent", true));
+                model.set(O("a", "c"), O("silent", true));
+                model.set(O("b", 2), O("silent", true));
+                model.unset("c", O("silent", true));
             }
         });
         model.on("change:a change:b change:c", new Function() {
@@ -2166,9 +2168,9 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 changes.add(val);
             }
         });
-        model.set(new Options("a", "a", "b", 1, "c", "item"));
+        model.set(O("a", "a", "b", 1, "c", "item"));
         assertEquals(Arrays.asList("a", 1, "item"), changes);
-        assertEquals(new Options("a", "c", "b", 2), model.getAttributes());
+        assertEquals(O("a", "c", "b", 2), model.getAttributes());
     }
 
 
@@ -2186,20 +2188,20 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change", new Function() {
             @Override
             public void f() {
-                model.set(new Options("a", "c"), new Options("silent", true));
+                model.set(O("a", "c"), O("silent", true));
             }
         });
 
-        model.set(new Options("a", "a"));
+        model.set(O("a", "a"));
         assertEquals(Collections.singletonList("a"), changes);
-        model.set(new Options("a", "a"));
+        model.set(O("a", "a"));
         assertEquals(Arrays.asList("a", "a"), changes);
     }
 
 
     public void testChangeCalculationsShouldUseIsEqual() {
-        Model model = new Model(new Options("a", new Options("key", "value")));
-        model.set("a", new Options("key", "value"), new Options("silent", true));
+        Model model = new Model(O("a", O("key", "value")));
+        model.set("a", O("key", "value"), O("silent", true));
 
         assertNull(model.changedAttributes());
     }
@@ -2242,14 +2244,14 @@ public class GBackboneModelTestGwt extends GWTTestCase {
                 return true;
             }
         }
-        Model model = new ValidateModel(new Options("valid", true));
+        Model model = new ValidateModel(O("valid", true));
         assertTrue(model.isValid());
-        model.set(new Options("valid", false), new Options("validate", true));
+        model.set(O("valid", false), O("validate", true));
         assertTrue(model.isValid());
 
         model.set("valid", false);
         assertFalse(model.isValid());
-        model.set(new Options("valid", false, "a", "a"), new Options("validate", true));
+        model.set(O("valid", false, "a", "a"), O("validate", true));
         assertFalse(model.has("a"));
         assertFalse(model.isValid());
     }
@@ -2270,7 +2272,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
 
-        Model model = new ValidateModel(new Options("id", 1), new Options("validate", true));
+        Model model = new ValidateModel(O("id", 1), O("validate", true));
         assertEquals("This shouldn't happen", model.getValidationError());
     }
 
@@ -2292,7 +2294,7 @@ public class GBackboneModelTestGwt extends GWTTestCase {
             }
         }
         Model model = new JSONModel();
-        model.save(new Options("x", 1), new Options("wait", true));
+        model.save(O("x", 1), O("wait", true));
 
         assertEquals(1, count[0]);
     }
@@ -2305,28 +2307,28 @@ public class GBackboneModelTestGwt extends GWTTestCase {
         model.on("change", new Function() {
             @Override
             public void f() {
-                model.set(new Options("b", true), new Options("silent", true));
+                model.set(O("b", true), O("silent", true));
                 count[0]++;
             }
         });
-        model.set(new Options("a", true));
+        model.set(O("a", true));
 
         assertEquals(1, count[0]);
     }
 
 
     public void testIdWillOnlyBeUpdatedIfItIsSet() {
-        final Model model = new Model(new Options("id", 1));
+        final Model model = new Model(O("id", 1));
         model.setIdAsInt(2);
-        model.set(new Options("foo", "bar"));
+        model.set(O("foo", "bar"));
         assertEquals(2, model.getIdAsInt());
         assertEquals(2, model.get("id"));
 
-        model.set(new Options("id", 3));
+        model.set(O("id", 3));
         assertEquals(3, model.getIdAsInt());
         assertEquals(3, model.get("id"));
 
-        model.set(new Options("id", "key"));
+        model.set(O("id", "key"));
         assertEquals("key", model.getId());
         assertEquals("key", model.get("id"));
     }

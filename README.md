@@ -1,5 +1,5 @@
 
-GwtBackbone v0.1.0
+GwtBackbone v0.2.0
 ===========
 
 GwtBackbone a.k.a. GBackbone is a Backbone-like API written in GWT, which allows GWT to be used convert already written enterprise backbone projects into entirely used in GWT.
@@ -18,6 +18,39 @@ Mostly base functionality like Collection, Model & View are available, but still
 As well currently only tests for the Collection are available - and not yet fully tested.
 
 As i go on, i'll create a more organized list of all features still missing.
+
+
+Adding to your project
+=======
+
+For now this package is available only via https://jitpack.io/
+
+### Gradle dependencies
+```
+repositories {
+  maven {
+    url "https://jitpack.io"
+  }
+}
+
+dependencies {
+    compile 'com.github.liraz:gwt-backbone:0.2.0'
+}
+```
+
+### Maven dependencies
+```
+<repository>
+  <id>jitpack.io</id>
+  <url>https://jitpack.io</url>
+</repository>
+
+<dependency>
+    <groupId>com.github.liraz</groupId>
+    <artifactId>gwt-backbone</artifactId>
+    <version>0.2.0</version>
+</dependency>
+```
 
 
 Usage

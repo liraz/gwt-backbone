@@ -25,10 +25,15 @@ import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import org.lirazs.gbackbone.client.core.collection.Collection;
+import org.lirazs.gbackbone.client.core.collection.function.*;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.function.MatchesFunction;
 import org.lirazs.gbackbone.client.core.function.UrlRootFunction;
+import org.lirazs.gbackbone.client.core.model.function.*;
+import org.lirazs.gbackbone.client.core.model.function.OnErrorFunction;
+import org.lirazs.gbackbone.client.core.model.function.OnInvalidFunction;
+import org.lirazs.gbackbone.client.core.model.function.OnSyncFunction;
 import org.lirazs.gbackbone.client.core.net.Sync;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
 import org.lirazs.gbackbone.client.core.util.UUID;
@@ -1102,5 +1107,115 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
 
     public boolean matches(MatchesFunction matchesFunction) {
         return matchesFunction.f(attributes);
+    }
+
+
+    public Model onChange(OnChangeFunction callback) {
+        return on("change", callback);
+    }
+
+    public <V> Model onChangeAttr(String attr, OnChangeAttrFunction<V> callback) {
+        return on("change:" + attr, callback);
+    }
+
+    public Model onDestroy(OnDestroyFunction callback) {
+        return on("destroy", callback);
+    }
+
+    public Model onError(OnErrorFunction callback) {
+        return on("error", callback);
+    }
+
+    public Model onInvalid(OnInvalidFunction callback) {
+        return on("invalid", callback);
+    }
+
+    public Model onSync(OnSyncFunction callback) {
+        return on("sync", callback);
+    }
+
+    public Model onceChange(OnChangeFunction callback) {
+        return once("change", callback);
+    }
+
+    public <V> Model onceChangeAttr(String attr, OnChangeAttrFunction<V> callback) {
+        return once("change:" + attr, callback);
+    }
+
+    public Model onceDestroy(OnDestroyFunction callback) {
+        return once("destroy", callback);
+    }
+
+    public Model onceError(OnErrorFunction callback) {
+        return once("error", callback);
+    }
+
+    public Model onceInvalid(OnInvalidFunction callback) {
+        return once("invalid", callback);
+    }
+
+    public Model onceSync(OnSyncFunction callback) {
+        return once("sync", callback);
+    }
+
+
+    public Model listenToChange(Model model, OnChangeFunction callback) {
+        return listenTo(model, "change", callback);
+    }
+
+    public <V> Model listenToChangeAttr(Model model, String attr, OnChangeAttrFunction<V> callback) {
+        return listenTo(model, "change:" + attr, callback);
+    }
+
+    public Model listenToDestroy(Model model, OnDestroyFunction callback) {
+        return listenTo(model, "destroy", callback);
+    }
+
+    public Model listenToError(Model model, OnErrorFunction callback) {
+        return listenTo(model, "error", callback);
+    }
+
+    public Model listenToInvalid(Model model, OnInvalidFunction callback) {
+        return listenTo(model, "invalid", callback);
+    }
+
+    public Model listenToSync(Model model, OnSyncFunction callback) {
+        return listenTo(model, "sync", callback);
+    }
+
+    public Model listenToAdd(Collection collection, OnAddFunction callback) {
+        return listenTo(collection, "add", callback);
+    }
+
+    public Model listenToRemove(Collection collection, OnRemoveFunction callback) {
+        return listenTo(collection, "remove", callback);
+    }
+
+    public Model listenToReset(Collection collection, OnResetFunction callback) {
+        return listenTo(collection, "reset", callback);
+    }
+
+    public Model listenToSort(Collection collection, OnSortFunction callback) {
+        return listenTo(collection, "sort", callback);
+    }
+
+    public Model listenToUpdate(Collection collection, OnUpdateFunction callback) {
+        return listenTo(collection, "update", callback);
+    }
+
+    public Model listenToChange(Collection collection, OnChangeFunction callback) {
+        return listenTo(collection, "change", callback);
+    }
+
+    public <V> Model listenToChangeAttr(Collection collection, String attr, OnChangeAttrFunction<V> callback) {
+        return listenTo(collection, "change:" + attr, callback);
+    }
+
+    public Model listenToDestroy(Collection collection, OnDestroyFunction callback) {
+        return listenTo(collection, "destroy", callback);
+    }
+
+    public Model listenToSync(Collection collection, OnSyncFunction callback) {
+        return listenTo(collection, "sync", callback);
     }
 }

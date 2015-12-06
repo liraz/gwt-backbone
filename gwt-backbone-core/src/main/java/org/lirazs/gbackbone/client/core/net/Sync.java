@@ -16,7 +16,9 @@
 package org.lirazs.gbackbone.client.core.net;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.query.client.*;
 import com.google.gwt.query.client.js.JsMap;
 import com.google.gwt.query.client.plugins.ajax.Ajax;
@@ -293,10 +295,10 @@ public class Sync {
         if(options.containsKey("withCredentials"))
             settings.setWithCredentials(options.getBoolean("withCredentials"));
 
+        saveLastAjaxSettings(settings);
+
         Promise xhr = GQuery.ajax(settings);
         options.put("xhr", xhr);
-
-        syncArgs = settings;
 
         if(model != null)
             model.trigger("request", model, xhr, options);
@@ -310,4 +312,25 @@ public class Sync {
     private native boolean noXhrPatch() /*-{
         return typeof window !== 'undefined' && !!window.ActiveXObject && !(window.XMLHttpRequest && (new XMLHttpRequest).dispatchEvent);
     }-*/;
+
+    private void saveLastAjaxSettings(Ajax.Settings settings) {
+        syncArgs = Ajax.createSettings();
+
+        Object data = settings.get("data");
+
+        syncArgs.setContentType(settings.getContentType());
+        syncArgs.setContext(settings.getContext());
+        if (data != null) {
+            syncArgs.setData(JSONParser.parseStrict((String) data));
+        }
+        syncArgs.setDataString(settings.getDataString());
+        syncArgs.setError(settings.getError());
+        syncArgs.setHeaders(settings.getHeaders());
+        syncArgs.setSuccess(settings.getSuccess());
+        syncArgs.setTimeout(settings.getTimeout());
+        syncArgs.setType(settings.getType());
+        syncArgs.setUrl(settings.getUrl());
+        syncArgs.setUsername(settings.getUsername());
+        syncArgs.setWithCredentials(settings.getWithCredentials());
+    }
 }

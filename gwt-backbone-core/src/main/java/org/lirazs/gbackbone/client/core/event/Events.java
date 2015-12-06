@@ -144,13 +144,13 @@ public class Events<T extends Events<T>> {
      }
      */
     public T off() {
-        events = new HashMap();
+        events = new HashMap<String, List<EventEntry>>();
         return (T)this;
     }
 
     public T off(Function callback, Object context) {
-        String[] names = (String[]) events.keySet().toArray();
-        for (String name : names) {
+        Set<String> keySet = new HashSet<String>(events.keySet());
+        for (String name : keySet) {
             off(name, callback, context);
         }
         return (T)this;
@@ -257,7 +257,8 @@ public class Events<T extends Events<T>> {
         if(listeners == null || listeners.isEmpty())
             return (T)this;
 
-        for (String listenerId : listeners.keySet()) {
+        Set<String> keySet = new HashSet<String>(listeners.keySet());
+        for (String listenerId : keySet) {
             Events listener = listeners.get(listenerId);
             listener.off(null, this);
             listeners.remove(listenerId);
