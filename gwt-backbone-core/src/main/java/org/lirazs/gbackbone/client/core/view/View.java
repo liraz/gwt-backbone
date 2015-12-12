@@ -15,7 +15,6 @@
  */
 package org.lirazs.gbackbone.client.core.view;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.query.client.Function;
@@ -23,15 +22,19 @@ import com.google.gwt.query.client.GQuery;
 import com.google.gwt.query.client.Properties;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
+import com.google.gwt.user.client.Event;
+import org.lirazs.gbackbone.client.core.annotation.EventHandler;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.util.UUID;
+import org.lirazs.gbackbone.reflection.client.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-public class View extends Events {
+public class View extends Events implements FullReflection {
     private String id;
 
     private String cid;
@@ -110,11 +113,58 @@ public class View extends Events {
             events = options.get("events");
 
         ensureElement();
+        bindAnnotatedEvents();
 
         initialize();
         initialize(options);
 
         delegateEvents();
+    }
+
+    private void bindAnnotatedEvents() {
+        ClassType classType = TypeOracle.Instance.getClassType(getClass());
+        classType.getName();
+
+        try {
+            Method[] methods = classType.getMethods();
+            for (final Method method : methods) {
+                EventHandler annotation = method.getAnnotation(EventHandler.class);
+                if(annotation != null && method.isPublic()) {
+
+                    String value = annotation.value();
+                    if(!value.isEmpty()) {
+                        final View thisView = this;
+                        MatchResult matchResult = delegateEventSplitter.exec(value);
+                        delegate(matchResult.getGroup(1), matchResult.getGroup(2), new Function() {
+                            @Override
+                            public void f() {
+                                Event event = getEvent();
+                                Element element = getElement();
+
+                                Parameter[] parameters = method.getParameters();
+                                Object[] args = new Object[parameters.length];
+
+                                for (int i = 0; i < parameters.length; i++) {
+                                    Parameter parameter = parameters[i];
+                                    String typeName = parameter.getTypeName();
+
+                                    if(typeName.equals("com.google.gwt.user.client.Event")) {
+                                        args[i] = event;
+                                    }
+                                    if(typeName.equals("com.google.gwt.dom.client.Element")) {
+                                        args[i] = element;
+                                    }
+                                }
+
+                                method.invoke(thisView, args);
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        }
     }
 
     protected void initialize() {

@@ -1,0 +1,17 @@
+<module>
+	<inherits name="com.google.gwt.user.User" />
+
+	<inherits name="org.lirazs.gbackbone.common.Common" />
+
+	<generate-with class="org.lirazs.gbackbone.gen.reflection.Reflection__ProxyGenerator">
+		<when-type-assignable class="org.lirazs.gbackbone.reflection.client.TypeOracle"/>
+	</generate-with>
+	
+	<generate-with class="org.lirazs.gbackbone.gen.reflection.ReflectionProxyGenerator">
+		<when-type-assignable class="org.lirazs.gbackbone.reflection.client.ClassType"/>
+	</generate-with>
+	
+	<inherits name="org.lirazs.gbackbone.reflection.emul.Emulation" />
+
+	<source path="client" />
+</module>

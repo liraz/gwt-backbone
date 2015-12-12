@@ -27,6 +27,7 @@
 
     <modules>
         <module>gwt-backbone-core</module>
+        <module>gwt-backbone-reflection</module>
     </modules>
 
     <properties>

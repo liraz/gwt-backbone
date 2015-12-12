@@ -11,6 +11,7 @@ import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import static org.lirazs.gbackbone.client.core.data.Options.O;
 import org.lirazs.gbackbone.client.core.model.Model;
+import org.lirazs.gbackbone.client.core.test.view.AnnotatedView;
 import org.lirazs.gbackbone.client.core.view.View;
 
 /**
@@ -769,4 +770,12 @@ public class GBackboneViewTestGwt extends GWTTestCase {
         assertEquals(1, count[0]);
     }
 
+    public void testAnnotatedView() {
+        final int[] counter = {0};
+
+        AnnotatedView annotatedView = new AnnotatedView(O("el", "#testElement"), counter);
+        annotatedView.$("h1").trigger("click").trigger("click");
+
+        assertEquals(6, counter[0]);
+    }
 }

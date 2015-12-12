@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<editmodel:ClassDiagramEditModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:editmodel="editmodel.xmi" xmlns:options="options.xmi" name="ReflectionClassDiagram" foregroundRGB="255,255,255" id="{UMLID=_IX5IsbmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection}" metadata="uml2-1.0" initialized="true" tag="1000" key="323030373036323920436F63656C65722F41646D696E6973747261746F72">
+  <children xsi:type="editmodel:ClassEditModel" targetConnections="//@children.1/@sourceConnections.0" name="Type" location="100,20" size="71,27" stereotype="" id="{UMLID=_PZnfALmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/Type}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="228,198"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" targetConnections="//@children.1/@sourceConnections.2" name="ClassType" location="84,100" size="104,27" stereotype="" id="{UMLID=_O4YaMLmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="163,889"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:GeneralizationEditModel" size="2,1" description="Generalization" autoLocated="true" id="{UMLID=_PaqA0LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/Type&lt;-org.lirazs.gbackbone.client.reflection/ClassType}" source="//@children.1" target="//@children.0" targetEnd="//@children.1/@sourceConnections.0/@children.1" sourceEnd="//@children.1/@sourceConnections.0/@children.0" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="51,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="35,27"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:RealizationEditModel" size="2,1" description="Realization" autoLocated="true" id="{UMLID=_LFJRwLmvEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType->org.lirazs.gbackbone.client.reflection/HasMetaData}" source="//@children.1" target="//@children.3" targetEnd="//@children.1/@sourceConnections.1/@children.1" label="//@children.1/@sourceConnections.1/@children.2" sourceEnd="//@children.1/@sourceConnections.1/@children.0" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="87,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="5,41"/>
+      <children xsi:type="editmodel:WireLabelEditModel" location="228,80" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" autoLocated="true" id="{UMLID=_P5f48LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/ClassType@superclass}" source="//@children.1" target="//@children.1" targetEnd="//@children.1/@sourceConnections.2/@children.2" label="//@children.1/@sourceConnections.2/@children.0" sourceEnd="//@children.1/@sourceConnections.2/@children.1" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:WireLabelEditModel" location="79,91" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="enclosingType" location="0,10" id="{UMLID=_PjvrZLmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/ClassType@superclass|org.lirazs.gbackbone.client.reflection/ClassType#enclosingType}" anchorKind="FixedAtEdge" attachSource="true" multiplicityLabel="//@children.1/@sourceConnections.2/@children.1/@children.1" roleLabel="//@children.1/@sourceConnections.2/@children.1/@children.0" navigable="true" flags="2">
+        <children xsi:type="editmodel:LabelEditModel" name="- enclosingType" location="0,117" size="77,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+        <children xsi:type="editmodel:LabelEditModel" name="1" location="71,89" size="6,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="superclass" location="10,0" id="{UMLID=_PkCmUrmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/ClassType@superclass|org.lirazs.gbackbone.client.reflection/ClassType#superclass}" anchorKind="FixedAtEdge" multiplicityLabel="//@children.1/@sourceConnections.2/@children.2/@children.1" roleLabel="//@children.1/@sourceConnections.2/@children.2/@children.0" navigable="true" flags="2">
+        <children xsi:type="editmodel:LabelEditModel" name="- superclass" location="101,79" size="61,14" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" name="1" location="81,79" size="6,14" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" autoLocated="true" id="{UMLID=_QeA7QLmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Field@ownedEnd}" source="//@children.1" target="//@children.2" targetEnd="//@children.1/@sourceConnections.3/@children.2" label="//@children.1/@sourceConnections.3/@children.0" sourceEnd="//@children.1/@sourceConnections.3/@children.1" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:WireLabelEditModel" location="239,106" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="enclosingType" location="104,20" id="{UMLID=_QY8OArmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Field@ownedEnd|org.lirazs.gbackbone.client.reflection/ClassType#enclosingType}" attachSource="true" multiplicityLabel="//@children.1/@sourceConnections.3/@children.1/@children.1" roleLabel="//@children.1/@sourceConnections.3/@children.1/@children.0" navigable="true" changeability="2" flags="2">
+        <children xsi:type="editmodel:LabelEditModel" name="- enclosingType" location="195,99" size="77,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+        <children xsi:type="editmodel:LabelEditModel" name="1" location="195,127" size="6,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="ownedEnd" location="0,6" id="{UMLID=_QeA7QbmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Field@ownedEnd|org.lirazs.gbackbone.client.reflection/Field#ownedEnd}" roleLabel="//@children.1/@sourceConnections.3/@children.2/@children.0" flags="1">
+        <children xsi:type="editmodel:LabelEditModel" name="+ ownedEnd" location="212,99" size="61,14" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" autoLocated="true" id="{UMLID=_QmW-8LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Method@cachedOverridableMethods}" source="//@children.1" target="//@children.4" targetEnd="//@children.1/@sourceConnections.4/@children.2" label="//@children.1/@sourceConnections.4/@children.0" sourceEnd="//@children.1/@sourceConnections.4/@children.1" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:WireLabelEditModel" location="249,131" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="enclosingType" location="95,27" id="{UMLID=_Qg1lwLmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Method@cachedOverridableMethods|org.lirazs.gbackbone.client.reflection/ClassType#enclosingType}" attachSource="true" multiplicityLabel="//@children.1/@sourceConnections.4/@children.1/@children.1" roleLabel="//@children.1/@sourceConnections.4/@children.1/@children.0" navigable="true" changeability="2" flags="2">
+        <children xsi:type="editmodel:LabelEditModel" name="- enclosingType" location="95,134" size="77,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+        <children xsi:type="editmodel:LabelEditModel" name="1" location="186,134" size="6,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="cachedOverridableMethods" location="3,0" id="{UMLID=_PkMXULmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Method@cachedOverridableMethods|org.lirazs.gbackbone.client.reflection/Method#cachedOverridableMethods}" multiplicityLabel="//@children.1/@sourceConnections.4/@children.2/@children.1" roleLabel="//@children.1/@sourceConnections.4/@children.2/@children.0" aggregationKind="Composition" navigable="true" flags="2">
+        <children xsi:type="editmodel:LabelEditModel" name="- cachedOverridableMethods" location="316,149" size="140,14" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" name="*" location="298,149" size="4,14" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" autoLocated="true" id="{UMLID=_RDHMYbmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Constructor@ownedEnd}" source="//@children.1" target="//@children.6" targetEnd="//@children.1/@sourceConnections.5/@children.2" label="//@children.1/@sourceConnections.5/@children.0" sourceEnd="//@children.1/@sourceConnections.5/@children.1" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:WireLabelEditModel" location="272,170" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="enclosingType" location="76,27" id="{UMLID=_Q_1O4LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Constructor@ownedEnd|org.lirazs.gbackbone.client.reflection/ClassType#enclosingType}" attachSource="true" multiplicityLabel="//@children.1/@sourceConnections.5/@children.1/@children.1" roleLabel="//@children.1/@sourceConnections.5/@children.1/@children.0" navigable="true" changeability="2" flags="2">
+        <children xsi:type="editmodel:LabelEditModel" name="- enclosingType" location="76,134" size="77,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+        <children xsi:type="editmodel:LabelEditModel" name="1" location="202,134" size="6,14" fontInfo="Arial-8-0" anchorKind="FirstPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" name="ownedEnd" location="33,0" id="{UMLID=_RDHMYrmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/ClassType@enclosingType+org.lirazs.gbackbone.client.reflection/Constructor@ownedEnd|org.lirazs.gbackbone.client.reflection/Constructor#ownedEnd}" roleLabel="//@children.1/@sourceConnections.5/@children.2/@children.0" flags="1">
+        <children xsi:type="editmodel:LabelEditModel" name="+ ownedEnd" location="381,229" size="61,14" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" targetConnections="//@children.1/@sourceConnections.3" name="Field" location="280,114" size="72,27" stereotype="" id="{UMLID=_PlrlEbmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/Field}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="131,367"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:RealizationEditModel" size="2,1" description="Realization" autoLocated="true" id="{UMLID=__LF6kLmuEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/Field->org.lirazs.gbackbone.client.reflection/HasMetaData}" source="//@children.2" target="//@children.3" targetEnd="//@children.2/@sourceConnections.0/@children.1" label="//@children.2/@sourceConnections.0/@children.2" sourceEnd="//@children.2/@sourceConnections.0/@children.0" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="35,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="45,41"/>
+      <children xsi:type="editmodel:WireLabelEditModel" location="325,81" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <children xsi:type="editmodel:InterfaceEditModel" targetConnections="//@children.2/@sourceConnections.0 //@children.5/@sourceConnections.0 //@children.1/@sourceConnections.1" name="HasMetaData" location="270,20" size="123,41" id="{UMLID=_PaqA0bmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/HasMetaData}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" targetConnections="//@children.1/@sourceConnections.4" name="Method" location="306,170" size="87,27" stereotype="" id="{UMLID=_PkMXUbmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/Method}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:GeneralizationEditModel" size="2,1" description="Generalization" autoLocated="true" id="{UMLID=_QgZg4LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/AbstractMethod&lt;-org.lirazs.gbackbone.client.reflection/Method}" source="//@children.4" target="//@children.5" targetEnd="//@children.4/@sourceConnections.0/@children.1" sourceEnd="//@children.4/@sourceConnections.0/@children.0" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="74,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="11,27"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" targetConnections="//@children.4/@sourceConnections.0 //@children.6/@sourceConnections.0" name="AbstractMethod" location="369,114" size="138,27" stereotype="" id="{UMLID=_QgPv4LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/AbstractMethod}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:RealizationEditModel" size="2,1" description="Realization" autoLocated="true" id="{UMLID=_GwuPMLmvEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/AbstractMethod->org.lirazs.gbackbone.client.reflection/HasMetaData}" source="//@children.5" target="//@children.3" targetEnd="//@children.5/@sourceConnections.0/@children.1" label="//@children.5/@sourceConnections.0/@children.2" sourceEnd="//@children.5/@sourceConnections.0/@children.0" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="11,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="110,41"/>
+      <children xsi:type="editmodel:WireLabelEditModel" location="390,81" size="0,14" fontInfo="Arial-8-0" anchorKind="MiddlePart"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" targetConnections="//@children.1/@sourceConnections.5" name="Constructor" location="341,250" size="112,27" stereotype="" id="{UMLID=_PmbL8LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/Constructor}" runTimeClassModel="">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:GeneralizationEditModel" size="2,1" description="Generalization" autoLocated="true" id="{UMLID=_Q_iT8LmsEdyGseRhu5X4cA,JavaID=org.lirazs.gbackbone.client.reflection/AbstractMethod&lt;-org.lirazs.gbackbone.client.reflection/Constructor}" source="//@children.6" target="//@children.5" targetEnd="//@children.6/@sourceConnections.0/@children.1" sourceEnd="//@children.6/@sourceConnections.0/@children.0" connectionRouterKind="Manual">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="69,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="41,27"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showMethods="true" showAttributes="true" showMethodAssociationMember="false"/>
+  </children>
+  <diagramOptions xsi:type="options:ClassDiagramOptions" properties="wireOptions=1" autoName="false"/>
+  <boardSetting snapToGeometry="true" gridEnabled="true" gridSpacing="10,10" gridOrigin="0,0" rulerUnit="pixel">
+    <leftRuler/>
+    <topRuler/>
+  </boardSetting>
+  <classDiagramPreferences xsi:type="editmodel:UMLClassDiagramPreference" attributeSorter="Natural" methodSorter="Natural" showClassStereotype="true" showPackageStereotype="true" innerClassSorter="Natural" showPublicAttributes="true" showStaticAttributes="true" showPublicInnerClasses="true" showStaticInnerClasses="true" showInterfaceStereotype="true" showMethods="true" showAttributes="true" showLiterlas="true" showInnerEntity="true" showMethodAssociationMember="false"/>
+</editmodel:ClassDiagramEditModel>
