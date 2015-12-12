@@ -18,6 +18,7 @@ package org.lirazs.gbackbone.client.core.event;
 
 import com.google.gwt.query.client.Function;
 import com.google.gwt.regexp.shared.RegExp;
+import org.lirazs.gbackbone.client.core.function.OnceFunction;
 import org.lirazs.gbackbone.client.core.util.ArrayUtils;
 import org.lirazs.gbackbone.client.core.util.UUID;
 
@@ -27,7 +28,8 @@ public class Events<T extends Events<T>> {
 
     String listenerId = UUID.uniqueId("l");
 
-    Map<String, Events> listeners = new HashMap<String, Events>();
+    Map<String, ListeningEntry> listeners = new HashMap<String, ListeningEntry>();
+    Map<String, ListeningEntry> listeningTo = new HashMap<String, ListeningEntry>();
     Map<String, List<EventEntry>> events = new HashMap<String, List<EventEntry>>();
 
     RegExp eventsSplitter = RegExp.compile("\\s+");
@@ -36,43 +38,128 @@ public class Events<T extends Events<T>> {
         private final Function callback;
         private final Object context;
         private final Object ctx;
+        private final ListeningEntry listening;
 
-        EventEntry(Function callback, Object context, Object ctx) {
+        EventEntry(Function callback, Object context, Object ctx, ListeningEntry listening) {
             this.callback = callback;
             this.context = context;
             this.ctx = ctx;
+            this.listening = listening;
         }
     }
 
-    /**
-     * if (!eventsApi(this, 'on', name, [callback, context]) || !callback) return this;
-     this._events || (this._events = {});
-     var events = this._events[name] || (this._events[name] = []);
-     events.push({ callback: callback, context: context, ctx: context || this });
-     return this;
-     */
+    //{obj: obj, objId: id, id: thisId, listeningTo: listeningTo, count: 0};
+    class ListeningEntry {
+        private final Events obj;
+        private final String objId;
+        private final String id;
+        private final Map<String, ListeningEntry> listeningTo;
+        private int count;
+
+        ListeningEntry(Events obj, String objId, String id, Map<String,
+                        ListeningEntry> listeningTo) {
+            this.obj = obj;
+            this.objId = objId;
+            this.id = id;
+            this.listeningTo = listeningTo;
+        }
+        int incrementCount() {
+            count++;
+            return count;
+        }
+        int decreaseCount() {
+            count--;
+            return count;
+        }
+    }
+
+    public int getListeningToCount() {
+        return listeningTo.size();
+    }
+    public int getListenersCount() {
+        return listeners.size();
+    }
+    public int getEventCount(String eventName) {
+        List<EventEntry> eventEntries = events.get(eventName);
+        return eventEntries != null ? eventEntries.size() : 0;
+    }
+
+    /** // Bind an event to a `callback` function. Passing `"all"` will bind
+    // the callback to all events fired.
+    Events.on = function(name, callback, context) {
+        return internalOn(this, name, callback, context);
+    };
+
+    // Guard the `listening` argument from the public API.
+    var internalOn = function(obj, name, callback, context, listening) {
+        obj._events = eventsApi(onApi, obj._events || {}, name, callback, {
+                context: context,
+                ctx: obj,
+                listening: listening
+        });
+
+        if (listening) {
+            var listeners = obj._listeners || (obj._listeners = {});
+            listeners[listening.id] = listening;
+        }
+
+        return obj;
+    };*/
+
+    /** // The reducing API that adds a callback to the `events` object.
+    var onApi = function(events, name, callback, options) {
+        if (callback) {
+            var handlers = events[name] || (events[name] = []);
+            var context = options.context, ctx = options.ctx, listening = options.listening;
+            if (listening) listening.count++;
+
+            handlers.push({ callback: callback, context: context, ctx: context || ctx, listening: listening });
+        }
+        return events;
+    };*/
+
+    public T on(Map<String, Function> events) {
+        for (Map.Entry<String, Function> functionEntry : events.entrySet()) {
+            Function function = functionEntry.getValue();
+            if(function != null) {
+                on(functionEntry.getKey(), function);
+            }
+        }
+
+        return (T)this;
+    }
     public T on(String name, Function callback) {
         return on(name, callback, null);
     }
     public T on(String name, Function callback, Object context) {
+        internalOn(this, name, callback, context, null);
+        return (T)this;
+    }
 
+    private void internalOn(Events obj, String name, Function callback, Object context, ListeningEntry listening) {
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {
             String[] names = name.split(eventsSplitter.getSource());
             for (String splittedName : names) {
-                on(splittedName, callback, context);
+                internalOn(obj, splittedName, callback, context, listening);
             }
         } else {
-            List<EventEntry> eventEntries = events.get(name);
-            if(eventEntries == null) {
-                eventEntries = new ArrayList<EventEntry>();
-                events.put(name, eventEntries);
+            if (callback != null) {
+                List<EventEntry> handlers = (List<EventEntry>) obj.events.get(name);
+                if(handlers == null) {
+                    handlers = new ArrayList<EventEntry>();
+                    obj.events.put(name, handlers);
+                }
+
+                EventEntry eventEntry = new EventEntry(callback, context, context != null ? context : this, listening);
+                handlers.add(eventEntry);
             }
 
-            EventEntry eventEntry = new EventEntry(callback, context, context != null ? context : this);
-            eventEntries.add(eventEntry);
+            if(listening != null) {
+                listening.incrementCount();
+                obj.listeners.put(listening.id, listening);
+            }
         }
-        return (T)this;
     }
 
     /**
@@ -92,68 +179,134 @@ public class Events<T extends Events<T>> {
         return once(name, callback, null);
     }
     public T once(final String name, final Function callback, Object context) {
-        // Handle a situation where name is separated, can be multiple events
+        if(callback == null) return (T)this;
+
         if(eventsSplitter.test(name)) {
             String[] names = name.split(eventsSplitter.getSource());
             for (String splittedName : names) {
                 once(splittedName, callback, context);
             }
         } else {
-            final Function onceCallback = new Function() {
+            final OnceFunction onceCallback = new OnceFunction(name, callback) {
                 @Override
-                public void f() {
-                    off(name, this);
-                    callback.f(getArguments());
+                public void once() {
+                    off(getName(), this);
+                    getCallback().f(getArguments());
                 }
             };
             on(name, onceCallback, context);
         }
+
         return (T)this;
     }
 
+    public T once(Map<String, Function> events) {
+        return once(events, null);
+    }
 
-    /**
-     * off(name?: string, callback?: (...args: any[]) => void , context?: any): any {
-         var retain, ev, events, names, i, l, j, k;
-         if (!this._events || !eventsApi(this, 'off', name, [callback, context])) return this;
-         if (!name && !callback && !context) {
-             this._events = {};
-             return this;
-         }
+    public T once(Map<String, Function> events, Object context) {
+        for (Map.Entry<String, Function> functionEntry : events.entrySet()) {
+            Function function = functionEntry.getValue();
+            if(function != null) {
+                once(functionEntry.getKey(), function, context);
+            }
+        }
 
-         names = name ? [name] : _.keys(this._events);
-
-         for (i = 0, l = names.length; i < l; i++) {
-             name = names[i];
-             if (events = this._events[name]) {
-                 this._events[name] = retain = [];
-                 if (callback || context) {
-                     for (j = 0, k = events.length; j < k; j++) {
-                        ev = events[j];
-                        if ((callback && callback !== ev.callback && callback !== ev.callback._callback) ||
-                                (context && context !== ev.context)) {
-                            retain.push(ev);
-                        }
-                     }
-                 }
-                 if (!retain.length) delete this._events[name];
-             }
-         }
-
-         return this;
-     }
-     */
-    public T off() {
-        events = new HashMap<String, List<EventEntry>>();
         return (T)this;
+    }
+
+    /** // Remove one or many callbacks. If `context` is null, removes all
+    // callbacks with that function. If `callback` is null, removes all
+    // callbacks for the event. If `name` is null, removes all bound
+    // callbacks for all events.
+    Events.off =  function(name, callback, context) {
+        if (!this._events) return this;
+        this._events = eventsApi(offApi, this._events, name, callback, {
+                context: context,
+                listeners: this._listeners
+        });
+        return this;
+    };*/
+
+    /** // The reducing API that removes a callback from the `events` object.
+    var offApi = function(events, name, callback, options) {
+        if (!events) return;
+
+        var i = 0, listening;
+        var context = options.context, listeners = options.listeners;
+
+        // Delete all events listeners and "drop" events.
+        if (!name && !callback && !context) {
+            var ids = _.keys(listeners);
+            for (; i < ids.length; i++) {
+                listening = listeners[ids[i]];
+                delete listeners[listening.id];
+                delete listening.listeningTo[listening.objId];
+            }
+            return;
+        }
+
+        var names = name ? [name] : _.keys(events);
+        for (; i < names.length; i++) {
+            name = names[i];
+            var handlers = events[name];
+
+            // Bail out if there are no events stored.
+            if (!handlers) break;
+
+            // Replace events if there are any remaining.  Otherwise, clean up.
+            var remaining = [];
+            for (var j = 0; j < handlers.length; j++) {
+                var handler = handlers[j];
+                if (
+                        callback && callback !== handler.callback &&
+                                callback !== handler.callback._callback ||
+                                context && context !== handler.context
+                        ) {
+                    remaining.push(handler);
+                } else {
+                    listening = handler.listening;
+                    if (listening && --listening.count === 0) {
+                        delete listeners[listening.id];
+                        delete listening.listeningTo[listening.objId];
+                    }
+                }
+            }
+
+            // Update tail event if the list has any events.  Otherwise, clean up.
+            if (remaining.length) {
+                events[name] = remaining;
+            } else {
+                delete events[name];
+            }
+        }
+        if (_.size(events)) return events;
+    };*/
+
+    public T off() {
+        return off(null, null, null);
+    }
+
+    public T off(Map<String, Function> events) {
+        for (Map.Entry<String, Function> functionEntry : events.entrySet()) {
+            Function function = functionEntry.getValue();
+            if(function != null) {
+                off(functionEntry.getKey(), function);
+            }
+        }
+
+        return (T)this;
+    }
+
+    public T off(Object context) {
+        return off(null, null, context);
+    }
+    public T off(Function callback) {
+        return off(null, callback, null);
     }
 
     public T off(Function callback, Object context) {
-        Set<String> keySet = new HashSet<String>(events.keySet());
-        for (String name : keySet) {
-            off(name, callback, context);
-        }
-        return (T)this;
+        return off(null, callback, context);
     }
 
     public T off(String name) {
@@ -164,53 +317,115 @@ public class Events<T extends Events<T>> {
     }
 
     public T off(String name, Function callback, Object context) {
+        internalOff(name, callback, context, listeners);
+        return (T)this;
+    }
+
+    private void internalOff(String name, Function callback, Object context,
+                             Map<String, ListeningEntry> listeners) {
+
+        if(events == null || events.isEmpty()) return;
+
+        // Delete all events listeners and "drop" events.
+        if(name == null && callback == null && context == null) {
+            Set<String> ids = new HashSet<String>(listeners.keySet());
+            for (String id : ids) {
+                ListeningEntry listening = listeners.get(id);
+
+                listeners.remove(listening.id);
+                listening.listeningTo.remove(listening.objId);
+            }
+
+            this.events = new HashMap<String, List<EventEntry>>();
+            return;
+        }
+
         // Handle a situation where name is separated, can be multiple events
         if(eventsSplitter.test(name)) {
             String[] names = name.split(eventsSplitter.getSource());
             for (String splittedName : names) {
-                off(splittedName, callback, context);
+                internalOff(splittedName, callback, context, listeners);
             }
-        } else if(events.containsKey(name)) {
-            List<EventEntry> eventEntries = events.get(name);
+        } else {
+            // Replace events if there are any remaining.  Otherwise, clean up.
+            String[] names;
+            if(name != null) {
+                names = new String[] {name};
+            } else {
+                names = events.keySet().toArray(new String[events.size()]);
+            }
 
-            int retainIndex = 0;
-            //EventEntry[] retainKey = new EventEntry[eventEntries.size()];
+            for (String eventName : names) {
+                if(events.containsKey(eventName)) {
+                    List<EventEntry> handlers = events.get(eventName);
 
-            if(eventEntries.size() > 0 && (callback != null || context != null)) {
+                    List<EventEntry> remaining = new ArrayList<EventEntry>();
+                    events.put(eventName, remaining);
 
-                for (int i = 0; i < eventEntries.size(); i++) {
-                    EventEntry eventEntry = eventEntries.get(i);
-                    if((callback != null && !callback.equals(eventEntry.callback))
-                            || (context != null && !context.equals(eventEntry.context))) {
-                        //retainKey[retainIndex++] = eventEntry;
-                        retainIndex++;
+                    if(handlers.size() > 0) {
+
+                        for (int i = 0; i < handlers.size(); i++) {
+                            EventEntry handler = handlers.get(i);
+
+                            if(callback != null && callback instanceof OnceFunction) { // make sure the original instance is used for checks
+                                callback = ((OnceFunction)callback).getCallback();
+                            }
+
+                            Function eventEntryCallback = handler.callback;
+                            if(eventEntryCallback != null && eventEntryCallback instanceof OnceFunction) { // make sure the original instance is used for checks
+                                eventEntryCallback = ((OnceFunction)eventEntryCallback).getCallback();
+                            }
+
+                            if((callback != null && !callback.equals(eventEntryCallback))
+                                    || (context != null && !context.equals(handler.context))) {
+                                remaining.add(handler);
+                            } else {
+
+                                ListeningEntry listening = handler.listening;
+                                if(listening != null && listening.decreaseCount() == 0) {
+                                    listeners.remove(listening.id);
+                                    listening.listeningTo.remove(listening.objId);
+                                }
+                            }
+                        }
+                    }
+
+                    if(remaining.size() == 0) {
+                        handlers.clear();
+                        events.remove(eventName);
                     }
                 }
             }
-
-            if(retainIndex == 0) {
-                eventEntries.clear();
-                events.remove(name);
-            }
         }
-        return (T)this;
     }
 
+    /** // Trigger one or many events, firing all bound callbacks. Callbacks are
+    // passed the same arguments as `trigger` is, apart from the event name
+    // (unless you're listening on `"all"`, which will cause your callback to
+    // receive the true name of the event as the first argument).
+    Events.trigger =  function(name) {
+        if (!this._events) return this;
 
-    /**
-     trigger(name: string, ...args: any[]): any {
-         if (!this._events) return this;
-         if (!eventsApi(this, 'trigger', name, args)) return this;
+        var length = Math.max(0, arguments.length - 1);
+        var args = Array(length);
+        for (var i = 0; i < length; i++) args[i] = arguments[i + 1];
 
-         var events = this._events[name];
-         var allEvents = this._events.all;
+        eventsApi(triggerApi, this._events, name, void 0, args);
+        return this;
+    };*/
 
-         if (events) triggerEvents(events, args);
-         if (allEvents) triggerEvents(allEvents, arguments);
+    /** // Handles triggering the appropriate event callbacks.
+    var triggerApi = function(objEvents, name, cb, args) {
+        if (objEvents) {
+            var events = objEvents[name];
+            var allEvents = objEvents.all;
+            if (events && allEvents) allEvents = allEvents.slice();
+            if (events) triggerEvents(events, args);
+            if (allEvents) triggerEvents(allEvents, [name].concat(args));
+        }
+        return objEvents;
+    };*/
 
-         return this;
-     }
-     */
     public T trigger(String name, Object ...args) {
         if(events == null || events.isEmpty())
             return (T)this;
@@ -223,12 +438,17 @@ public class Events<T extends Events<T>> {
             }
         } else {
             List<EventEntry> eventEntries = events.get(name);
+            // support for all events listeners
+            List<EventEntry> allEventEntries = events.get("all");
+
+            if(eventEntries != null && eventEntries.size() > 0 &&
+                    allEventEntries != null && allEventEntries.size() > 0) {
+                // make sure provided all events array cannot grow/shrink while in trigger
+                allEventEntries = new ArrayList<EventEntry>(allEventEntries);
+            }
             if(eventEntries != null && eventEntries.size() > 0) {
                 triggerEvents(eventEntries, args);
             }
-
-            // support for all events listeners
-            List<EventEntry> allEventEntries = events.get("all");
             if(allEventEntries != null && allEventEntries.size() > 0) {
                 triggerEvents(allEventEntries, ArrayUtils.joinArrays(new Object[] {name}, args));
             }
@@ -236,90 +456,158 @@ public class Events<T extends Events<T>> {
         return (T)this;
     }
 
-    /**
-     *
-     stopListening(obj?: any, name?: string, callback?: (...args: any[]) => void ): any {
-         var listeners = this._listeners;
-         if (!listeners) return this;
-         var deleteListener = !name && !callback;
+    /** // Tell this object to stop listening to either specific events ... or
+    // to every object it's currently listening to.
+    Events.stopListening =  function(obj, name, callback) {
+        var listeningTo = this._listeningTo;
+        if (!listeningTo) return this;
 
-         if (typeof name === 'object') callback = <any> this;
-         if (obj) (listeners = {})[obj._listenerId] = obj;
+        var ids = obj ? [obj._listenId] : _.keys(listeningTo);
 
-         for (var id in listeners) {
-             listeners[id].off(name, callback, this);
-             if (deleteListener) delete this._listeners[id];
-         }
-         return this;
-     }
-     */
+        for (var i = 0; i < ids.length; i++) {
+            var listening = listeningTo[ids[i]];
+
+            // If listening doesn't exist, this object is not currently
+            // listening to obj. Break out early.
+            if (!listening) break;
+
+            listening.obj.off(name, callback, this);
+        }
+        if (_.isEmpty(listeningTo)) this._listeningTo = void 0;
+
+        return this;
+    };*/
     public T stopListening() {
-        if(listeners == null || listeners.isEmpty())
-            return (T)this;
+        return stopListening(null, null, null);
+    }
+    public T stopListening(String name) {
+        return stopListening(null, name, null);
+    }
+    public T stopListening(Events obj) {
+        return stopListening(obj, null, null);
+    }
+    public T stopListening(Events obj, String name) {
+        return stopListening(obj, name, null);
+    }
 
-        Set<String> keySet = new HashSet<String>(listeners.keySet());
-        for (String listenerId : keySet) {
-            Events listener = listeners.get(listenerId);
-            listener.off(null, this);
-            listeners.remove(listenerId);
+    public T stopListening(final Events obj, String name, Function callback) {
+        Map<String, ListeningEntry> listeningTo = this.listeningTo;
+        if(listeningTo == null || listeningTo.isEmpty()) return (T)this;
+
+        Set<String> ids = obj != null ? new HashSet<String>(Collections.singletonList(obj.listenerId))
+                : new HashSet<String>(listeningTo.keySet());
+
+        for (String id : ids) {
+            ListeningEntry listening = listeningTo.get(id);
+
+            // If listening doesn't exist, this object is not currently
+            // listening to obj. Break out early.
+            if(listening == null) break;
+
+            listening.obj.off(name, callback, this);
+        }
+        if(listeningTo.isEmpty()) this.listeningTo = new HashMap<String, ListeningEntry>();
+
+        return (T)this;
+    }
+
+    public T stopListening(Events obj, Map<String, Function> events) {
+        for (Map.Entry<String, Function> functionEntry : events.entrySet()) {
+            Function function = functionEntry.getValue();
+            if(function != null) {
+                stopListening(obj, functionEntry.getKey(), function);
+            }
         }
 
         return (T)this;
     }
-    public T stopListening(Events obj) {
-        if(listeners == null || listeners.isEmpty())
-            return (T)this;
 
-        obj.off(null, this);
-        listeners.remove(obj.listenerId);
+    /** // Inversion-of-control versions of `on`. Tell *this* object to listen to
+    // an event in another object... keeping track of what it's listening to
+    // for easier unbinding later.
+    Events.listenTo =  function(obj, name, callback) {
+        if (!obj) return this;
+        var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
+        var listeningTo = this._listeningTo || (this._listeningTo = {});
+        var listening = listeningTo[id];
+
+        // This object is not listening to any other events on `obj` yet.
+        // Setup the necessary references to track the listening callbacks.
+        if (!listening) {
+            var thisId = this._listenId || (this._listenId = _.uniqueId('l'));
+            listening = listeningTo[id] = {obj: obj, objId: id, id: thisId, listeningTo: listeningTo, count: 0};
+        }
+
+        // Bind callbacks on obj, and keep track of them on listening.
+        internalOn(obj, name, callback, this, listening);
+        return this;
+    };*/
+
+    public T listenTo(Events obj, Map<String, Function> events) {
+        for (Map.Entry<String, Function> functionEntry : events.entrySet()) {
+            Function function = functionEntry.getValue();
+            if(function != null) {
+                listenTo(obj, functionEntry.getKey(), function);
+            }
+        }
 
         return (T)this;
     }
-    public T stopListening(Events obj, String name) {
-        if(listeners == null || listeners.isEmpty())
-            return (T)this;
-
-        obj.off(name, null, this);
-        return (T)this;
-    }
-
-    public T stopListening(Events obj, String name, Function callback) {
-        if(listeners == null || listeners.isEmpty())
-            return (T)this;
-
-        obj.off(name, callback, this);
-        return (T)this;
-    }
-
-    /**
-     * listenTo(name: string, callback: (...args: any[]) => void , context?: any): any { }
-     * listenToOnce(name: string, callback: (...args: any[]) => void , context?: any): any { }
-     *
-     * var listenMethods = { listenTo: 'on', listenToOnce: 'once' };
-
-     _.each(listenMethods, function (implementation, method) {
-         EventBase.prototype[method] = function (obj, name, callback) {
-             var listeners = this._listeners || (this._listeners = {});
-             var id = obj._listenerId || (obj._listenerId = _.uniqueId('l'));
-
-             listeners[id] = obj;
-             if (typeof name === 'object') callback = this;
-
-             obj[implementation](name, callback, this);
-             return this;
-         };
-     });
-     */
 
     public T listenTo(Events obj, String name, Function callback) {
-        listeners.put(obj.listenerId, obj);
-        obj.on(name, callback, this);
+        if(obj == null) return (T)this;
+
+        String id = obj.listenerId;
+        Map<String, ListeningEntry> listeningTo = this.listeningTo;
+        ListeningEntry listening = listeningTo.get(id);
+
+        // This object is not listening to any other events on `obj` yet.
+        // Setup the necessary references to track the listening callbacks.
+        if(listening == null) {
+            String thisId = this.listenerId;
+            ListeningEntry listeningEntry = new ListeningEntry(
+                    obj, id, thisId, listeningTo
+            );
+            listeningTo.put(id, listeningEntry);
+            listening = listeningEntry;
+        }
+
+        // Bind callbacks on obj, and keep track of them on listening.
+        internalOn(obj, name, callback, this, listening);
 
         return (T)this;
     }
-    public T listenToOnce(Events obj, String name, Function callback) {
-        listeners.put(obj.listenerId, obj);
-        obj.once(name, callback, this);
+
+
+    public T listenToOnce(Events obj, Map<String, Function> events) {
+        for (Map.Entry<String, Function> functionEntry : events.entrySet()) {
+            Function function = functionEntry.getValue();
+            if(function != null) {
+                listenToOnce(obj, functionEntry.getKey(), function);
+            }
+        }
+
+        return (T)this;
+    }
+
+    public T listenToOnce(final Events obj, String name, Function callback) {
+        if(callback == null) return (T)this;
+
+        if(eventsSplitter.test(name)) {
+            String[] names = name.split(eventsSplitter.getSource());
+            for (String splittedName : names) {
+                listenToOnce(obj, splittedName, callback);
+            }
+        } else {
+            final OnceFunction onceCallback = new OnceFunction(name, callback) {
+                @Override
+                public void once() {
+                    stopListening(obj, getName(), this);
+                    getCallback().f(getArguments());
+                }
+            };
+            listenTo(obj, name, onceCallback);
+        }
 
         return (T)this;
     }
@@ -346,5 +634,45 @@ public class Events<T extends Events<T>> {
         }
     }
 
+    // Binding Aliases for backwards compatibility.
+    public T unbind() {
+        return unbind(null, null, null);
+    }
 
+    public T unbind(Map<String, Function> events) {
+        return off(events);
+    }
+
+    public T unbind(Object context) {
+        return unbind(null, null, context);
+    }
+    public T unbind(Function callback) {
+        return unbind(null, callback, null);
+    }
+
+    public T unbind(Function callback, Object context) {
+        return unbind(null, callback, context);
+    }
+
+    public T unbind(String name) {
+        return unbind(name, null, null);
+    }
+    public T unbind(String name, Function callback) {
+        return unbind(name, callback, null);
+    }
+
+    public T unbind(String name, Function callback, Object context) {
+        return off(name, callback, context);
+    }
+
+
+    public T bind(Map<String, Function> events) {
+        return on(events);
+    }
+    public T bind(String name, Function callback) {
+        return on(name, callback, null);
+    }
+    public T bind(String name, Function callback, Object context) {
+        return on(name, callback, context);
+    }
 }

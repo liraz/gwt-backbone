@@ -140,14 +140,6 @@ public abstract class Router extends Events {
 
     /**
      *
-     * routes: {
-         "alertMessageServiceList": "routeFilters",
-         "alertMessageServiceList/": "routeFilters",
-         "alertMessageServiceList/#!/stationIdentityKey/:stationIdentityKey/eventLogId/:eventLogId/severity/:severityType": "routeFilters",
-         "alertMessageServiceList/#!/severity/:severityType": "routeFilters",
-         "alertMessageServiceList/#!/eventLogId/:eventLogId": "routeFilters",
-         "alertMessageServiceList/#!/stationEditor/:moduleName/:stationIdentityKey" : "showStationEditor"
-     }
      *
      * // Bind all defined routes to `Backbone.history`. We have to reverse the
      // order of the routes here to support behavior where the most general
