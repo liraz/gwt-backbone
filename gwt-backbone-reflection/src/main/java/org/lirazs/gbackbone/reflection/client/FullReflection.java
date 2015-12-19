@@ -24,7 +24,9 @@ package org.lirazs.gbackbone.reflection.client;
  * if implement this interface, generate will create full reflection information
  * 
  */
-@Reflectable(fieldAnnotations = true, relationTypes=true, superClasses=true, assignableClasses=true)
+@Reflectable(classAnnotations = true, fields = true, methods = true, constructors = true,
+        fieldAnnotations = true, relationTypes=true,
+        superClasses=true, assignableClasses=true)
 public interface FullReflection {
 
 }

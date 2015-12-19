@@ -16,16 +16,21 @@
 package org.lirazs.gbackbone.client.core.navigation;
 
 import com.google.gwt.query.client.Function;
+import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
-import com.google.gwt.regexp.shared.SplitResult;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
-import org.lirazs.gbackbone.client.core.js.JsObject;
+import org.lirazs.gbackbone.reflection.client.ClassType;
+import org.lirazs.gbackbone.reflection.client.Method;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
+import org.lirazs.gbackbone.reflection.client.TypeOracle;
 
 import java.util.HashMap;
 
-
-public abstract class Router extends Events {
+@Reflectable(classAnnotations = true, fields = false, methods = true, constructors = false,
+        fieldAnnotations = true, relationTypes=false,
+        superClasses=false, assignableClasses=false)
+public class Router extends Events {
 
     /**
      * var optionalParam = /\((.*?)\)/g;
@@ -33,12 +38,12 @@ public abstract class Router extends Events {
      var splatParam = /\*\w+/g;
      var escapeRegExp = /[\-{}\[\]+?.,\\\^$|#\s]/g;
      */
-    RegExp optionalParam = RegExp.compile("/\\((.*?)\\)/g");
-    RegExp namedParam = RegExp.compile("/(\\(\\?)?:\\w+/g");
-    RegExp splatParam = RegExp.compile("/\\*\\w+/g");
-    RegExp escapeRegExp = RegExp.compile("/[\\-{}\\[\\]+?.,\\\\\\^$|#\\s]/g");
+    RegExp optionalParam = RegExp.compile("\\((.*?)\\)", "g");
+    //RegExp namedParam = RegExp.compile("(\\(\\?)?:\\w+", "g"); // cannot be used, since js function is needed
+    RegExp splatParam = RegExp.compile("\\*\\w+", "g");
+    RegExp escapeRegExp = RegExp.compile("[\\-{}\\[\\]+?.,\\\\\\^$|#\\s]", "g");
 
-    private HashMap<String, Function> routes;
+    private HashMap<String, String> routes;
 
 
     /**
@@ -66,9 +71,13 @@ public abstract class Router extends Events {
 
     // Initialize is an empty function by default. Override it with your own
     // initialization logic.
-    protected abstract void initialize(Options options);
+    protected void initialize(Options options) {
 
-    protected abstract HashMap<String, Function> routes();
+    }
+
+    protected HashMap<String, String> routes() {
+        return null;
+    }
 
     /**
      * // Manually bind a single named route to a callback. For example:
@@ -96,17 +105,40 @@ public abstract class Router extends Events {
          return this;
      }
      */
-    private Router route(String route, Function callback) {
+    protected Router route(String route, String name) {
+        return route(route, name, null);
+    }
+    protected Router route(String route, Function callback) {
         return route(route, "", callback);
     }
-    private Router route(String route, String name, Function callback) {
+    protected Router route(String route, String name, Function callback) {
         RegExp regExp = routeToRegExp(route);
         return route(regExp, name, callback);
     }
-    private Router route(RegExp route, Function callback) {
+    protected Router route(RegExp route, Function callback) {
         return route(route, "", callback);
     }
-    private Router route(final RegExp route, final String name, final Function callback) {
+    protected Router route(final RegExp route, final String name, Function callback) {
+
+        if(callback == null) {
+            callback = new Function() {
+                @Override
+                public void f() {
+                    ClassType classType = TypeOracle.Instance.getClassType(Router.this.getClass());
+                    Class[] params = new Class[getArguments().length];
+                    for (int i = 0; i < getArguments().length; i++) {
+                        params[i] = String.class;
+                    }
+
+                    Method method = classType.findMethod(name, params);
+                    if(method != null) {
+                        method.invoke(Router.this, getArguments());
+                    }
+                }
+            };
+        }
+
+        final Function innerCallback = callback;
 
         History.get().route(route, new Function() {
             @Override
@@ -114,8 +146,8 @@ public abstract class Router extends Events {
                 String fragment = this.getArgument(0);
 
                 String[] args = extractParameters(route, fragment);
-                if(callback != null) {
-                    callback.f(args);
+                if(innerCallback != null) {
+                    innerCallback.f(args);
                 }
                 trigger("route:" + name, args);
                 trigger("route", name, args);
@@ -155,15 +187,16 @@ public abstract class Router extends Events {
      }
      */
     private void bindRoutes() {
-        HashMap<String, Function> routesMap = routes();
-        if(routesMap == null) return;
+        HashMap<String, String> routesMap = routes();
+        if(routesMap == null && this.routes == null) return;
 
-        this.routes = routesMap;
+        if (routesMap != null) {
+            this.routes = routesMap;
+        }
 
-        String[] keys = (String[]) routesMap.keySet().toArray();
-        for (String route : keys) {
-            Function callback = routesMap.get(route);
-            route(route, callback);
+        for (String route : this.routes.keySet()) {
+            String name = this.routes.get(route);
+            route(route, name);
         }
     }
 
@@ -183,13 +216,20 @@ public abstract class Router extends Events {
      *
      */
     private RegExp routeToRegExp(String route) {
-        route = route.replaceAll(escapeRegExp.getSource(), "\\\\$&")
-                            .replaceAll(optionalParam.getSource(), "(?:$1)?")
-                            .replaceAll(namedParam.getSource(), "([^\\/]+)")
-                            .replaceAll(splatParam.getSource(), "(.*?)");
+        route = route.replaceAll(escapeRegExp.getSource(), "\\$&");
+        route = route.replaceAll(optionalParam.getSource(), "(?:$1)?");
+
+        route = replaceNamedParam(route);
+        route = route.replaceAll(splatParam.getSource(), "(.*?)");
 
         return RegExp.compile("^" + route + "$");
     }
+
+    private native String replaceNamedParam(String input) /*-{
+        return input.replace(new RegExp("(\\(\\?)?:\\w+", "g"), function (match, optional) {
+            return optional ? match : '([^\/]+)';
+        });
+    }-*/;
 
     /**
      * // Given a route, and a URL fragment that it matches, return the array of
@@ -203,11 +243,15 @@ public abstract class Router extends Events {
      }
      */
     private String[] extractParameters(RegExp route, String fragment) {
-        SplitResult params = route.split(fragment);
-        String[] result = new String[params.length()];
+        MatchResult matchResult = route.exec(fragment);
+        int groupCount = matchResult.getGroupCount() - 1;
+        if(groupCount < 0)
+            groupCount = 0;
 
-        for (int i = 0; i < params.length(); i++) {
-            String param = params.get(i);
+        String[] result = new String[groupCount];
+
+        for (int i = 0; i < groupCount; i++) {
+            String param = matchResult.getGroup(i + 1);
             result[i] = decodeURIComponent(param);
         }
         return result;

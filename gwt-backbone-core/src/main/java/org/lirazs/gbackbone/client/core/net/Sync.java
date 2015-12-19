@@ -269,8 +269,14 @@ public class Sync {
             settings.setContentType(options.<String>get("contentType"));
         if(options.containsKey("context"))
             settings.setContext(options.<Element>get("context"));
-        if(options.containsKey("data"))
-            settings.setData(options.get("data"));
+        if(options.containsKey("data")) {
+            Object data = options.get("data");
+            // make sure options object is not just passed along to the GQuery Ajax
+            if(data instanceof Options)
+                data = ((Options) data).toJsonString();
+
+            settings.setData(data);
+        }
         if(options.containsKey("dataString"))
             settings.setDataString(options.<String>get("dataString"));
         if(options.containsKey("dataType"))
@@ -321,8 +327,9 @@ public class Sync {
         syncArgs.setContentType(settings.getContentType());
         syncArgs.setContext(settings.getContext());
         if (data != null) {
-            syncArgs.setData(JSONParser.parseStrict((String) data));
+            syncArgs.setData(data);
         }
+        syncArgs.setDataType(settings.getDataType());
         syncArgs.setDataString(settings.getDataString());
         syncArgs.setError(settings.getError());
         syncArgs.setHeaders(settings.getHeaders());

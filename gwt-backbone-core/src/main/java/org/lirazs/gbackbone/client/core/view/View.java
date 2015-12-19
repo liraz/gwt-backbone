@@ -34,7 +34,10 @@ import org.lirazs.gbackbone.reflection.client.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class View extends Events implements FullReflection {
+@Reflectable(classAnnotations = true, fields = false, methods = true, constructors = false,
+        fieldAnnotations = true, relationTypes=false,
+        superClasses=false, assignableClasses=false)
+public class View extends Events {
     private String id;
 
     private String cid;
@@ -123,7 +126,6 @@ public class View extends Events implements FullReflection {
 
     private void bindAnnotatedEvents() {
         ClassType classType = TypeOracle.Instance.getClassType(getClass());
-        classType.getName();
 
         try {
             Method[] methods = classType.getMethods();

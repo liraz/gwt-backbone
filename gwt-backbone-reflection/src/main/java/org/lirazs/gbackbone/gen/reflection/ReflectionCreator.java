@@ -217,6 +217,13 @@ public class ReflectionCreator extends LogableSourceCreator {
 			sourceWriter.outdent();
 			sourceWriter.println("}");
 
+			sourceWriter.println("String methodNameCheck = methodName;");
+			sourceWriter.println("if (args.length > 0){");
+			sourceWriter.indent();
+			sourceWriter.println("methodNameCheck = methodName + args.length;");
+			sourceWriter.outdent();
+			sourceWriter.println("}");
+
 			for (JMethod method : methods) {
 				if (!method.isPublic())
 					continue;
@@ -230,9 +237,14 @@ public class ReflectionCreator extends LogableSourceCreator {
 
 				String methodName = method.getName();
 				JParameter[] methodParameters = method.getParameters();
+				String methodNameCheck = method.getName();
+				if(methodParameters.length > 0) {
+					methodNameCheck = methodName + methodParameters.length;
+				}
+
 				JType returnType = method.getReturnType();
 
-				sourceWriter.println("if (methodName.equals(\"" + methodName
+				sourceWriter.println("if (methodNameCheck.equals(\"" + methodNameCheck
 						+ "\")) {");
 				sourceWriter.indent();
 				sourceWriter.println("checkInvokeParams(methodName, "

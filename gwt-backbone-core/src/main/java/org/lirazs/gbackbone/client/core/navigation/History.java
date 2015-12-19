@@ -22,20 +22,17 @@ import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Properties;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.js.JsArray;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import org.lirazs.gbackbone.client.core.navigation.function.OnRouteFunction;
 
 import static com.google.gwt.query.client.GQuery.$;
 import static com.google.gwt.query.client.GQuery.window;
 
-public class History extends Events {
+public class History extends Events<History> {
 
     /**
      * // Cached regex for stripping a leading hash/slash and trailing space.
@@ -51,16 +48,16 @@ public class History extends Events {
      var trailingSlash = /\/$/;
      */
     // Cached regex for stripping a leading hash/slash and trailing space.
-    RegExp routeStripper = RegExp.compile("/^[#\\/]|\\s+$/g");
+    RegExp routeStripper = RegExp.compile("^[#\\/]|\\s+$","g");
 
     // Cached regex for stripping leading and trailing slashes.
-    RegExp rootStripper = RegExp.compile("/^\\/+|\\/+$/g");
+    RegExp rootStripper = RegExp.compile("^\\/+|\\/+$","g");
 
     // Cached regex for detecting MSIE.
-    RegExp isExplorer = RegExp.compile("/msie [\\w.]+/");
+    RegExp isExplorer = RegExp.compile("msie [\\w.]+");
 
     // Cached regex for removing a trailing slash.
-    RegExp trailingSlash = RegExp.compile("/\\/$/");
+    RegExp trailingSlash = RegExp.compile("\\/$");
 
     /**
      * fragment;
@@ -85,14 +82,32 @@ public class History extends Events {
      */
     static Boolean started = false;
 
+    class HandlerEntry {
+        RegExp route;
+        Function callback;
+
+        public HandlerEntry(RegExp route, Function callback) {
+            this.route = route;
+            this.callback = callback;
+        }
+
+        public RegExp getRoute() {
+            return route;
+        }
+
+        public Function getCallback() {
+            return callback;
+        }
+    }
+
     JsArray<Properties> handlers;
     int interval = 50;
     Options options;
 
     Timer checkUrlInterval;
-    Boolean hasPushState;
-    Boolean wantsHashChange;
-    Boolean wantsPushState;
+    boolean hasPushState;
+    boolean wantsHashChange;
+    boolean wantsPushState;
 
     String root;
     String fragment;
@@ -105,6 +120,16 @@ public class History extends Events {
             instance = new History();
         }
         return instance;
+    }
+
+    private WindowLocation location = new WindowLocationImpl();
+
+    public void registerLocationImpl(WindowLocation location) {
+        this.location = location;
+    }
+
+    public void setInterval(int interval) {
+        this.interval = interval;
     }
 
     /**
@@ -136,8 +161,8 @@ public class History extends Events {
         return getHash(null);
     }
     public String getHash(IFrameElement iframe) {
-        RegExp re = RegExp.compile("/#(.*)$/");
-        String href = Window.Location.getHref();
+        RegExp re = RegExp.compile("#(.*)$");
+        String href = location.getHref();
 
         if(iframe != null) {
             href = getIFrameUrl(iframe);
@@ -164,15 +189,15 @@ public class History extends Events {
      }
      */
     public String getFragment() {
-        return getFragment(null, null);
+        return getFragment(null, false);
     }
     public String getFragment(String fragment) {
         return getFragment(fragment, false);
     }
-    public String getFragment(String fragment, Boolean forcePushState) {
+    public String getFragment(String fragment, boolean forcePushState) {
         if(fragment == null) {
             if(hasPushState || !wantsHashChange || forcePushState) {
-                fragment = Window.Location.getPath();
+                fragment = location.getPath();
                 String root = this.root.replaceAll(trailingSlash.getSource(), "");
                 if(fragment.contains(root)) fragment = fragment.substring(root.length());
             } else {
@@ -264,8 +289,8 @@ public class History extends Events {
         this.hasPushState = this.options.getBoolean("pushState") && isPushStateSupported();
 
         String fragment = this.getFragment();
-        int documentMode = getDocumentMode();
-        boolean oldIE = (isExplorer.test(Window.Navigator.getUserAgent().toLowerCase())) && documentMode <= 7;
+        Integer documentMode = getDocumentMode();
+        boolean oldIE = (isExplorer.test(Window.Navigator.getUserAgent().toLowerCase())) && documentMode != null && documentMode <= 7;
 
         // Normalize root to always include a leading and trailing slash.
         this.root = ("/" + this.root + "/").replaceAll(rootStripper.getSource(), "/");
@@ -289,19 +314,19 @@ public class History extends Events {
         } else if(wantsHashChange && isOnHashChangeSupported() && !oldIE) {
             $(window).on("hashchange", this.checkUrl);
         }else if(wantsHashChange) {
-            this.checkUrlInterval = new Timer();
-            this.checkUrlInterval.schedule(new TimerTask() {
+            this.checkUrlInterval = new Timer() {
                 @Override
                 public void run() {
                     checkUrl.f();
                 }
-            }, this.interval);
+            };
+            this.checkUrlInterval.scheduleRepeating(this.interval);
         }
 
         // Determine if we need to change the base url, for a pushState link
         // opened by a non-pushState browser.
         this.fragment = fragment;
-        Boolean atRoot = Window.Location.getPath().replaceAll("/[^/]$/", "$&/").equals(this.root);
+        Boolean atRoot = location.getPath().replaceAll("/[^/]$/", "$&/").equals(this.root);
 
         // Transition from hashChange to pushState or vice versa if both are
         // requested.
@@ -310,13 +335,13 @@ public class History extends Events {
             // browser, but we're currently in a browser that doesn't support it...
             if(!hasPushState && !atRoot) {
                 this.fragment = getFragment(null, true);
-                Window.Location.replace(this.root + getLocationSearch() + "#" + this.fragment);
+                location.replace(this.root + getLocationSearch() + "#" + this.fragment);
                 // Return immediately as browser will do redirect to new url
                 return true;
 
                 // Or if we've started out with a hash-based route, but we're currently
                 // in a browser where it could be `pushState`-based instead...
-            } else if (hasPushState && atRoot && Window.Location.getHash() != null) {
+            } else if (hasPushState && atRoot && location.getHash() != null) {
                 this.fragment = this.getHash().replaceAll(routeStripper.getSource(), "");
                 replaceHistoryState(Document.get().getTitle(), this.root + this.fragment + getLocationSearch());
             }
@@ -377,6 +402,10 @@ public class History extends Events {
         this.handlers.unshift(properties);
     }
 
+    public void checkUrl() {
+        checkUrl.f();
+    }
+
     /**
      * // Checks the current URL to see if it has changed, and if it has,
      // calls `loadUrl`, normalizing across the hidden iframe.
@@ -434,7 +463,7 @@ public class History extends Events {
         for (int i = 0; i < handlers.length(); i++) {
             Properties handler = handlers.get(i);
             RegExp route = handler.get("route");
-            Function callback = handler.get("callback");
+            Function callback = handler.getFunction("callback");
 
             if (route.test(fragment)) {
                 callback.f(fragment);
@@ -493,8 +522,11 @@ public class History extends Events {
      }
      *
      */
-    private boolean navigate(String fragment) {
-        return navigate(fragment, null);
+    public boolean navigate(String fragment) {
+        return navigate(fragment, new Options());
+    }
+    public boolean navigate(String fragment, Boolean trigger) {
+        return navigate(fragment, new Options("trigger", trigger));
     }
     // instead of: navigate(fragment, true) use navigate(fragment, new Options("trigger",true))
     public boolean navigate(String fragment, Options options) {
@@ -532,7 +564,7 @@ public class History extends Events {
             // If you've told us that you explicitly don't want fallback hashchange-
             // based history, then `navigate` becomes a page refresh.
         } else {
-            Window.Location.assign(url);
+            location.assign(url);
             return true;
         }
 
@@ -561,7 +593,7 @@ public class History extends Events {
     }
     private void updateHash(IFrameElement iFrame, String fragment, boolean replace) {
         if(replace) {
-            String locationHref = Window.Location.getHref();
+            String locationHref = location.getHref();
             if(iFrame != null) {
                 locationHref = getIFrameUrl(iFrame);
             }
@@ -571,7 +603,7 @@ public class History extends Events {
             if(iFrame != null) {
                 replaceFrameLocation(iFrame, href + '#' + fragment);
             } else {
-                Window.Location.replace(href + '#' + fragment);
+                location.replace(href + '#' + fragment);
             }
         } else {
             // Some browsers require that `hash` contains a leading #.
@@ -583,6 +615,13 @@ public class History extends Events {
                 com.google.gwt.user.client.History.newItem(hash);
             }
         }
+    }
+
+    public History onRoute(OnRouteFunction callback) {
+        return on("route", callback);
+    }
+    public History offRoute(OnRouteFunction callback) {
+        return off("route", callback);
     }
 
     private native void replaceFrameLocation(IFrameElement frame, String s) /*-{
@@ -627,15 +666,15 @@ public class History extends Events {
         return $wnd.location.search;
     }-*/;
 
-    private native Boolean isOnHashChangeSupported() /*-{
+    private native boolean isOnHashChangeSupported() /*-{
         return ('onhashchange' in window);
     }-*/;
 
-    private native Boolean isPushStateSupported() /*-{
+    private native boolean isPushStateSupported() /*-{
         return typeof($wnd.history.pushState) == "function";
     }-*/;
 
-    private native int getDocumentMode() /*-{
+    private native Integer getDocumentMode() /*-{
         return $wnd.document.documentMode;
     }-*/;
 }

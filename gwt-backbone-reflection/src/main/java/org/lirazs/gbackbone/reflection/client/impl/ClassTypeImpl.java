@@ -91,7 +91,7 @@ public class ClassTypeImpl<T> extends TypeImpl implements AccessDef, HasAnnotati
 
 	protected void checkInvokeParams(String methodName, int paramCount, Object[] args) throws IllegalArgumentException {
 		if (args.length != paramCount) {
-			throw new IllegalArgumentException("Method: " + methodName + "request " + paramCount + " params, but invoke provide " + args.length + " params.");
+			throw new IllegalArgumentException("Method: " + methodName + " request " + paramCount + " params, but invoke provide " + args.length + " params.");
 		}
 	}
 
