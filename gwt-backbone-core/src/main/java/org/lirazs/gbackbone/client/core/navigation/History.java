@@ -366,8 +366,10 @@ public class History extends Events<History> {
         $(window).off("popstate", this.checkUrl);
         $(window).off("hashchange", this.checkUrl);
 
-        checkUrlInterval.cancel();
-        checkUrlInterval = null;
+        if (checkUrlInterval != null) {
+            checkUrlInterval.cancel();
+            checkUrlInterval = null;
+        }
 
         History.started = false;
     }
@@ -598,7 +600,7 @@ public class History extends Events<History> {
                 locationHref = getIFrameUrl(iFrame);
             }
 
-            String href = locationHref.replace("/(javascript:|#).*$/", "");
+            String href = locationHref.replaceAll("(javascript:|#).*$", "");
 
             if(iFrame != null) {
                 replaceFrameLocation(iFrame, href + '#' + fragment);

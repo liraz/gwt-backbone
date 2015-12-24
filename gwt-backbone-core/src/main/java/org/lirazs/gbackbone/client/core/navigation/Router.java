@@ -25,7 +25,7 @@ import org.lirazs.gbackbone.reflection.client.Method;
 import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.reflection.client.TypeOracle;
 
-import java.util.HashMap;
+import java.util.*;
 
 @Reflectable(classAnnotations = true, fields = false, methods = true, constructors = false,
         fieldAnnotations = true, relationTypes=false,
@@ -33,17 +33,19 @@ import java.util.HashMap;
 public class Router extends Events {
 
     /**
-     * var optionalParam = /\((.*?)\)/g;
-     var namedParam = /(\(\?)?:\w+/g;
-     var splatParam = /\*\w+/g;
-     var escapeRegExp = /[\-{}\[\]+?.,\\\^$|#\s]/g;
+     * // Cached regular expressions for matching named param parts and splatted
+     // parts of route strings.
+     var optionalParam = /\((.*?)\)/g;
+     var namedParam    = /(\(\?)?:\w+/g;
+     var splatParam    = /\*\w+/g;
+     var escapeRegExp  = /[\-{}\[\]+?.,\\\^$|#\s]/g;
      */
     RegExp optionalParam = RegExp.compile("\\((.*?)\\)", "g");
     //RegExp namedParam = RegExp.compile("(\\(\\?)?:\\w+", "g"); // cannot be used, since js function is needed
     RegExp splatParam = RegExp.compile("\\*\\w+", "g");
     RegExp escapeRegExp = RegExp.compile("[\\-{}\\[\\]+?.,\\\\\\^$|#\\s]", "g");
 
-    private HashMap<String, String> routes;
+    private Map<String, ?> routes;
 
 
     /**
@@ -75,7 +77,7 @@ public class Router extends Events {
 
     }
 
-    protected HashMap<String, String> routes() {
+    protected LinkedHashMap<String, ?> routes() {
         return null;
     }
 
@@ -187,48 +189,60 @@ public class Router extends Events {
      }
      */
     private void bindRoutes() {
-        HashMap<String, String> routesMap = routes();
+        Map<String, ?> routesMap = routes();
         if(routesMap == null && this.routes == null) return;
 
         if (routesMap != null) {
             this.routes = routesMap;
         }
 
-        for (String route : this.routes.keySet()) {
-            String name = this.routes.get(route);
-            route(route, name);
+        List<String> keys = new ArrayList<String>(routes.keySet());
+        for(int i = keys.size() - 1; i >= 0; i--){
+            String route = keys.get(i);
+
+            Object o = this.routes.get(route);
+            if (o instanceof String) {
+                String name = (String) o;
+                route(route, name);
+            } else if(o instanceof Function) {
+                Function callback = (Function) o;
+                route(route, callback);
+            }
         }
     }
 
     /**
+     *
+     * var optionalParam = /\((.*?)\)/g;
+     var namedParam    = /(\(\?)?:\w+/g;
+     var splatParam    = /\*\w+/g;
+     var escapeRegExp  = /[\-{}\[\]+?.,\\\^$|#\s]/g;
+     *
      * // Convert a route string into a regular expression, suitable for matching
      // against the current location hash.
-     _routeToRegExp(route: string): RegExp {
+     _routeToRegExp: function(route) {
          route = route.replace(escapeRegExp, '\\$&')
-                         .replace(optionalParam, '(?:$1)?')
-                         .replace(namedParam, function (match, optional) {
-                            return optional ? match : '([^\/]+)';
-                         })
-                         .replace(splatParam, '(.*?)');
-
-         return new RegExp('^' + route + '$');
-     }
+             .replace(optionalParam, '(?:$1)?')
+             .replace(namedParam, function(match, optional) {
+                return optional ? match : '([^/?]+)';
+             })
+             .replace(splatParam, '([^?]*?)');
+         return new RegExp('^' + route + '(?:\\?([\\s\\S]*))?$');
+     },
      *
      */
     private RegExp routeToRegExp(String route) {
-        route = route.replaceAll(escapeRegExp.getSource(), "\\$&");
-        route = route.replaceAll(optionalParam.getSource(), "(?:$1)?");
-
-        route = replaceNamedParam(route);
-        route = route.replaceAll(splatParam.getSource(), "(.*?)");
-
-        return RegExp.compile("^" + route + "$");
+        return RegExp.compile(nativeRouteToRegExp(route));
     }
 
-    private native String replaceNamedParam(String input) /*-{
-        return input.replace(new RegExp("(\\(\\?)?:\\w+", "g"), function (match, optional) {
-            return optional ? match : '([^\/]+)';
-        });
+    private native String nativeRouteToRegExp(String input) /*-{
+        input = input.replace(/[\-{}\[\]+?.,\\\^$|#\s]/g, '\\$&')
+            .replace(/\((.*?)\)/g, '(?:$1)?')
+            .replace(/(\(\?)?:\w+/g, function(match, optional) {
+                return optional ? match : '([^/?]+)';
+            })
+            .replace(/\*\w+/g, '([^?]*?)');
+        return '^' + input + '(?:\\?([\\s\\S]*))?$';
     }-*/;
 
     /**
@@ -248,13 +262,15 @@ public class Router extends Events {
         if(groupCount < 0)
             groupCount = 0;
 
-        String[] result = new String[groupCount];
+        List<String> params = new ArrayList<String>();
 
         for (int i = 0; i < groupCount; i++) {
             String param = matchResult.getGroup(i + 1);
-            result[i] = decodeURIComponent(param);
+            if (param != null && !param.isEmpty()) {
+                params.add(decodeURIComponent(param));
+            }
         }
-        return result;
+        return params.toArray(new String[params.size()]);
     }
 
     private native String decodeURIComponent(String s) /*-{

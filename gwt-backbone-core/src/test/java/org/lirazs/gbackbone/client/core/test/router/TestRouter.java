@@ -4,12 +4,14 @@ import com.google.gwt.query.client.Function;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.navigation.Router;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 /**
  * Created on 18/12/2015.
  */
 public class TestRouter extends Router {
+    private int loadUrlCount;
+
     private int count;
     private int testing;
 
@@ -36,14 +38,15 @@ public class TestRouter extends Router {
     private String queryArgs;
 
     private String anything;
+    private String value = "unset";
 
     public TestRouter(Options options) {
         super(options);
     }
 
     @Override
-    protected HashMap<String, String> routes() {
-        HashMap<String, String> routes = new HashMap<String, String>();
+    protected LinkedHashMap<String, ?> routes() {
+        LinkedHashMap<String, Object> routes = new LinkedHashMap<String, Object>();
 
         routes.put("noCallback", "noCallback");
         routes.put("counter", "counter");
@@ -62,7 +65,12 @@ public class TestRouter extends Router {
         routes.put("decode/:named/*splat", "decode");
         routes.put("*first/complex-*part/*rest", "complex");
         routes.put("query/:entity", "query");
-        //put("function/:value", ExternalObject.routingFunction);
+        routes.put("function/:value", new Function() {
+            @Override
+            public void f() {
+                value = getArgument(0);
+            }
+        });
         routes.put("*anything", "anything");
 
         return routes;
@@ -73,6 +81,8 @@ public class TestRouter extends Router {
         testing = options.getInt("testing");
         route("implicit", "implicit");
     }
+
+
 
     public int getTesting() {
         return testing;
@@ -154,6 +164,9 @@ public class TestRouter extends Router {
         return anything;
     }
 
+    public String getValue() {
+        return value;
+    }
 
     public void counter() {
         count++;
@@ -188,7 +201,7 @@ public class TestRouter extends Router {
         this.contact = "new";
     }
 
-    public void loadContact() {
+    public void loadContact(String id) {
         this.contact = "load";
     }
 
