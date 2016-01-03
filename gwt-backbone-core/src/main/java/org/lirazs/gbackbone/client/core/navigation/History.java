@@ -148,7 +148,7 @@ public class History extends Events<History> {
      */
     protected String getSearch() {
         RegExp re = RegExp.compile("\\?.+");
-        String href = location.getHref().replaceAll("/#.*/", "");
+        String href = location.getHref().replaceAll("#.*", "");
 
         MatchResult result = re.exec(href);
         return result != null ? result.getGroup(0) : "";

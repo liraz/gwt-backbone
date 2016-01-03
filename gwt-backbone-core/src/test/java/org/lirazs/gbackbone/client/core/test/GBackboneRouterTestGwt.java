@@ -567,6 +567,7 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
         location.replace("http://example.com/root#x/y?a=b");
 
         History history = new History() {
+
             @Override
             protected void replaceHistoryState(String title, String route) {
                 super.replaceHistoryState(title, route);
@@ -583,7 +584,6 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
                 "root", "root",
                 "pushState", true
         ));
-
         assertEquals(1, counter[0]);
     }
 
@@ -860,9 +860,7 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
                         put("path", new Function() {
                             @Override
                             public void f() {
-                                //TODO: How is this test is passing?! even backbone's native implementation is returning the same results
-                                //assertEquals("x=y", getArgument(0));
-                                assertEquals("x=y#hash", getArgument(0));
+                                assertEquals("x=y", getArgument(0));
                                 counter[0]++;
                             }
                         });
