@@ -4,7 +4,9 @@ import com.google.gwt.query.client.Function;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.navigation.Router;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Created on 18/12/2015.
@@ -45,14 +47,14 @@ public class TestRouter extends Router {
     }
 
     @Override
-    protected LinkedHashMap<String, ?> routes() {
-        LinkedHashMap<String, Object> routes = new LinkedHashMap<String, Object>();
+    protected Map<String, ?> routes() {
+        Map<String, Object> routes = new LinkedHashMap<String, Object>();
 
         routes.put("noCallback", "noCallback");
         routes.put("counter", "counter");
         routes.put("search/:query", "search");
         routes.put("search/:query/p:page", "search");
-        routes.put("charñ", "charUTF");
+        routes.put("charÃ±", "charUTF");
         routes.put("char%C3%B1", "charEscaped");
         routes.put("contacts", "contacts");
         routes.put("contacts/new", "newContact");

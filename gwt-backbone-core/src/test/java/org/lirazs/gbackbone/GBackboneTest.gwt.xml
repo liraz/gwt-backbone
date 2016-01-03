@@ -15,6 +15,16 @@
 -->
 
 <module>
+	<inherits name="de.barop.gwt.PushState" />
+	<set-property
+			name="history.pushStateSupported"
+			value="yes" />
+
+	<inherits name="org.timepedia.exporter.Exporter" />
+	<set-property
+			name="export"
+			value="yes" />
+
     <inherits name='org.lirazs.gbackbone.GBackbone'/>
 
     <source path="client"/>

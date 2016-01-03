@@ -77,7 +77,7 @@ public class Router extends Events {
 
     }
 
-    protected LinkedHashMap<String, ?> routes() {
+    protected Map<String, ?> routes() {
         return null;
     }
 
@@ -110,7 +110,7 @@ public class Router extends Events {
     protected Router route(String route, String name) {
         return route(route, name, null);
     }
-    protected Router route(String route, Function callback) {
+    public Router route(String route, Function callback) {
         return route(route, "", callback);
     }
     protected Router route(String route, String name, Function callback) {
@@ -146,18 +146,29 @@ public class Router extends Events {
             @Override
             public void f() {
                 String fragment = this.getArgument(0);
-
                 String[] args = extractParameters(route, fragment);
-                if(innerCallback != null) {
-                    innerCallback.f(args);
-                }
-                trigger("route:" + name, args);
-                trigger("route", name, args);
 
-                History.get().trigger("route", Router.this, name, args);
+                if (execute(innerCallback, args, name)) {
+                    trigger("route:" + name, args);
+                    trigger("route", name, args);
+
+                    History.get().trigger("route", Router.this, name, args);
+                }
             }
         });
         return this;
+    }
+
+    // Execute a route handler with the provided parameters.  This is an
+    // excellent place to do pre-route setup or post-route cleanup.
+    /**execute: function(callback, args, name) {
+        if (callback) callback.apply(this, args);
+    },*/
+    protected boolean execute(Function callback, String[] args, String name) {
+        if(callback != null) {
+            callback.f(args);
+        }
+        return true;
     }
 
     /**
@@ -246,15 +257,13 @@ public class Router extends Events {
     }-*/;
 
     /**
-     * // Given a route, and a URL fragment that it matches, return the array of
-     // extracted decoded parameters. Empty or unmatched parameters will be
-     // treated as `null` to normalize cross-browser behavior.
-     _extractParameters(route: RegExp, fragment: string): string[] {
-         var params = route.exec(fragment).slice(1);
-         return _.map(params, function (param) {
-         return param ? decodeURIComponent(param) : null;
-         });
-     }
+     * Given a route, and a URL fragment that it matches, return the array of
+     * extracted decoded parameters. Empty or unmatched parameters will be
+     * treated as `null` to normalize cross-browser behavior.
+     *
+     * @param route
+     * @param fragment
+     * @return
      */
     private String[] extractParameters(RegExp route, String fragment) {
         MatchResult matchResult = route.exec(fragment);
@@ -266,8 +275,14 @@ public class Router extends Events {
 
         for (int i = 0; i < groupCount; i++) {
             String param = matchResult.getGroup(i + 1);
+
             if (param != null && !param.isEmpty()) {
-                params.add(decodeURIComponent(param));
+                // Don't decode the search params.
+                if(i == groupCount - 1) {
+                    params.add(param);
+                } else {
+                    params.add(decodeURIComponent(param));
+                }
             }
         }
         return params.toArray(new String[params.size()]);

@@ -19,6 +19,7 @@ public class WindowLocationEmulation implements WindowLocation {
     private String fragment;
     private String pathname;
     private String protocol;
+    private String lastLocationAssign;
 
     public WindowLocationEmulation(String href) {
         parser = Document.get().createElement("a");
@@ -39,7 +40,7 @@ public class WindowLocationEmulation implements WindowLocation {
 
         // In IE, anchor.pathname does not contain a leading slash though
         // window.location.pathname does.
-        if(RegExp.compile("^\\/").test(pathname)) {
+        if(!RegExp.compile("^\\/").test(pathname)) {
             pathname = "/" + pathname;
         }
     }
@@ -79,6 +80,7 @@ public class WindowLocationEmulation implements WindowLocation {
 
     @Override
     public void assign(String newURL) {
+        lastLocationAssign = newURL;
         replace(newURL);
     }
 
@@ -106,4 +108,12 @@ public class WindowLocationEmulation implements WindowLocation {
     private native String getAnchorProtocol(Element elem) /*-{
         return elem.protocol;
     }-*/;
+
+    public String getLastLocationAssign() {
+        return lastLocationAssign;
+    }
+
+    public void setPath(String path) {
+        this.pathname = path;
+    }
 }
