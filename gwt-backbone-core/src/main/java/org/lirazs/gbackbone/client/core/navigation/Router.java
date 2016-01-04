@@ -18,12 +18,10 @@ package org.lirazs.gbackbone.client.core.navigation;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
+import org.lirazs.gbackbone.client.core.annotation.Route;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
-import org.lirazs.gbackbone.reflection.client.ClassType;
-import org.lirazs.gbackbone.reflection.client.Method;
-import org.lirazs.gbackbone.reflection.client.Reflectable;
-import org.lirazs.gbackbone.reflection.client.TypeOracle;
+import org.lirazs.gbackbone.reflection.client.*;
 
 import java.util.*;
 
@@ -31,19 +29,6 @@ import java.util.*;
         fieldAnnotations = true, relationTypes=false,
         superClasses=false, assignableClasses=false)
 public class Router extends Events {
-
-    /**
-     * // Cached regular expressions for matching named param parts and splatted
-     // parts of route strings.
-     var optionalParam = /\((.*?)\)/g;
-     var namedParam    = /(\(\?)?:\w+/g;
-     var splatParam    = /\*\w+/g;
-     var escapeRegExp  = /[\-{}\[\]+?.,\\\^$|#\s]/g;
-     */
-    RegExp optionalParam = RegExp.compile("\\((.*?)\\)", "g");
-    //RegExp namedParam = RegExp.compile("(\\(\\?)?:\\w+", "g"); // cannot be used, since js function is needed
-    RegExp splatParam = RegExp.compile("\\*\\w+", "g");
-    RegExp escapeRegExp = RegExp.compile("[\\-{}\\[\\]+?.,\\\\\\^$|#\\s]", "g");
 
     private Map<String, ?> routes;
 
@@ -133,8 +118,15 @@ public class Router extends Events {
                     }
 
                     Method method = classType.findMethod(name, params);
+
                     if(method != null) {
                         method.invoke(Router.this, getArguments());
+                    } else {
+                        // try another look for a String[] array parameter
+                        method = classType.findMethod(name, String[].class);
+                        if(method != null) {
+                            method.invoke(Router.this, new Object[] { getArguments() });
+                        }
                     }
                 }
             };
@@ -200,11 +192,18 @@ public class Router extends Events {
      }
      */
     private void bindRoutes() {
-        Map<String, ?> routesMap = routes();
-        if(routesMap == null && this.routes == null) return;
+        Map routesMap = routes();
+        Map<String, String> annotatedMethodRoutes = getAnnotatedMethodRoutes();
+
+        if(routesMap == null && this.routes == null && annotatedMethodRoutes.isEmpty()) return;
 
         if (routesMap != null) {
+            if(!annotatedMethodRoutes.isEmpty()) {
+                routesMap.putAll(annotatedMethodRoutes);
+            }
             this.routes = routesMap;
+        } else {
+            this.routes = annotatedMethodRoutes;
         }
 
         List<String> keys = new ArrayList<String>(routes.keySet());
@@ -220,6 +219,36 @@ public class Router extends Events {
                 route(route, callback);
             }
         }
+    }
+
+    private Map<String, String> getAnnotatedMethodRoutes() {
+        Map<String, String> routes = new LinkedHashMap<String, String>();
+
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+
+            Method[] methods = classType.getMethods();
+
+            for (final Method method : methods) {
+                Route annotation = method.getAnnotation(Route.class);
+                if(annotation != null && method.isPublic()) {
+
+                    String methodName = method.getName();
+                    String[] values = annotation.value();
+
+                    for (String value : values) {
+                        if(!value.isEmpty()) {
+                            routes.put(value, methodName);
+                        }
+                    }
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
+        }
+        return routes;
     }
 
     /**

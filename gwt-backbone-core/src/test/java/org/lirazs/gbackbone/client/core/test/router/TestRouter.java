@@ -4,7 +4,6 @@ import com.google.gwt.query.client.Function;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.navigation.Router;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -12,7 +11,6 @@ import java.util.Map;
  * Created on 18/12/2015.
  */
 public class TestRouter extends Router {
-    private int loadUrlCount;
 
     private int count;
     private int testing;

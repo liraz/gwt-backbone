@@ -1,12 +1,12 @@
 package org.lirazs.gbackbone.client.core.test;
 
-import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
 import org.lirazs.gbackbone.client.core.navigation.History;
 import org.lirazs.gbackbone.client.core.navigation.Router;
 import org.lirazs.gbackbone.client.core.navigation.function.OnRouteFunction;
-import org.lirazs.gbackbone.client.core.test.router.WindowLocationEmulation;
+import org.lirazs.gbackbone.client.core.test.router.AnnotatedTestRouter;
 import org.lirazs.gbackbone.client.core.test.router.TestRouter;
+import org.lirazs.gbackbone.client.core.test.router.WindowLocationEmulation;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1269,5 +1269,55 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
                 "pushState", true
         ));
         assertEquals(1, counter[0]);
+    }
+
+    public void testAnnotatedRouter() {
+        AnnotatedTestRouter annotatedRouter = new AnnotatedTestRouter();
+
+        location.replace("http://example.com#search/news");
+        History.get().checkUrl();
+
+        assertEquals("news", annotatedRouter.getQuery());
+        assertEquals(null, annotatedRouter.getPage());
+        assertEquals("search", lastRoute);
+        assertEquals("news", lastArgs[0]);
+
+        location.replace("http://example.com#search/тест");
+        History.get().checkUrl();
+
+        assertEquals("тест", annotatedRouter.getQuery());
+        assertEquals(null, annotatedRouter.getPage());
+        assertEquals("search", lastRoute);
+        assertEquals("тест", lastArgs[0]);
+
+        location.replace("http://example.com#search/nyc/p10");
+        History.get().checkUrl();
+
+        assertEquals("nyc", annotatedRouter.getQuery());
+        assertEquals("10", annotatedRouter.getPage());
+
+        History.get().navigate("search/manhattan/p20", O("trigger", true));
+
+        assertEquals("manhattan", annotatedRouter.getQuery());
+        assertEquals("20", annotatedRouter.getPage());
+
+        History.get().navigate("query/test?a=b", O("trigger", true));
+
+        assertEquals("a=b", annotatedRouter.getQueryArgs());
+
+        History.get().navigate("contacts", true);
+        assertEquals("index", annotatedRouter.getContact());
+        History.get().navigate("contacts", O("trigger", true));
+        assertEquals("index", annotatedRouter.getContact());
+
+        History.get().navigate("contacts/new", true);
+        assertEquals("new", annotatedRouter.getContact());
+        History.get().navigate("contacts/new", O("trigger", true));
+        assertEquals("new", annotatedRouter.getContact());
+
+        History.get().navigate("contacts/foo", true);
+        assertEquals("load", annotatedRouter.getContact());
+        History.get().navigate("contacts/foo", O("trigger", true));
+        assertEquals("load", annotatedRouter.getContact());
     }
 }
