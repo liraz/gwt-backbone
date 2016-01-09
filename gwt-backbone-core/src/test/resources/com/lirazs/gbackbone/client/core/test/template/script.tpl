@@ -1,0 +1,1 @@
+<script><i><%= value %></i></script>
