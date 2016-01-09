@@ -16,10 +16,12 @@
 package org.lirazs.gbackbone.client.core.data;
 
 import com.google.gwt.json.client.*;
+import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Properties;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 public class Options extends LinkedHashMap<String, Object> implements JsonSerializable {
@@ -79,11 +81,26 @@ public class Options extends LinkedHashMap<String, Object> implements JsonSerial
         }
     }
 
+    public Options(Map<String, ?> map) {
+        super();
+
+        for (Map.Entry<String, ?> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
+    }
+
     // for compatibility with GQuery
     public final Properties toProperties() {
         Properties props = Properties.create();
         for (String k : keySet()) {
-            props.set(k, get(k));
+            Object val = get(k);
+            if (val instanceof Options) {
+                props.set(k, ((Options) val).toProperties());
+            } else if (val instanceof Function) {
+                props.setFunction(k, (Function) val);
+            } else {
+                props.set(k, val);
+            }
         }
 
         return props;
@@ -179,12 +196,14 @@ public class Options extends LinkedHashMap<String, Object> implements JsonSerial
             JSONValue value = null;
             Object o = this.get(key);
 
-            if (o instanceof Double)
-                value = new JSONNumber((Double) o);
-            else if (o instanceof Float)
-                value = new JSONNumber((Float) o);
+            if (o == null)
+                value = JSONNull.getInstance();
             else if (o instanceof Integer)
                 value = new JSONNumber((Integer) o);
+            else if (o instanceof Float)
+                value = new JSONNumber((Float) o);
+            else if (o instanceof Double)
+                value = new JSONNumber((Double) o);
             else if (o instanceof Long)
                 value = new JSONNumber((Long) o);
             else if (o instanceof Short)
@@ -192,9 +211,11 @@ public class Options extends LinkedHashMap<String, Object> implements JsonSerial
             else if (o instanceof Byte)
                 value = new JSONNumber((Byte) o);
             else if (o instanceof Boolean) {
-                value = new JSONString(String.valueOf(o));
+                value = JSONBoolean.getInstance((Boolean) o);
             } else if (o instanceof String) {
                 value = new JSONString((String) o);
+            } else if (o instanceof Options) {
+                value = ((Options) o).toJsonObject();
             }
             j.put(key, value);
         }

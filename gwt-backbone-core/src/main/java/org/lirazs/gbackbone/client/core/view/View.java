@@ -125,9 +125,9 @@ public class View extends Events {
     }
 
     private void bindAnnotatedEvents() {
-        ClassType classType = TypeOracle.Instance.getClassType(getClass());
-
         try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+
             Method[] methods = classType.getMethods();
             for (final Method method : methods) {
                 EventHandler annotation = method.getAnnotation(EventHandler.class);
@@ -166,6 +166,8 @@ public class View extends Events {
             }
         } catch (MethodInvokeException e) {
             e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
         }
     }
 

@@ -12,7 +12,11 @@ import org.lirazs.gbackbone.client.core.data.Options;
 import static org.lirazs.gbackbone.client.core.data.Options.O;
 import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.test.view.AnnotatedView;
+import org.lirazs.gbackbone.client.core.view.Template;
+import org.lirazs.gbackbone.client.core.view.TemplateFactory;
 import org.lirazs.gbackbone.client.core.view.View;
+
+import java.util.HashMap;
 
 /**
  * Created on 23/10/2015.
@@ -38,6 +42,13 @@ public class GBackboneViewTestGwt extends GWTTestCase {
                 "className", "test-view",
                 "other", "non-special-option"
         ));
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("evaluate", "<%([\\s\\S]+?)%>");
+        templateSettings.put("interpolate", "<%=([\\s\\S]+?)%>");
+        templateSettings.put("escape", "<%-([\\s\\S]+?)%>");
+        templateSettings.put("variable", null); // by default put all values in local scope
+        TemplateFactory.templateSettings(templateSettings);
     }
 
     public void gwtTearDown() {
@@ -777,5 +788,182 @@ public class GBackboneViewTestGwt extends GWTTestCase {
         annotatedView.$("h1").trigger("click").trigger("click");
 
         assertEquals(6, counter[0]);
+    }
+
+    public void testTemplate() {
+        Template template = TemplateFactory.template("Hello world!!");
+        String result = template.apply(O("a", 1, "b", 2, "c", "3"));
+
+        assertEquals("Hello world!!", result);
+
+        Template basicTemplate = TemplateFactory.template("<%= thing %> is gettin' on my noives!");
+        result = basicTemplate.apply(O("thing", "This"));
+
+        assertEquals("can do basic attribute interpolation", "This is gettin' on my noives!", result);
+
+        Template sansSemicolonTemplate = TemplateFactory.template("A <% this %> B");
+        assertEquals("A  B", sansSemicolonTemplate.apply());
+
+        Template backslashTemplate = TemplateFactory.template("<%= thing %> is \\\\ridanculous");
+        assertEquals("This is \\\\ridanculous", backslashTemplate.apply(O("thing", "This")));
+
+        Template escapeTemplate  = TemplateFactory.template("<%= a ? 'checked=\"checked\"' : '' %>");
+        assertEquals("can handle slash escapes in interpolations.", "checked=\"checked\"", escapeTemplate.apply(O("a", true)));
+
+        Template fancyTemplate  = TemplateFactory.template("<ul><% for (var key in people) { %><li><%= people[key] %></li><% } %></ul>");
+        result = fancyTemplate.apply(O("people", O("moe", "Moe", "larry", "Larry", "curly", "Curly")));
+        assertEquals("can run arbitrary javascript in templates", "<ul><li>Moe</li><li>Larry</li><li>Curly</li></ul>", result);
+
+        Template escapedCharsInJavascriptTemplate  = TemplateFactory.template("<ul><% numbers.split('\\n').forEach(function(item) { %><li><%= item %></li><% }) %></ul>");
+        result = escapedCharsInJavascriptTemplate.apply(O("numbers", "one\ntwo\nthree\nfour"));
+        assertEquals("Can use escaped characters (e.g. \n) in JavaScript", "<ul><li>one</li><li>two</li><li>three</li><li>four</li></ul>", result);
+
+        Template namespaceCollisionTemplate  = TemplateFactory.template("<%= pageCount %> <%= thumbnails[pageCount] %> <% for(var p in thumbnails) { %><div class='thumbnail' rel='<%= thumbnails[p] %>'></div><% } %>");
+        result = namespaceCollisionTemplate.apply(O(
+                "pageCount", 3,
+                "page", true,
+                "thumbnails", O(
+                        1, "p1-thumbnail.gif",
+                        2, "p2-thumbnail.gif",
+                        3, "p3-thumbnail.gif"
+                )
+        ));
+        assertEquals("3 p3-thumbnail.gif <div class='thumbnail' rel='p1-thumbnail.gif'></div><div class='thumbnail' rel='p2-thumbnail.gif'></div><div class='thumbnail' rel='p3-thumbnail.gif'></div>", result);
+
+        Template noInterpolateTemplate = TemplateFactory.template("<div><p>Just some text. Hey, I know this is silly but it aids consistency.</p></div>");
+        assertEquals("<div><p>Just some text. Hey, I know this is silly but it aids consistency.</p></div>", noInterpolateTemplate.apply());
+
+        Template quoteTemplate = TemplateFactory.template("It's its, not it's");
+        assertEquals("It's its, not it's", quoteTemplate.apply());
+
+        Template quoteInStatementAndBody = TemplateFactory.template("<%   if(foo == 'bar'){ %>Statement quotes and 'quotes'.<% } %>");
+        assertEquals("Statement quotes and 'quotes'.", quoteInStatementAndBody.apply(O("foo", "bar")));
+
+        Template withNewlinesAndTabs = TemplateFactory.template("This\n\t\tis: <%= x %>.\n\tok.\nend.");
+        assertEquals("This\n\t\tis: that.\n\tok.\nend.", withNewlinesAndTabs.apply(O("x", "that")));
+
+        template = TemplateFactory.template("<i><%- value %></i>");
+        assertEquals("<i>&lt;script&gt;</i>", template.apply(O("value", "<script>")));
+
+        template = TemplateFactory.template("\n " +
+                "  <%\n " +
+                "  // a comment\n " +
+                "  if (data) { data += 12345; }; %>\n " +
+                "  <li><%= data %></li>\n ");
+        assertEquals("<li>24690</li>", template.apply(O("data", 12345)).replaceAll("/\\s/g", "").trim());
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("evaluate", "\\{\\{([\\s\\S]+?)\\}\\}");
+        templateSettings.put("interpolate", "\\{\\{=([\\s\\S]+?)\\}\\}");
+        TemplateFactory.templateSettings(templateSettings);
+
+        Template custom = TemplateFactory.template("<ul>{{ for (var key in people) { }}<li>{{= people[key] }}</li>{{ } }}</ul>");
+        result = custom.apply(O("people", O("moe", "Moe", "larry", "Larry", "curly", "Curly")));
+        assertEquals("can run arbitrary javascript in templates", "<ul><li>Moe</li><li>Larry</li><li>Curly</li></ul>", result);
+
+        Template customQuote = TemplateFactory.template("It's its, not it's");
+        assertEquals("It's its, not it's", customQuote.apply());
+
+        quoteInStatementAndBody = TemplateFactory.template("{{ if(foo == 'bar'){ }}Statement quotes and 'quotes'.{{ } }}");
+        assertEquals("Statement quotes and 'quotes'.", quoteInStatementAndBody.apply(O("foo", "bar")));
+
+        templateSettings = new HashMap<String, String>();
+        templateSettings.put("evaluate", "<\\?([\\s\\S]+?)\\?>");
+        templateSettings.put("interpolate", "<\\?=([\\s\\S]+?)\\?>");
+        TemplateFactory.templateSettings(templateSettings);
+
+        Template customWithSpecialChars = TemplateFactory.template("<ul><? for (var key in people) { ?><li><?= people[key] ?></li><? } ?></ul>");
+        result = customWithSpecialChars.apply(O("people", O("moe", "Moe", "larry", "Larry", "curly", "Curly")));
+        assertEquals("can run arbitrary javascript in templates", "<ul><li>Moe</li><li>Larry</li><li>Curly</li></ul>", result);
+
+        Template customWithSpecialCharsQuote = TemplateFactory.template("It's its, not it's");
+        assertEquals("It's its, not it's", customWithSpecialCharsQuote.apply());
+
+        quoteInStatementAndBody = TemplateFactory.template("<? if(foo == 'bar'){ ?>Statement quotes and 'quotes'.<? } ?>");
+        assertEquals("Statement quotes and 'quotes'.", quoteInStatementAndBody.apply(O("foo", "bar")));
+
+        templateSettings = new HashMap<String, String>();
+        templateSettings.put("evaluate", "");
+        templateSettings.put("escape", "");
+        templateSettings.put("variable", "");
+        templateSettings.put("interpolate", "\\{\\{(.+?)\\}\\}");
+        TemplateFactory.templateSettings(templateSettings);
+
+        Template mustache = TemplateFactory.template("Hello {{planet}}!");
+        assertEquals("can mimic mustache.js", "Hello World!", mustache.apply(O("planet", "World")));
+
+        Template templateWithNull = TemplateFactory.template("a null undefined {{planet}}");
+        assertEquals("can handle missing escape and evaluate settings", "a null undefined world", templateWithNull.apply(O("planet", "world")));
+    }
+
+    public void testTemplateHandlesUnicode() {
+        Template tmpl = TemplateFactory.template("<p>\u2028<%= \"\\u2028\\u2029\" %>\u2029</p>");
+        assertEquals("<p>\u2028\u2028\u2029\u2029</p>", tmpl.apply());
+    }
+
+    public void testTemplateSettingsVariable() {
+        String s = "<%=data.x%>";
+        Options data = O("x", "x");
+
+        Template tmp = TemplateFactory.template(s, O("variable", "data"));
+        assertEquals("x", tmp.apply(data));
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("variable", "data");
+        TemplateFactory.templateSettings(templateSettings);
+
+        tmp = TemplateFactory.template(s);
+        assertEquals("x", tmp.apply(data));
+    }
+
+    public void testTemplateSettingsIsUnchangedByCustomSettings() {
+        String s = "<%=data.x%>";
+        Options data = O("x", "x");
+
+        Template tmp = TemplateFactory.template(s, O("variable", "data"));
+        assertEquals("x", tmp.apply(data));
+
+        tmp = TemplateFactory.template("<%= x %>");
+        assertEquals("x", tmp.apply(data));
+    }
+
+    public void testUndefinedTemplateVariables() {
+        Template template = TemplateFactory.template("<%=x%>");
+        assertEquals("", template.apply(O("x", null)));
+
+        Template templateEscaped = TemplateFactory.template("<%-x%>");
+        assertEquals("", templateEscaped.apply(O("x", null)));
+
+        Template templateWithProperty = TemplateFactory.template("<%=x.foo%>");
+        assertEquals("", templateWithProperty.apply(O("x", O())));
+
+        Template templateWithPropertyEscaped = TemplateFactory.template("<%-x.foo%>");
+        assertEquals("", templateWithPropertyEscaped.apply(O("x", O())));
+    }
+
+    public void testInterpolateEvaluatesCodeOnlyOnce() {
+        final int[] count = {0};
+        Template template = TemplateFactory.template("<%= f() %>");
+        template.apply(O("f", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        }));
+
+        template = TemplateFactory.template("<%- f() %>");
+        template.apply(O("f", new Function() {
+            @Override
+            public void f() {
+                count[0]++;
+            }
+        }));
+
+        assertEquals(2, count[0]);
+    }
+
+    public void testDelimetersAreAppliedToUnescapedText() {
+        Template template = TemplateFactory.template("<<\nx\n>>", O("evaluate", "<<(.*?)>>"));
+        assertEquals("<<\nx\n>>", template.apply());
     }
 }
