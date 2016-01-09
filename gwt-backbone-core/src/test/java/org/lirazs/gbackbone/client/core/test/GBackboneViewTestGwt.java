@@ -5,13 +5,18 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.GQuery;
+import com.google.gwt.query.client.Promise;
 import com.google.gwt.query.client.Properties;
 import com.google.gwt.user.client.ui.RootPanel;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import static org.lirazs.gbackbone.client.core.data.Options.O;
+
+import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.model.Model;
+import org.lirazs.gbackbone.client.core.test.view.AnnotatedTemplateView;
 import org.lirazs.gbackbone.client.core.test.view.AnnotatedView;
+import org.lirazs.gbackbone.client.core.test.view.AsyncAnnotatedTemplateView;
 import org.lirazs.gbackbone.client.core.view.Template;
 import org.lirazs.gbackbone.client.core.view.TemplateFactory;
 import org.lirazs.gbackbone.client.core.view.View;
@@ -965,5 +970,111 @@ public class GBackboneViewTestGwt extends GWTTestCase {
     public void testDelimetersAreAppliedToUnescapedText() {
         Template template = TemplateFactory.template("<<\nx\n>>", O("evaluate", "<<(.*?)>>"));
         assertEquals("<<\nx\n>>", template.apply());
+    }
+
+    public void testTemplateFromScriptElement() {
+        GQuery $script = GQuery.$("<script><i><%= value %></i></script>");
+
+        Template template = TemplateFactory.template($script);
+        assertEquals("<i>test</i>", template.apply(O("value", "test")));
+    }
+
+    public void testLoadTemplateFile() {
+        final int[] count = {0};
+        delayTestFinish(5000);
+
+        final String filePath = "https://raw.githubusercontent.com/liraz/gwt-backbone/master/gwt-backbone-core/src/test/resources/com/lirazs/gbackbone/client/core/test/template/script.tpl";
+
+        final Promise[] promise = {TemplateFactory.loadTemplate(filePath)};
+        promise[0].done(new Function() {
+            @Override
+            public void f() {
+                Template template = getArgument(0);
+                assertNotNull(template);
+                assertEquals("<script><i>test</i></script>", template.apply(O("value", "test")));
+                count[0]++;
+
+                // checking that it comes from cache on the second time
+                promise[0] = TemplateFactory.loadTemplate(filePath);
+                promise[0].done(new Function() {
+                    @Override
+                    public void f() {
+                        Template template = getArgument(0);
+                        assertNotNull(template);
+                        assertEquals("<script><i>test</i></script>", template.apply(O("value", "test")));
+                        count[0]++;
+                    }
+                });
+
+                assertEquals(2, count[0]);
+                finishTest();
+            }
+        });
+    }
+
+    public void testLoadTemplateFileWithRoot() {
+        final int[] count = {0};
+        delayTestFinish(5000);
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("urlRoot", "https://raw.githubusercontent.com/liraz/gwt-backbone/master/gwt-backbone-core/src/test/resources/com/lirazs/gbackbone/client/core/test/template/");
+        TemplateFactory.templateSettings(templateSettings);
+
+        final String filePath = "script.tpl";
+
+        final Promise promise = TemplateFactory.loadTemplate(filePath);
+        promise.done(new Function() {
+            @Override
+            public void f() {
+                Template template = getArgument(0);
+                assertNotNull(template);
+                assertEquals("<script><i>test</i></script>", template.apply(O("value", "test")));
+                count[0]++;
+
+                final String filePath2 = "people.ejs";
+
+                // checking that it comes from cache on the second time
+                Promise promise2 = TemplateFactory.loadTemplate(filePath2);
+                promise2.done(new Function() {
+                    @Override
+                    public void f() {
+                        Template template = getArgument(0);
+                        assertNotNull(template);
+                        assertEquals("<ul><li>Moe</li><li>Larry</li><li>Curly</li></ul>",
+                                template.apply(O("people", O("moe", "Moe", "larry", "Larry", "curly", "Curly"))));
+                        count[0]++;
+
+                        assertEquals(2, count[0]);
+                        finishTest();
+                    }
+                });
+            }
+        });
+    }
+
+    public void testAnnotatedTemplateView() {
+        delayTestFinish(5000);
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("urlRoot", "https://raw.githubusercontent.com/liraz/gwt-backbone/master/gwt-backbone-core/src/test/resources/com/lirazs/gbackbone/client/core/test/template/");
+        TemplateFactory.templateSettings(templateSettings);
+
+        Model model = new Model(O("value", "annotated"));
+
+        AnnotatedTemplateView templateView = new AnnotatedTemplateView(O("model", model));
+        assertEquals("annotated", templateView.get$El().html());
+
+        Events events = new Events();
+
+        Model peopleModel = new Model(O("people", O("moe", "Moe", "larry", "Larry", "curly", "Curly")));
+        final AsyncAnnotatedTemplateView asyncTemplateView = new AsyncAnnotatedTemplateView(O("model", peopleModel));
+
+        events.listenToOnce(asyncTemplateView, "template:complete", new Function() {
+            @Override
+            public void f() {
+                assertEquals("<ul><li>Moe</li><li>Larry</li><li>Curly</li></ul>", asyncTemplateView.get$El().html());
+                finishTest();
+            }
+        });
     }
 }

@@ -19,11 +19,13 @@ import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.GQuery;
+import com.google.gwt.query.client.Promise;
 import com.google.gwt.query.client.Properties;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.Event;
 import org.lirazs.gbackbone.client.core.annotation.EventHandler;
+import org.lirazs.gbackbone.client.core.annotation.ViewTemplate;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
@@ -55,6 +57,7 @@ public class View extends Events {
     private Map<String, ViewEventEntry> delegatedEvents = new HashMap<String, ViewEventEntry>();
 
     private GQuery $el;
+    private Template template;
 
     RegExp delegateEventSplitter = RegExp.compile("^(\\S+)\\s*(.*)$");
 
@@ -121,6 +124,7 @@ public class View extends Events {
         initialize();
         initialize(options);
 
+        bindAnnotatedTemplate();
         delegateEvents();
     }
 
@@ -171,6 +175,64 @@ public class View extends Events {
         }
     }
 
+    private void bindAnnotatedTemplate() {
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+            ViewTemplate annotation = classType.getAnnotation(ViewTemplate.class);
+
+            if(annotation != null && classType.isClass() != null) {
+                String templateValue = annotation.value();
+                String templateFilePath = annotation.filePath();
+                final boolean autoRender = annotation.autoRender();
+
+                if(templateValue != null && !templateValue.isEmpty()) { // rendering the template value as is
+                    template = TemplateFactory.template(templateValue);
+                    if(autoRender) {
+                        Options attributes = getTemplateAttributes();
+                        get$El().html(template.apply(attributes));
+                    }
+
+                } else if(templateFilePath != null && !templateFilePath.isEmpty()) { // rendering the template async
+                    trigger("template:load");
+
+                    Promise promise = TemplateFactory.loadTemplate(templateFilePath);
+                    promise.progress(new Function() {
+                        @Override
+                        public void f() {
+                            int progress = getArgument(0);
+                            trigger("template:progress", progress);
+                        }
+                    });
+                    promise.done(new Function() {
+                        @Override
+                        public void f() {
+                            template = getArgument(0);
+                            if(autoRender) {
+                                Options attrs = getTemplateAttributes();
+                                get$El().html(template.apply(attrs));
+                            }
+                            trigger("template:complete");
+                        }
+                    });
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
+        }
+    }
+
+    private Options getTemplateAttributes() {
+        Options attrs = new Options();
+        if(model != null) {
+            attrs = model.getAttributes();
+        } else if(attributes != null) {
+            attrs = attributes;
+        }
+        return attrs;
+    }
+
     protected void initialize() {
         // override
     }
@@ -200,6 +262,10 @@ public class View extends Events {
 
     public Collection getCollection() {
         return collection;
+    }
+
+    public Template getTemplate() {
+        return template;
     }
 
     /**

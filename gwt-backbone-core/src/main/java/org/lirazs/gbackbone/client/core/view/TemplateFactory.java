@@ -1,6 +1,11 @@
 package org.lirazs.gbackbone.client.core.view;
 
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.query.client.Function;
+import com.google.gwt.query.client.GQuery;
+import com.google.gwt.query.client.Promise;
+import com.google.gwt.query.client.plugins.ajax.Ajax;
+import com.google.gwt.query.client.plugins.deferred.PromiseFunction;
 import org.lirazs.gbackbone.client.core.data.Options;
 
 import java.util.HashMap;
@@ -10,11 +15,14 @@ import java.util.Map;
  * Created on 05/01/2016.
  */
 public class TemplateFactory {
+    private static final Map<String, Template> CACHED_TEMPLATES = new HashMap<String, Template>();
+
     private static final Map<String, String> TEMPLATE_SETTINGS = new HashMap<String, String>() { {
         put("evaluate", "<%([\\s\\S]+?)%>");
         put("interpolate", "<%=([\\s\\S]+?)%>");
         put("escape", "<%-([\\s\\S]+?)%>");
         put("variable", null); // by default put all values in local scope
+        put("urlRoot", ""); // by default no root for urls, urls are absolute/relative with no root
     } };
 
     private static void setTemplateKey(final Map<String, String> templateSettings, final String key) {
@@ -28,6 +36,67 @@ public class TemplateFactory {
         setTemplateKey(templateSettings, "interpolate");
         setTemplateKey(templateSettings, "escape");
         setTemplateKey(templateSettings, "variable");
+        setTemplateKey(templateSettings, "urlRoot");
+    }
+
+    public static Promise loadTemplate(final String filePath) {
+        return loadTemplate(filePath, null);
+    }
+    public static Promise loadTemplate(final String filePath, final Options templateSettings) {
+        Promise promise;
+        String urlRoot = TEMPLATE_SETTINGS.get("urlRoot");
+
+        if(templateSettings != null) {
+            if (templateSettings.containsKey("urlRoot"))
+                urlRoot = templateSettings.get("urlRoot", String.class);
+        }
+        final String finalFilePath = urlRoot + filePath;
+
+        if(CACHED_TEMPLATES.containsKey(finalFilePath)) {
+            promise = new PromiseFunction() {
+                @Override
+                public void f(Deferred dfd) {
+                    dfd.notify(1);
+                    dfd.resolve(CACHED_TEMPLATES.get(finalFilePath));
+                }
+            };
+        } else {
+            promise = new PromiseFunction() {
+                @Override
+                public void f(final Deferred dfd) {
+
+                    final Ajax.Settings settings = Ajax.createSettings();
+                    settings.setUrl(finalFilePath);
+                    settings.setType("get");
+                    settings.setDataType("text");
+                    settings.setSuccess(new Function() {
+                        @Override
+                        public void f() {
+                            String templateString = getArgument(0);
+                            Template template = template(templateString, templateSettings);
+
+                            CACHED_TEMPLATES.put(finalFilePath, template);
+
+                            dfd.notify(1);
+                            dfd.resolve(template);
+                        }
+                    });
+                    GQuery.ajax(settings);
+                }
+            };
+        }
+
+        return promise;
+    }
+
+    public static Template template(final GQuery selector) {
+        return new TemplateImpl(selector.html());
+    }
+    public static Template template(final GQuery selector, Map<String, String> settings) {
+        return new TemplateImpl(selector.html(), new Options(settings));
+    }
+    public static Template template(final GQuery selector, Options settings) {
+        return new TemplateImpl(selector.html(), settings);
     }
 
     public static Template template(final String template) {
