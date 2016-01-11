@@ -25,6 +25,7 @@ import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.Event;
 import org.lirazs.gbackbone.client.core.annotation.EventHandler;
+import org.lirazs.gbackbone.client.core.annotation.InjectModel;
 import org.lirazs.gbackbone.client.core.annotation.InjectView;
 import org.lirazs.gbackbone.client.core.annotation.ViewTemplate;
 import org.lirazs.gbackbone.client.core.collection.Collection;
@@ -118,6 +119,11 @@ public class View extends Events {
             tagName = options.get("tagName");
         if(options.containsKey("events"))
             events = options.get("events");
+
+        // start model injections only if there's model or attributes available
+        if(attributes != null || model != null) {
+            bindAnnotatedModelInjections();
+        }
 
         ensureElement();
         bindAnnotatedEvents();
@@ -294,6 +300,45 @@ public class View extends Events {
                             // probably some other element type
                             field.setFieldValue(this, $element.get(0));
                         }
+                    }
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
+        }
+    }
+
+    /**
+     * Can be used by a custom view model appending enviornment -
+     * since View class cannot know when the developer is deciding to attach the model into the view
+     */
+    protected void injectModels() {
+        bindAnnotatedModelInjections();
+    }
+
+    private void bindAnnotatedModelInjections() {
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+
+            Field[] fields = classType.getFields();
+            for (final Field field : fields) {
+                InjectModel annotation = field.getAnnotation(InjectModel.class);
+                if(annotation != null) {
+                    String attributeName = null;
+                    String value = annotation.value();
+
+                    if(!value.isEmpty()) { // using the value as selector
+                        attributeName = value;
+                    } else {
+                        attributeName = field.getName();
+                    }
+
+                    if(model != null) {
+                        field.setFieldValue(this, model.get(attributeName));
+                    } else if(attributes != null) {
+                        field.setFieldValue(this, attributes.get(attributeName));
                     }
                 }
             }

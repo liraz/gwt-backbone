@@ -1112,4 +1112,30 @@ public class GBackboneViewTestGwt extends GWTTestCase {
             }
         });
     }
+
+    public void testInjectedModels() {
+        delayTestFinish(5000);
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("urlRoot", "https://raw.githubusercontent.com/liraz/gwt-backbone/master/gwt-backbone-core/src/test/resources/com/lirazs/gbackbone/client/core/test/template/");
+        TemplateFactory.templateSettings(templateSettings);
+
+        final Events events = new Events();
+
+        final AnnotatedModelInjectedView annotatedInjectedView = new AnnotatedModelInjectedView(
+                O("model", new Model(O("email", "test@email.testme")))
+        );
+
+        events.listenToOnce(annotatedInjectedView, "template:complete", new Function() {
+            @Override
+            public void f() {
+                annotatedInjectedView.render();
+
+                assertNotNull(annotatedInjectedView.emailInput);
+                assertEquals("test@email.testme", annotatedInjectedView.emailInput.getValue());
+
+                finishTest();
+            }
+        });
+    }
 }
