@@ -14,9 +14,7 @@ import static org.lirazs.gbackbone.client.core.data.Options.O;
 
 import org.lirazs.gbackbone.client.core.event.Events;
 import org.lirazs.gbackbone.client.core.model.Model;
-import org.lirazs.gbackbone.client.core.test.view.AnnotatedTemplateView;
-import org.lirazs.gbackbone.client.core.test.view.AnnotatedView;
-import org.lirazs.gbackbone.client.core.test.view.AsyncAnnotatedTemplateView;
+import org.lirazs.gbackbone.client.core.test.view.*;
 import org.lirazs.gbackbone.client.core.view.Template;
 import org.lirazs.gbackbone.client.core.view.TemplateFactory;
 import org.lirazs.gbackbone.client.core.view.View;
@@ -1073,6 +1071,43 @@ public class GBackboneViewTestGwt extends GWTTestCase {
             @Override
             public void f() {
                 assertEquals("<ul><li>Moe</li><li>Larry</li><li>Curly</li></ul>", asyncTemplateView.get$El().html());
+                finishTest();
+            }
+        });
+    }
+
+    public void testInjectedViews() {
+        delayTestFinish(5000);
+
+        HashMap<String, String> templateSettings = new HashMap<String, String>();
+        templateSettings.put("urlRoot", "https://raw.githubusercontent.com/liraz/gwt-backbone/master/gwt-backbone-core/src/test/resources/com/lirazs/gbackbone/client/core/test/template/");
+        TemplateFactory.templateSettings(templateSettings);
+
+        final Events events = new Events();
+
+        final AnnotatedInjectedView annotatedInjectedView = new AnnotatedInjectedView();
+
+        events.listenToOnce(annotatedInjectedView, "template:complete", new Function() {
+            @Override
+            public void f() {
+                assertNotNull(annotatedInjectedView.emailInput);
+                assertNotNull(annotatedInjectedView.emailRetypeInput);
+                assertNotNull(annotatedInjectedView.phoneNumberInput);
+                assertNotNull(annotatedInjectedView.addressInput);
+                assertNotNull(annotatedInjectedView.cityInput);
+                assertNotNull(annotatedInjectedView.formTitle);
+                assertNotNull(annotatedInjectedView.getFormBottomTitle());
+
+                final CustomRenderAnnotatedInjectedView customAnnotatedInjectedView = new CustomRenderAnnotatedInjectedView();
+
+                assertNotNull(customAnnotatedInjectedView.emailInput);
+                assertNotNull(customAnnotatedInjectedView.emailRetypeInput);
+                assertNotNull(customAnnotatedInjectedView.phoneNumberInput);
+                assertNotNull(customAnnotatedInjectedView.addressInput);
+                assertNotNull(customAnnotatedInjectedView.cityInput);
+                assertNotNull(customAnnotatedInjectedView.formTitle);
+                assertNotNull(customAnnotatedInjectedView.formBottomTitle);
+
                 finishTest();
             }
         });

@@ -25,6 +25,7 @@ import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.Event;
 import org.lirazs.gbackbone.client.core.annotation.EventHandler;
+import org.lirazs.gbackbone.client.core.annotation.InjectView;
 import org.lirazs.gbackbone.client.core.annotation.ViewTemplate;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
@@ -36,7 +37,7 @@ import org.lirazs.gbackbone.reflection.client.*;
 import java.util.HashMap;
 import java.util.Map;
 
-@Reflectable(classAnnotations = true, fields = false, methods = true, constructors = false,
+@Reflectable(classAnnotations = true, fields = true, methods = true, constructors = false,
         fieldAnnotations = true, relationTypes=false,
         superClasses=false, assignableClasses=false)
 public class View extends Events {
@@ -126,6 +127,18 @@ public class View extends Events {
 
         bindAnnotatedTemplate();
         delegateEvents();
+
+        // if a template is being loaded
+        if(template == null && hasTemplateAnnotationWithFilePath()) {
+            listenToOnce(this, "template:complete", new Function() {
+                @Override
+                public void f() {
+                    bindAnnotatedViewInjections();
+                }
+            });
+        } else {
+            bindAnnotatedViewInjections();
+        }
     }
 
     private void bindAnnotatedEvents() {
@@ -184,12 +197,16 @@ public class View extends Events {
                 String templateValue = annotation.value();
                 String templateFilePath = annotation.filePath();
                 final boolean autoRender = annotation.autoRender();
+                final boolean callRenderWhenComplete = annotation.callRenderWhenComplete();
 
                 if(templateValue != null && !templateValue.isEmpty()) { // rendering the template value as is
                     template = TemplateFactory.template(templateValue);
                     if(autoRender) {
                         Options attributes = getTemplateAttributes();
                         get$El().html(template.apply(attributes));
+                    }
+                    if(callRenderWhenComplete) {
+                        render();
                     }
 
                 } else if(templateFilePath != null && !templateFilePath.isEmpty()) { // rendering the template async
@@ -212,8 +229,72 @@ public class View extends Events {
                                 get$El().html(template.apply(attrs));
                             }
                             trigger("template:complete");
+
+                            if(callRenderWhenComplete) {
+                                render();
+                            }
                         }
                     });
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
+        }
+    }
+
+    private boolean hasTemplateAnnotationWithFilePath() {
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+            ViewTemplate annotation = classType.getAnnotation(ViewTemplate.class);
+
+            return annotation != null && annotation.filePath() != null && !annotation.filePath().isEmpty();
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
+        }
+        return false;
+    }
+
+    /**
+     * Can be used by a custom view rendering enviornment -
+     * since View class cannot know when the developer is appending the markup
+     */
+    protected void injectViews() {
+        bindAnnotatedViewInjections();
+    }
+
+    private void bindAnnotatedViewInjections() {
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+
+            Field[] fields = classType.getFields();
+            for (final Field field : fields) {
+                InjectView annotation = field.getAnnotation(InjectView.class);
+                if(annotation != null) {
+                    GQuery $element = null;
+                    String value = annotation.value();
+
+                    if(!value.isEmpty()) { // using the value as selector
+                        $element = $(value);
+                    } else {
+                        $element = $("#" + field.getName());
+                    }
+
+                    ClassType elementClass = field.getType().isClassOrInterface();
+
+                    if(elementClass != null) {
+                        String name = elementClass.getName();
+                        if(name.equals("com.google.gwt.query.client.GQuery")) {
+                            // we have a GQuery element field..
+                            field.setFieldValue(this, $element);
+                        } else {
+                            // probably some other element type
+                            field.setFieldValue(this, $element.get(0));
+                        }
+                    }
                 }
             }
         } catch (MethodInvokeException e) {
