@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Created on 23/10/2015.
  */
-public class GBackboneModelTestGwt extends GWTTestCase {
+public class GwtTestGBackboneModel extends GWTTestCase {
 
     private Collection<Model> collection;
     private Model doc;

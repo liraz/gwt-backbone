@@ -31,11 +31,6 @@
             <version>${gwtversion}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-elemental</artifactId>
-            <version>${gwtversion}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.lirazs.gbackbone</groupId>
@@ -71,4 +66,80 @@
             </exclusions>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- GWT Maven Plugin -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>gwt-maven-plugin</artifactId>
+                <version>${gwtmaven}</version>
+                <executions>
+                    <execution>
+                        <id>clean-compile</id>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>run-ie8-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>IE8</htmlunit>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-ie9-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>IE9</htmlunit>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-ie10-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>IE10</htmlunit>
+                        </configuration>
+                    </execution>
+                    <!-- TODO: Chrome HtmlUnit is a mess, no support for XPath in the browser and other weird stuff.. -->
+                    <!--<execution>
+                        <id>run-chrome-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>Chrome</htmlunit>
+                        </configuration>
+                    </execution>-->
+                    <execution>
+                        <id>run-ff-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>FF17</htmlunit>
+                        </configuration>
+                    </execution>
+                </executions>
+                <!-- Plugin configuration. There are many available
+                    options, see gwt-maven-plugin documentation at codehaus.org -->
+                <configuration>
+                    <localWorkers>2</localWorkers>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -3,6 +3,8 @@ package org.lirazs.gbackbone.client.core.test;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.junit.client.GWTTestCase;
+import com.google.gwt.query.client.Browser;
+import com.google.gwt.query.client.GQuery;
 import com.google.gwt.user.client.History;
 import de.barop.gwt.client.HistoryConverter;
 import de.barop.gwt.client.HistoryConverterPushState;
@@ -89,13 +91,17 @@ public abstract class AbstractPushStateTest extends GWTTestCase {
     protected void gwtSetUp() throws Exception {
         super.gwtSetUp();
 
-        if (states == null) {
-            ExporterUtil.exportAll();
-            states = new Stack<State>();
-            GWT.create(History.class);
-        }
+        // no need for push state emulation on ie8 & ie9 (since they really don't support push state)
+        if (!GQuery.browser.ie8 && !GQuery.browser.ie9) {
 
-        statesOnTestStart = states.size();
+            if (states == null) {
+                ExporterUtil.exportAll();
+                states = new Stack<State>();
+                GWT.create(History.class);
+            }
+
+            statesOnTestStart = states.size();
+        }
     }
 
     /**

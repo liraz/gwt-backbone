@@ -22,6 +22,7 @@
 
     <add-linker name="xsiframe" />
 
+	<entry-point class='org.lirazs.gbackbone.client.GBackbone' />
     <source path="client"/>
     
     <generate-with class="org.lirazs.gbackbone.generator.ReflectionGenerator">

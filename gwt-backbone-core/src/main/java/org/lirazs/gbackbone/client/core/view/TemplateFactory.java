@@ -31,6 +31,10 @@ public class TemplateFactory {
         }
     }
 
+    public static void clearTemplateCache() {
+        CACHED_TEMPLATES.clear();
+    }
+
     public static void templateSettings(final Map<String, String> templateSettings) {
         setTemplateKey(templateSettings, "evaluate");
         setTemplateKey(templateSettings, "interpolate");

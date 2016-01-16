@@ -1,6 +1,7 @@
 package org.lirazs.gbackbone.client.core.test;
 
 import com.google.gwt.query.client.Function;
+import com.google.gwt.query.client.GQuery;
 import org.lirazs.gbackbone.client.core.navigation.History;
 import org.lirazs.gbackbone.client.core.navigation.Router;
 import org.lirazs.gbackbone.client.core.navigation.function.OnRouteFunction;
@@ -18,7 +19,7 @@ import static org.lirazs.gbackbone.client.core.data.Options.O;
 /**
  * Created on 23/10/2015.
  */
-public class GBackboneRouterTestGwt extends AbstractPushStateTest {
+public class GwtTestGBackboneRouter extends AbstractPushStateTest {
 
     public String getModuleName() {
         return "org.lirazs.gbackbone.GBackboneTest";
@@ -419,6 +420,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testHistoryDoesNotPrependRootToFragment() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -444,6 +449,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNormalizeRoot() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         History.get().stop();
         location.replace("http://example.com/root");
 
@@ -463,6 +472,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNormalizeRoot2() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         History.get().stop();
         location.replace("http://example.com/root#fragment");
 
@@ -492,6 +505,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testTransitionFromHashChangeToPushState() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         History.get().stop();
         location.replace("http://example.com/root#x/y");
 
@@ -521,6 +538,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNavigateWithEmptyRoot() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         History.get().stop();
         location.replace("http://example.com/");
 
@@ -561,6 +582,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testHashChangeToPushStateWithSearch() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -715,6 +740,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNoTrailingSlashOnRoot() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -740,6 +769,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNoTrailingSlashOnRoot2() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -763,6 +796,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNoTrailingSlashOnRoot3() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -787,6 +824,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testFragmentMatchingSansQueryHash() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -843,6 +884,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNavigateToAHashUrl() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -907,6 +952,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testUnicodePathname() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         location.replace("http://example.com/myyjä");
@@ -936,6 +985,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testUnicodePathnameWithPercentInAParameter() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         location.replace("http://example.com/myyjä/foo%20%25%3F%2f%40%25%20bar");
@@ -968,6 +1021,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testNewLineInRoute() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         location.replace("http://example.com/stuff%0Anonsense?param=foo%0Abar");
@@ -1050,6 +1107,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testHistoryNavigateDecodesBeforeComparison() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         History.get().stop();
@@ -1179,6 +1240,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testRootsWithRegexCharacters() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         location.replace("http://example.com/x+y.z/foo");
@@ -1210,6 +1275,10 @@ public class GBackboneRouterTestGwt extends AbstractPushStateTest {
     }
 
     public void testRootsWithUnicodeCharacters() {
+        // IE8 & IE9 does not support pushstate tests
+        if(GQuery.browser.ie8 || GQuery.browser.ie9)
+            return;
+
         final int[] counter = {0};
 
         location.replace("http://example.com/®ooτ/foo");

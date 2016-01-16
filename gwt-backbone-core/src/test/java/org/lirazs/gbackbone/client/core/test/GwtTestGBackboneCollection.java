@@ -37,7 +37,7 @@ import org.lirazs.gbackbone.client.core.test.model.*;
 
 import java.util.*;
 
-public class GBackboneCollectionTestGwt extends GWTTestCase {
+public class GwtTestGBackboneCollection extends GWTTestCase {
 
     private Model a;
     private Model b;

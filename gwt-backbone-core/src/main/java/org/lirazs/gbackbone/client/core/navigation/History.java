@@ -186,7 +186,12 @@ public class History extends Events<History> {
      */
     protected String getPath() {
         int rootLastIndex = this.root.length() - 1;
-        String path = decodeFragment(location.getPath() + getSearch()).substring(rootLastIndex > -1 ? rootLastIndex : 0);
+        String decodedFragment = decodeFragment(location.getPath() + getSearch());
+        if(rootLastIndex > decodedFragment.length()) {
+            rootLastIndex = decodedFragment.length();
+        }
+
+        String path = decodedFragment.substring(rootLastIndex > -1 ? rootLastIndex : 0);
         return !path.isEmpty() && path.charAt(0) == '/' ? path.substring(1) : path;
     }
 
@@ -556,7 +561,7 @@ public class History extends Events<History> {
             if(iFrame != null) {
                 updateFrameLocationHash(iFrame, hash);
             } else {
-                com.google.gwt.user.client.History.newItem(hash);
+                location.setHash(hash);
             }
         }
     }
@@ -608,20 +613,13 @@ public class History extends Events<History> {
 
     private native String openAndCloseIFrameDocument(IFrameElement frame) /*-{
         if(frame.document) {
-            frame.document.open().close();
+            frame.document.open()
+            frame.document.close();
         }
     }-*/;
 
     private native String getIFrameUrl(IFrameElement frame) /*-{
-        if (frame.contentDocument !== undefined) {
-            return frame.contentDocument.URL;
-        } else if (frame.contentWindow !== undefined &&
-            frame.contentWindow.document !== undefined)
-        {
-            return frame.contentWindow.document;
-        } else {
-            return null;
-        }
+        return frame.contentWindow !== undefined ? frame.contentWindow.location.href : "";
     }-*/;
 
     protected native void replaceHistoryState(String title, String route) /*-{
@@ -630,10 +628,6 @@ public class History extends Events<History> {
 
     protected native void pushHistoryState(String title, String route) /*-{
         $wnd.history.pushState({}, title, route);
-    }-*/;
-
-    public native String getLocationSearch() /*-{
-        return $wnd.location.search;
     }-*/;
 
     private native boolean isOnHashChangeSupported() /*-{

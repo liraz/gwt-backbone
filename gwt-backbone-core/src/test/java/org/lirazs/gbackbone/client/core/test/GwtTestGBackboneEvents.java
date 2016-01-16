@@ -20,7 +20,7 @@ import static org.lirazs.gbackbone.client.core.data.Options.O;
 /**
  * Created on 23/10/2015.
  */
-public class GBackboneEventsTestGwt extends GWTTestCase {
+public class GwtTestGBackboneEvents extends GWTTestCase {
 
     public String getModuleName() {
         return "org.lirazs.gbackbone.GBackboneTest";

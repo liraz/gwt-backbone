@@ -116,4 +116,13 @@ public class WindowLocationEmulation implements WindowLocation {
     public void setPath(String path) {
         this.pathname = path;
     }
+
+    @Override
+    public void setHash(String hash) {
+        setAnchorHash(parser, hash);
+    }
+
+    private native void setAnchorHash(Element elem, String hash) /*-{
+        elem.hash = hash;
+    }-*/;
 }

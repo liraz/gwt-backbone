@@ -68,26 +68,6 @@
             </plugin>
         </plugins>
     </build>
-	
-	<reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>changelog-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <configuration>
-                    <aggregate>true</aggregate>
-                </configuration>
-            </plugin>
-        </plugins>
-    </reporting>
 
     <pluginRepositories>
         <pluginRepository>
@@ -95,7 +75,5 @@
             <url>http://repo1.maven.org/maven2</url>
         </pluginRepository>
     </pluginRepositories>
-
-
 
 </project>

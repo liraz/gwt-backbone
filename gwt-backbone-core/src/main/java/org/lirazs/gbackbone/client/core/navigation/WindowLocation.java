@@ -13,5 +13,7 @@ public interface WindowLocation {
 
     String getHash();
 
+    void setHash(String hash);
+
     void assign(String newURL);
 }

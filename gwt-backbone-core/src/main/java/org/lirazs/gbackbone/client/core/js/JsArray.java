@@ -106,8 +106,34 @@ public final class JsArray<T> extends JavaScriptObject {
     }
 
     public boolean contains(Object o) {
-        return c().contains(o);
+        return arrayContains(c(), o);
     }
+
+    /**
+     * Needed for IE8 which doesn't have a indexOf method
+     */
+    private native boolean arrayContains(JavaScriptObject cache, Object o) /*-{
+        if (!Array.prototype.indexOf) {
+            Array.prototype.indexOf = function(elt) {
+                var len = this.length >>> 0;
+
+                var from = Number(arguments[1]) || 0;
+                from = (from < 0)
+                    ? Math.ceil(from)
+                    : Math.floor(from);
+                if (from < 0)
+                    from += len;
+
+                for (; from < len; from++) {
+                    if (from in this &&
+                        this[from] === elt)
+                        return from;
+                }
+                return -1;
+            };
+        }
+        return cache.indexOf(o) >= 0;
+    }-*/;
 
     public void remove(Object... objects) {
         for (Object o : objects) {

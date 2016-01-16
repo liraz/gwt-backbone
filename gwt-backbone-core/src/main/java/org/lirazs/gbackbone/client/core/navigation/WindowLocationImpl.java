@@ -27,6 +27,11 @@ public class WindowLocationImpl implements WindowLocation {
     }
 
     @Override
+    public native void setHash(String hash) /*-{
+        $wnd.location.hash = hash;
+    }-*/;
+
+    @Override
     public void assign(String newURL) {
         Window.Location.assign(newURL);
     }
