@@ -24,10 +24,7 @@ import com.google.gwt.query.client.Properties;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.Event;
-import org.lirazs.gbackbone.client.core.annotation.EventHandler;
-import org.lirazs.gbackbone.client.core.annotation.InjectModel;
-import org.lirazs.gbackbone.client.core.annotation.InjectView;
-import org.lirazs.gbackbone.client.core.annotation.ViewTemplate;
+import org.lirazs.gbackbone.client.core.annotation.*;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
@@ -40,15 +37,15 @@ import java.util.Map;
 
 @Reflectable(classAnnotations = true, fields = true, methods = true, constructors = false,
         fieldAnnotations = true, relationTypes=false,
-        superClasses=false, assignableClasses=false)
-public class View extends Events {
+        superClasses=true, assignableClasses=false)
+public class View<M extends Model> extends Events<View<M>> {
     private String id;
 
     private String cid;
     private String tagName;
     private String className;
 
-    private Model model;
+    private M model;
     private Collection collection;
     private Element el;
     private String elSelector;
@@ -125,7 +122,11 @@ public class View extends Events {
             bindAnnotatedModelInjections();
         }
 
+        bindAnnotatedTagName();
+        bindAnnotatedElement();
+
         ensureElement();
+        bindAnnotatedViewInjections();
         bindAnnotatedEvents();
 
         initialize();
@@ -142,8 +143,44 @@ public class View extends Events {
                     bindAnnotatedViewInjections();
                 }
             });
-        } else {
-            bindAnnotatedViewInjections();
+        }
+    }
+
+    private void bindAnnotatedTagName() {
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+            ViewTagName annotation = classType.getAnnotation(ViewTagName.class);
+
+            if(annotation != null && classType.isClass() != null) {
+                String tagNameValue = annotation.value();
+
+                if(tagNameValue != null && !tagNameValue.isEmpty()) { // rendering the template value as is
+                    tagName = tagNameValue;
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
+        }
+    }
+
+    private void bindAnnotatedElement() {
+        try {
+            ClassType classType = TypeOracle.Instance.getClassType(getClass());
+            ViewElement annotation = classType.getAnnotation(ViewElement.class);
+
+            if(annotation != null && classType.isClass() != null) {
+                String elementValue = annotation.value();
+
+                if(elementValue != null && !elementValue.isEmpty()) { // rendering the template value as is
+                    elSelector = elementValue;
+                }
+            }
+        } catch (MethodInvokeException e) {
+            e.printStackTrace();
+        } catch (ReflectionRequiredException e) {
+            // do nothing... a reflection operation was operated on an inner class
         }
     }
 
@@ -202,11 +239,23 @@ public class View extends Events {
             if(annotation != null && classType.isClass() != null) {
                 String templateValue = annotation.value();
                 String templateFilePath = annotation.filePath();
+                String templateSelector = annotation.selector();
                 final boolean autoRender = annotation.autoRender();
                 final boolean callRenderWhenComplete = annotation.callRenderWhenComplete();
 
                 if(templateValue != null && !templateValue.isEmpty()) { // rendering the template value as is
                     template = TemplateFactory.template(templateValue);
+                    if(autoRender) {
+                        Options attributes = getTemplateAttributes();
+                        get$El().html(template.apply(attributes));
+                    }
+                    if(callRenderWhenComplete) {
+                        render();
+                    }
+
+                } else if(templateSelector != null && !templateSelector.isEmpty()) { // rendering the template value as is
+                    GQuery scriptElement = GQuery.$(templateSelector);
+                    template = TemplateFactory.template(scriptElement.html());
                     if(autoRender) {
                         Options attributes = getTemplateAttributes();
                         get$El().html(template.apply(attributes));
@@ -279,7 +328,7 @@ public class View extends Events {
             Field[] fields = classType.getFields();
             for (final Field field : fields) {
                 InjectView annotation = field.getAnnotation(InjectView.class);
-                if(annotation != null) {
+                if(annotation != null && field.isPublic()) {
                     GQuery $element = null;
                     String value = annotation.value();
 
@@ -382,7 +431,7 @@ public class View extends Events {
         return tagName;
     }
 
-    public Model getModel() {
+    public M getModel() {
         return model;
     }
 

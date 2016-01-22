@@ -15,18 +15,14 @@
  */
 package org.lirazs.gbackbone.client.core.net;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.dom.client.Element;
-import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.query.client.*;
 import com.google.gwt.query.client.js.JsMap;
 import com.google.gwt.query.client.plugins.ajax.Ajax;
 import org.lirazs.gbackbone.client.core.data.JsonSerializable;
 import org.lirazs.gbackbone.client.core.data.Options;
-import org.lirazs.gbackbone.client.core.util.JsObjectUtils;
 
-public class Sync {
+public class NetworkSyncStrategy implements SyncStrategy {
 
     /**
      * // Map from CRUD to HTTP for our default `Backbone.sync` implementation.
@@ -45,15 +41,15 @@ public class Sync {
         return syncArgs;
     }
 
-    private static Sync instance = null;
-    public static Sync get() {
+    private static NetworkSyncStrategy instance = null;
+    public static NetworkSyncStrategy get() {
         if(instance == null) {
-            instance = new Sync();
+            instance = new NetworkSyncStrategy();
         }
         return instance;
     }
 
-    protected Sync() {
+    protected NetworkSyncStrategy() {
         methodMap = JsMap.create();
         methodMap.put("create", "POST");
         methodMap.put("update", "PUT");

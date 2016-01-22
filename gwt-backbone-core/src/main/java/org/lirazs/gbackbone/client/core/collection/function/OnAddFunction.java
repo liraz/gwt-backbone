@@ -8,12 +8,12 @@ import org.lirazs.gbackbone.client.core.model.Model;
 /**
  * Created on 04/12/2015.
  */
-public abstract class OnAddFunction extends Function {
+public abstract class OnAddFunction<M extends Model> extends Function {
 
     @Override
     public void f() {
-        f((Model)getArgument(0), (Collection)getArgument(0), (Options)getArgument(1));
+        f((M)getArgument(1), (Collection)getArgument(2), (Options)getArgument(3));
     }
 
-    abstract void f(Model model, Collection collection, Options options);
+    public abstract void f(M model, Collection collection, Options options);
 }

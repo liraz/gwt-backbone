@@ -34,7 +34,8 @@ import org.lirazs.gbackbone.client.core.model.function.*;
 import org.lirazs.gbackbone.client.core.model.function.OnErrorFunction;
 import org.lirazs.gbackbone.client.core.model.function.OnInvalidFunction;
 import org.lirazs.gbackbone.client.core.model.function.OnSyncFunction;
-import org.lirazs.gbackbone.client.core.net.Sync;
+import org.lirazs.gbackbone.client.core.net.NetworkSyncStrategy;
+import org.lirazs.gbackbone.client.core.net.SyncStrategy;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
 import org.lirazs.gbackbone.client.core.util.UUID;
 import org.lirazs.gbackbone.client.generator.Reflectable;
@@ -58,6 +59,17 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
 
     private String urlRoot = null;
     private UrlRootFunction<Model> urlRootFunction = null;
+
+    // by default working with Network sync strategy
+    private SyncStrategy syncStrategy = NetworkSyncStrategy.get();
+
+    public void registerSyncStrategy(SyncStrategy syncStrategy) {
+        this.syncStrategy = syncStrategy;
+    }
+
+    public SyncStrategy getSyncStrategy() {
+        return syncStrategy;
+    }
 
     /**
      * _changing;
@@ -226,7 +238,7 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
          }
      */
     public Promise sync(String method, Options options) {
-        return Sync.get().sync(method, this, options);
+        return syncStrategy.sync(method, this, options);
     }
 
     public String getId() {

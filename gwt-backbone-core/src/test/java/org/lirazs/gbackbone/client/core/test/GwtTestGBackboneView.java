@@ -2,6 +2,7 @@ package org.lirazs.gbackbone.client.core.test;
 
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.ScriptElement;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.GQuery;
@@ -1169,7 +1170,7 @@ public class GwtTestGBackboneView extends GWTTestCase {
                 assertNotNull(annotatedInjectedView.addressInput);
                 assertNotNull(annotatedInjectedView.cityInput);
                 assertNotNull(annotatedInjectedView.formTitle);
-                assertNotNull(annotatedInjectedView.getFormBottomTitle());
+                assertNotNull(annotatedInjectedView.formBottomTitle);
 
                 final CustomRenderAnnotatedInjectedView customAnnotatedInjectedView = new CustomRenderAnnotatedInjectedView();
 
@@ -1210,5 +1211,10 @@ public class GwtTestGBackboneView extends GWTTestCase {
                 finishTest();
             }
         });
+    }
+
+    public void testAnnotatedTagNameView() {
+        AnnotatedTagView tagView = new AnnotatedTagView();
+        assertEquals("<li></li>", tagView.get$El().toString().toLowerCase());
     }
 }

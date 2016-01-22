@@ -12,6 +12,8 @@ public @interface ViewTemplate {
 
     String value() default "";
 
+    String selector() default "";
+
     String filePath() default "";
 
     boolean autoRender() default true;

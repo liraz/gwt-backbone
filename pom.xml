@@ -7,7 +7,7 @@
     <groupId>org.lirazs.gbackbone</groupId>
     <artifactId>gwt-backbone</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.1</version>
+    <version>0.4.0</version>
     <name>Gwt Backbone Project</name>
 	<description>GwtBackbone is a Backbone.js clone written in GWT.</description>
 	
@@ -28,6 +28,7 @@
     <modules>
         <module>gwt-backbone-core</module>
         <module>gwt-backbone-reflection</module>
+        <module>gwt-backbone-examples</module>
     </modules>
 
     <properties>
@@ -35,6 +36,9 @@
         <gwtmaven>2.7.0</gwtmaven>
         <gwt.loglevel>INFO</gwt.loglevel>
         <gwt.outputstyle>OBF</gwt.outputstyle>
+        <appengine.app.version>1</appengine.app.version>
+        <appengine.target.version>1.9.30</appengine.target.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>

@@ -24,5 +24,7 @@ public interface Synchronized {
 
     JsonSerializable toJSON();
 
-    public Events trigger(String name, Object ...args);
+    SyncStrategy getSyncStrategy();
+
+    Events trigger(String name, Object ...args);
 }

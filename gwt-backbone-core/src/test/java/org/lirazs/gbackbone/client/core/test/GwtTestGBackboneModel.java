@@ -4,7 +4,6 @@ import com.google.gwt.json.client.*;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.Promise;
-import com.google.gwt.user.client.Timer;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import static org.lirazs.gbackbone.client.core.data.Options.O;
@@ -13,7 +12,7 @@ import static org.lirazs.gbackbone.client.core.data.OptionsList.OL;
 import org.lirazs.gbackbone.client.core.function.MatchesFunction;
 import org.lirazs.gbackbone.client.core.function.UrlRootFunction;
 import org.lirazs.gbackbone.client.core.model.Model;
-import org.lirazs.gbackbone.client.core.net.Sync;
+import org.lirazs.gbackbone.client.core.net.NetworkSyncStrategy;
 import org.lirazs.gbackbone.client.core.test.model.*;
 
 import java.util.ArrayList;
@@ -1582,13 +1581,13 @@ public class GwtTestGBackboneModel extends GWTTestCase {
         });
         model.save(O("x", 3), O("wait", true));
 
-        JSONValue jsonValue = JSONParser.parseStrict(String.valueOf(Sync.get().getSyncArgs().get("data")));
+        JSONValue jsonValue = JSONParser.parseStrict(String.valueOf(NetworkSyncStrategy.get().getSyncArgs().get("data")));
         assertEquals(O(jsonValue), O("x", 3, "y", 2));
 
         assertEquals(1, model.get("x"));
         assertEquals(0, changed[0]);
 
-        Sync.get().getSyncArgs().getSuccess().f();
+        NetworkSyncStrategy.get().getSyncArgs().getSuccess().f();
 
         assertEquals(3, model.get("x"));
         assertEquals(1, changed[0]);

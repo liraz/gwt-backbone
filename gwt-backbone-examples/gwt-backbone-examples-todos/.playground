@@ -1,0 +1,19 @@
+{
+  "project_name": "GBackbone Todos",
+  "project_description": "Example of TodoMVC written in Gwt-Backbone",
+  "show_files": [
+    "src/main/java/org/lirazs/gbackbone/examples/todos/client/AppView.java",
+    "src/main/java/org/lirazs/gbackbone/examples/todos/client/Todo.java",
+    "src/main/java/org/lirazs/gbackbone/examples/todos/client/TodoList.java",
+    "src/main/java/org/lirazs/gbackbone/examples/todos/client/TodosEntryPoint.java",
+    "src/main/java/org/lirazs/gbackbone/examples/todos/client/TodoView.java",
+    "src/main/java/org/lirazs/gbackbone/examples/todos/Todos.gwt.xml",
+    "pom.xml",
+    "src/main/webapp/index.html",
+    "src/main/webapp/todos.css",
+    "src/main/webapp/WEB-INF/appengine-web.xml",
+    "src/main/webapp/WEB-INF/web.xml"
+  ],
+  "read_only_demo_url": "https://try-java-demo-dot-cloud-playground.appspot.com/",
+  "download_filename": "appengine-try-java.zip"
+}

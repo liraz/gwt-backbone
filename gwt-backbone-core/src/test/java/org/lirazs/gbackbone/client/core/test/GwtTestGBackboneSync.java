@@ -3,13 +3,12 @@ package org.lirazs.gbackbone.client.core.test;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.json.client.JSONParser;
-import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.plugins.ajax.Ajax;
 import org.lirazs.gbackbone.client.core.collection.Collection;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.model.Model;
-import org.lirazs.gbackbone.client.core.net.Sync;
+import org.lirazs.gbackbone.client.core.net.NetworkSyncStrategy;
 
 import static org.lirazs.gbackbone.client.core.data.Options.O;
 
@@ -42,7 +41,7 @@ public class GwtTestGBackboneSync extends GWTTestCase {
     public void testRead() {
         library.fetch();
 
-        Ajax.Settings syncArgs = Sync.get().getSyncArgs();
+        Ajax.Settings syncArgs = NetworkSyncStrategy.get().getSyncArgs();
         assertEquals("/library", syncArgs.getUrl());
         assertEquals("GET", syncArgs.getType());
         assertEquals("json", syncArgs.getDataType());
@@ -54,7 +53,7 @@ public class GwtTestGBackboneSync extends GWTTestCase {
     public void testPassingData() {
         library.fetch(O("data", O("a", "a", "one", 1)));
 
-        Ajax.Settings syncArgs = Sync.get().getSyncArgs();
+        Ajax.Settings syncArgs = NetworkSyncStrategy.get().getSyncArgs();
         assertEquals("/library", syncArgs.getUrl());
 
         String data = JsonUtils.stringify((JavaScriptObject) syncArgs.getData());

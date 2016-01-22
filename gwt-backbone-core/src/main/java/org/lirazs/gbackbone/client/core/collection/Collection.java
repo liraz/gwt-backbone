@@ -36,12 +36,12 @@ import org.lirazs.gbackbone.client.core.model.function.OnChangeAttrFunction;
 import org.lirazs.gbackbone.client.core.model.function.OnChangeFunction;
 import org.lirazs.gbackbone.client.core.model.function.OnDestroyFunction;
 import org.lirazs.gbackbone.client.core.model.function.OnSyncFunction;
-import org.lirazs.gbackbone.client.core.net.Sync;
+import org.lirazs.gbackbone.client.core.net.NetworkSyncStrategy;
+import org.lirazs.gbackbone.client.core.net.SyncStrategy;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
 import org.lirazs.gbackbone.client.core.util.ObjectUtils;
 import org.lirazs.gbackbone.client.generator.Reflection;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 public class Collection<T extends Model> extends Events<Collection<T>> implements Synchronized, Iterable<T> {
@@ -67,6 +67,17 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
     Map<String, T> byId;
     Class<T> modelClass;
     ModelClassFunction<T> modelClassFunction;
+
+    // by default working with Network sync strategy
+    private SyncStrategy syncStrategy = NetworkSyncStrategy.get();
+
+    public void registerSyncStrategy(SyncStrategy syncStrategy) {
+        this.syncStrategy = syncStrategy;
+    }
+
+    public SyncStrategy getSyncStrategy() {
+        return syncStrategy;
+    }
 
     /**
      * constructor(models?: Model[], options?: CollectionOptions) {
@@ -276,7 +287,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
      }
      */
     public Promise sync(String method, Options options) {
-        return Sync.get().sync(method, this, options);
+        return syncStrategy.sync(method, this, options);
     }
 
     private String url;
@@ -839,10 +850,10 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
          return models;
      },
      */
-    public Collection reset(JSONArray models) {
+    public Collection reset(JSONValue models) {
         return reset(models, null);
     }
-    public Collection reset(JSONArray models, Options options) {
+    public Collection reset(JSONValue models, Options options) {
         return reset(parse(models, options), options);
     }
     public Collection reset(Options ...models) {
@@ -1563,7 +1574,12 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         options.put("success", new Function() {
             @Override
             public void f() {
-                JSONArray response = getArgument(1);
+                JSONValue response;
+                if(getArgument(0) instanceof Model) {
+                    response = getArgument(1);
+                } else {
+                    response = getArgument(0);
+                }
 
                 if(options.getBoolean("reset")) {
                     Collection.this.reset(response, options);
@@ -1582,7 +1598,7 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         options.put("error", new Function() {
             @Override
             public void f() {
-                JavaScriptObject response = getArgument(1);
+                Object response = getArgument(0);
                 if(error != null) {
                     error.f(Collection.this, response, options);
                 }
@@ -1812,6 +1828,9 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         } else {
             model = (T)new Model(attributes, options);
         }
+        // make sure model is using the same sync strategy that was used with collection
+        model.registerSyncStrategy(syncStrategy);
+
         return model;
     }
 
@@ -1827,6 +1846,9 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
         } else {
             model = (T)new Model(attributes, options);
         }
+        // make sure model is using the same sync strategy that was used with collection
+        model.registerSyncStrategy(syncStrategy);
+
         return model;
     }
 
@@ -2080,12 +2102,12 @@ public class Collection<T extends Model> extends Events<Collection<T>> implement
 
             @Override
             public T next() {
-                return models.get(i++);
+                return at(i++);
             }
 
             @Override
             public void remove() {
-                Collection.this.remove(models.get(i));
+                Collection.this.remove(at(i));
             }
         };
     }

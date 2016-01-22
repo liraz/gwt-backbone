@@ -14,5 +14,5 @@ public abstract class OnChangeFunction extends Function {
         f((Model)getArgument(0), (Options)getArgument(1));
     }
 
-    abstract void f(Model model, Options options);
+    public abstract void f(Model model, Options options);
 }

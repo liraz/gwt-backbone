@@ -31,21 +31,11 @@ public class AnnotatedInjectedView extends View {
     @InjectView
     public SpanElement formTitle;
 
-    // injectable fields must be public or have a setter at least
     @InjectView(".bottomTitle")
-    private GQuery formBottomTitle;
-
+    public GQuery formBottomTitle;
 
     public AnnotatedInjectedView() {
         super();
-    }
-
-    public GQuery getFormBottomTitle() {
-        return formBottomTitle;
-    }
-
-    public void setFormBottomTitle(GQuery formBottomTitle) {
-        this.formBottomTitle = formBottomTitle;
     }
 
     @Override

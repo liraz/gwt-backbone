@@ -14,6 +14,16 @@ Currently what mostly is used from GwtQuery is JsMap, Function & the whole selec
 All functionality is available and tested, in addition to some utility annotations and helpers that can be used.
 
 
+Demo
+=======
+Check out the demo source here (Todos application):
+https://github.com/liraz/gwt-backbone/tree/master/gwt-backbone-examples/gwt-backbone-examples-todos
+
+Use the following link to see the Todos application live running:
+https://gbackbone-1198.appspot.com/
+
+Demo was tested on IE 8,9,10+, FireFox, Chrome, Android & iPhone
+
 Highlights
 =======
 
@@ -117,6 +127,54 @@ public class AnnotatedTemplateView extends View {
 }
 ```
 
+Also a selector of the <script id="item-template"></script> element holding the html template currently in the document can be provided:
+```java
+@ViewTemplate(selector = "#item-template")
+public class ListItemView extends View {
+
+    public ListItemView(Options options) {
+        super(options);
+    }
+}
+```
+
+View @InjectView annotation for injecting views that exists inside the $el
+------
+A GWT element can be injected, as well GQuery is supported.
+The annotation can be provided with a selector to get the element injected.
+Or you can also leave it empty, then the property name will be taken in the following selector pattern "#%s".
+```java
+@ViewTemplate(filePath = "CustomerRegisterView.ejs")
+public class InjectedView extends View {
+
+    @InjectView
+    public InputElement emailInput;
+
+    @InjectView("#emailRetypeSpecialId")
+    public InputElement emailRetypeInput;
+
+    @InjectView(".phoneInputClass")
+    public InputElement phoneNumberInput;
+
+    @InjectView(".addressInputAsGQuery")
+    public GQuery addressInput;
+
+    @InjectView
+    public GQuery cityInput;
+
+    public AnnotatedModelInjectedView(Options options) {
+        super(options);
+    }
+
+    @Override
+    public View render() {
+        emailInput.setValue("value@value.com");
+
+        return this;
+    }
+}
+```
+
 View @InjectModel annotation for injecting properties from model
 ------
 ```java
@@ -142,6 +200,24 @@ public class AnnotatedModelInjectedView extends View {
 }
 ```
 
+View @ViewTagName annotation for specifying tag name for a view
+------
+```java
+@ViewTagName("li")
+public class TodoView extends View<Todo> {
+
+}
+```
+
+View @ViewElement annotation for specifying the view's element that is in the DOM
+------
+```java
+@ViewElement("#todoapp")
+public class AppView extends View {
+
+}
+```
+
 
 Adding to your project
 =======
@@ -157,7 +233,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.liraz:gwt-backbone:0.2.1'
+    compile 'com.github.liraz:gwt-backbone:0.4.0'
 }
 ```
 
@@ -171,7 +247,7 @@ dependencies {
 <dependency>
     <groupId>com.github.liraz</groupId>
     <artifactId>gwt-backbone</artifactId>
-    <version>0.2.1</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 

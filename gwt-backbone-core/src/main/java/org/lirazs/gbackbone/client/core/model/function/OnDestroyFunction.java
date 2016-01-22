@@ -12,8 +12,8 @@ public abstract class OnDestroyFunction extends Function {
 
     @Override
     public void f() {
-        f((Model)getArgument(0), (Collection)getArgument(1), (Options)getArgument(1));
+        f((Model)getArgument(0), (Collection)getArgument(1), (Options)getArgument(2));
     }
 
-    abstract void f(Model model, Collection collection, Options options);
+    public abstract void f(Model model, Collection collection, Options options);
 }

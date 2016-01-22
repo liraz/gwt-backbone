@@ -14,5 +14,5 @@ public abstract class OnResetFunction extends Function {
         f((Collection)getArgument(0), (Options)getArgument(1));
     }
 
-    abstract void f(Collection collection, Options options);
+    public abstract void f(Collection collection, Options options);
 }
