@@ -5,7 +5,7 @@
     <parent>
         <artifactId>gwt-backbone-examples</artifactId>
         <groupId>org.lirazs.gbackbone</groupId>
-        <version>0.4.0</version>
+        <version>0.4.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>war</packaging>
@@ -16,7 +16,7 @@
         <dependency>
             <groupId>org.lirazs.gbackbone</groupId>
             <artifactId>gwt-backbone-core</artifactId>
-            <version>0.4.0</version>
+            <version>0.4.1</version>
         </dependency>
 
         <dependency>
