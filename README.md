@@ -233,7 +233,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.liraz:gwt-backbone:0.4.1'
+    compile 'com.github.liraz.gwt-backbone:gwt-backbone:0.4.1'
 }
 ```
 
@@ -245,7 +245,7 @@ dependencies {
 </repository>
 
 <dependency>
-    <groupId>com.github.liraz</groupId>
+    <groupId>com.github.liraz.gwt-backbone</groupId>
     <artifactId>gwt-backbone</artifactId>
     <version>0.4.1</version>
 </dependency>
