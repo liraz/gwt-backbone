@@ -38,6 +38,8 @@ import org.lirazs.gbackbone.client.core.net.NetworkSyncStrategy;
 import org.lirazs.gbackbone.client.core.net.SyncStrategy;
 import org.lirazs.gbackbone.client.core.net.Synchronized;
 import org.lirazs.gbackbone.client.core.util.UUID;
+import org.lirazs.gbackbone.client.core.validation.ValidationError;
+import org.lirazs.gbackbone.client.core.validation.Validator;
 import org.lirazs.gbackbone.client.generator.Reflectable;
 import org.lirazs.gbackbone.client.generator.Reflection;
 
@@ -54,6 +56,12 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
     private String id = null;
     private Options attributes = null;
     private String cid;
+
+    protected Validator validator;
+
+    public void registerValidator(Validator validator) {
+        this.validator = validator;
+    }
 
     private Collection<? extends Model> collection;
 
@@ -208,6 +216,13 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
       returning `true` if all is well. Otherwise, fire an `"invalid"` event.
      */
     public Object validate(Options attributes, Options options) {
+        if(validator != null) { // we have a validator registered, use it
+            List<ValidationError> validationErrors = validator.isValid(attributes);
+            if(validationErrors != null && validationErrors.size() > 0) {
+                return validationErrors;
+            }
+        }
+
         return null; // override
     }
 

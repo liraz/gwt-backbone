@@ -42,7 +42,9 @@ public interface Method extends AbstractMethod, AccessDef, Member{
 	public Type getReturnType() throws ReflectionRequiredException;
 	
 	public String getReturnTypeName();
-	
+
+	public Class getReturnTypeClass();
+
 	
 	/**
    * Returns the default value for the annotation member represented by

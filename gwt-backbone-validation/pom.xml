@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>gwt-backbone</artifactId>
+        <groupId>org.lirazs.gbackbone</groupId>
+        <version>0.5.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>gwt-backbone-validation</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.lirazs.gbackbone</groupId>
+            <artifactId>gwt-backbone-core</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-user</artifactId>
+            <version>${gwtversion}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-dev</artifactId>
+            <version>${gwtversion}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.gwtquery</groupId>
+            <artifactId>gwtquery</artifactId>
+            <version>${gquery.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>de.knightsoft-net</groupId>
+            <artifactId>gwt-commons-validator</artifactId>
+            <version>1.5.0-1</version>
+        </dependency>
+        <dependency>
+            <groupId>de.knightsoft-net</groupId>
+            <artifactId>gwt-commons-validator</artifactId>
+            <version>1.5.0-1</version>
+            <classifier>sources</classifier>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.7</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- GWT Maven Plugin -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>gwt-maven-plugin</artifactId>
+                <version>${gwtmaven}</version>
+                <executions>
+                    <execution>
+                        <id>clean-compile</id>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>compile</goal>
+                            <goal>resources</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>run-ie8-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>IE8</htmlunit>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-ie9-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>IE9</htmlunit>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-ie10-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>IE10</htmlunit>
+                        </configuration>
+                    </execution>
+                    <!-- TODO: Chrome HtmlUnit is a mess, no support for XPath in the browser and other weird stuff.. -->
+                    <!--<execution>
+                        <id>run-chrome-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>Chrome</htmlunit>
+                        </configuration>
+                    </execution>-->
+                    <execution>
+                        <id>run-ff-gwt-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <htmlunit>FF17</htmlunit>
+                        </configuration>
+                    </execution>
+                </executions>
+                <!-- Plugin configuration. There are many available
+                    options, see gwt-maven-plugin documentation at codehaus.org -->
+                <configuration>
+                    <localWorkers>2</localWorkers>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

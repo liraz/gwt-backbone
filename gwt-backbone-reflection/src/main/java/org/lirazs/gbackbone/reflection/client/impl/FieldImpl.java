@@ -45,6 +45,7 @@ public class FieldImpl implements Field, AccessDef, HasAnnotations {
 
 	private Type type;
 	private String typeName;
+	private Class typeClass;
 
 	public FieldImpl(ClassTypeImpl<?> enclosingType, String name) {
 		this.enclosingType = enclosingType;
@@ -129,6 +130,14 @@ public class FieldImpl implements Field, AccessDef, HasAnnotations {
 
 	public void setTypeName(String typeName) {
 		this.typeName = typeName;
+	}
+
+	public Class getTypeClass() {
+		return typeClass;
+	}
+
+	public void setTypeClass(Class typeClass) {
+		this.typeClass = typeClass;
 	}
 
 	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {

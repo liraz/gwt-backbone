@@ -56,6 +56,7 @@ public class MethodImpl extends AbstractMethodImpl implements AccessDef, HasAnno
 
 	private TypeImpl returnType;
 	private String returnTypeName;
+	private Class returnTypeClass;
 
 	/* (non-Javadoc)
 	 * @see org.lirazs.gbackbone.client.reflection.Method#getReturnType()
@@ -152,6 +153,15 @@ public class MethodImpl extends AbstractMethodImpl implements AccessDef, HasAnno
 
 	public void setReturnTypeName(String returnTypeName) {
 		this.returnTypeName = returnTypeName;
+	}
+
+	@Override
+	public Class getReturnTypeClass() {
+		return returnTypeClass;
+	}
+
+	public void setReturnTypeClass(Class returnTypeClass) {
+		this.returnTypeClass = returnTypeClass;
 	}
 
 	public Class getDeclaringClass() {

@@ -338,16 +338,16 @@ public class View<M extends Model> extends Events<View<M>> {
                         $element = $("#" + field.getName());
                     }
 
-                    ClassType elementClass = field.getType().isClassOrInterface();
-
+                    String elementClass = field.getTypeName();
                     if(elementClass != null) {
-                        String name = elementClass.getName();
-                        if(name.equals("com.google.gwt.query.client.GQuery")) {
+                        if(elementClass.equals("com.google.gwt.query.client.GQuery")) {
                             // we have a GQuery element field..
-                            field.setFieldValue(this, $element);
+                            //field.setFieldValue(this, $element);
+                            field.getEnclosingType().setFieldValue(this, field.getName(), $element);
                         } else {
                             // probably some other element type
-                            field.setFieldValue(this, $element.get(0));
+                            //field.setFieldValue(this, $element.get(0));
+                            field.getEnclosingType().setFieldValue(this, field.getName(), $element.get(0));
                         }
                     }
                 }

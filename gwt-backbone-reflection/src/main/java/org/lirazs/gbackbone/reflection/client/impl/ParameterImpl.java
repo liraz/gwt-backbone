@@ -22,12 +22,7 @@ package org.lirazs.gbackbone.reflection.client.impl;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
-import org.lirazs.gbackbone.reflection.client.HasAnnotations;
-import org.lirazs.gbackbone.reflection.client.Method;
-import org.lirazs.gbackbone.reflection.client.Parameter;
-import org.lirazs.gbackbone.reflection.client.ReflectionRequiredException;
-import org.lirazs.gbackbone.reflection.client.Type;
-import org.lirazs.gbackbone.reflection.client.TypeOracle;
+import org.lirazs.gbackbone.reflection.client.*;
 
 public class ParameterImpl implements HasAnnotations, Parameter {
 	private final String name;
@@ -37,21 +32,26 @@ public class ParameterImpl implements HasAnnotations, Parameter {
 	private Type type;
 
 	private String typeName;
+	private Class typeClass;
 
-	private final Method enclosingMethod;
+	//TODO: why only Method interface?.. it can be a constructor as well..
+	//private final Method enclosingMethod;
+	private final AbstractMethod enclosingMethod;
 
 
-	public ParameterImpl(MethodImpl enclosingMethod, String typeName, String name) {
+	public ParameterImpl(AbstractMethod enclosingMethod, String typeName, Class typeClass, String name) {
 		this.enclosingMethod = enclosingMethod;
 		this.typeName = typeName;
+		this.typeClass = typeClass;
 		this.name = name;
 
 		enclosingMethod.addParameter(this);
 	}
-	
-	public ParameterImpl(MethodImpl enclosingMethod, TypeImpl type, String name) {
-		this(enclosingMethod, getTypeName(type), name);
-		
+
+	public ParameterImpl(AbstractMethod enclosingMethod, TypeImpl type, Class typeClass, String name) {
+		this(enclosingMethod, getTypeName(type), typeClass, name);
+
+		this.typeClass = typeClass;
 		this.type = type;
 	}
 	
@@ -66,7 +66,7 @@ public class ParameterImpl implements HasAnnotations, Parameter {
 	/* (non-Javadoc)
 	 * @see org.lirazs.gbackbone.client.reflection.Parameter#getEnclosingMethod()
 	 */
-	public Method getEnclosingMethod() {
+	public AbstractMethod getEnclosingMethod() {
 		return enclosingMethod;
 	}
 
@@ -111,13 +111,22 @@ public class ParameterImpl implements HasAnnotations, Parameter {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.lirazs.gbackbone.client.reflection.Parameter#setTypeName(java.lang.String)
-	 */
+         * @see org.lirazs.gbackbone.client.reflection.Parameter#setTypeName(java.lang.String)
+         */
 	public void setTypeName(String typeName) {
 		this.typeName = typeName;
 	}
-	
-  public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+
+	@Override
+	public Class getTypeClass() {
+		return typeClass;
+	}
+
+	public void setTypeClass(Class typeClass) {
+		this.typeClass = typeClass;
+	}
+
+	public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
     return annotations.getAnnotation(annotationClass);
   }
   

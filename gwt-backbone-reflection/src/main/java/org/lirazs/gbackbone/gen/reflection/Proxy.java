@@ -40,11 +40,10 @@ public class Proxy extends ClassTypeImpl<Proxy> {
 		addMethods();
 		
 		new ConstructorImpl(this){
-			public Object newInstance() {
-				//return GWT.create(XXX.class);
+			@Override
+			public Object newInstance(Object... initargs) {
 				return null;
 			}
-			
 		};
 	}
 

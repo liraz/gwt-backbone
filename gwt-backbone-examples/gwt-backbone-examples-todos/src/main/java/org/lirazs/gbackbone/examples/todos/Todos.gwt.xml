@@ -15,7 +15,7 @@
 -->
 
 <module>
-	<inherits name='org.lirazs.gbackbone.GBackbone'/>
+	<inherits name='org.lirazs.gbackbone.Core'/>
 
     <add-linker name="xsiframe" />
 

@@ -390,18 +390,26 @@ public class ReflectAllInOneCreator extends LogableSourceCreator {
 		//Add next line we can make sure we just append normal class type, always get from TypeOracle
 		//not JParameterizedType or JTypeParameter etc...
 		//RC2 we support ParameterizedType now.
+
 		if (classType != null && classType.isParameterized() == null){
 //			System.out.println("addClassIfNotExists: " + classType.getQualifiedSourceName());
 			classType = this.typeOracle.findType(classType.getQualifiedSourceName());
-			
 		}
 		
 		//we just process public classes
 		if ((classType == null) || (classType.isPrivate()) || (classType.isProtected()) || (GeneratorHelper.isSystemClass(classType) && !classType.isPublic()))
 		  return false;
-		
+
+		String qualifiedSourceName = classType.getQualifiedSourceName();
+
 		//no need java.lang.class
-		if (classType.getQualifiedSourceName().equals("java.lang.Class"))
+		//if (qualifiedSourceName.equals("java.lang.Class"))
+		//	return false;
+
+		//no need for system or gwt core classes
+		if (qualifiedSourceName.contains("java.lang") || qualifiedSourceName.contains("java.util")
+				|| qualifiedSourceName.contains("java.io")
+				|| qualifiedSourceName.contains("com.google.gwt"))
 			return false;
 		
 		if (candidateList.indexOf(classType.getErasedType()) < 0){

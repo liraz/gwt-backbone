@@ -7,9 +7,48 @@
     <groupId>org.lirazs.gbackbone</groupId>
     <artifactId>gwt-backbone</artifactId>
     <packaging>pom</packaging>
-    <version>0.4.1</version>
+    <version>0.5.0</version>
     <name>Gwt Backbone Project</name>
 	<description>GwtBackbone is a Backbone.js clone written in GWT.</description>
+    <url>https://github.com/liraz/gwt-backbone</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Same as Bootstrap</comments>
+        </license>
+    </licenses>
+
+    <inceptionYear>2016</inceptionYear>
+
+    <scm>
+        <url>git@github.com:liraz/gwt-backbone.git</url>
+        <connection>scm:git@github.com:liraz/gwt-backbone.git</connection>
+        <developerConnection>scm:git@github.com:liraz/gwt-backbone.git</developerConnection>
+        <tag>0.5.0</tag>
+    </scm>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/liraz/gwt-backbone/issues</url>
+    </issueManagement>
+
+    <organization>
+        <name>liraz</name>
+        <url>https://github.com/liraz</url>
+    </organization>
+
+    <mailingLists>
+        <mailingList>
+            <name>GWT-Backbone</name>
+            <archive>https://groups.google.com/d/forum/gwt-backbone</archive>
+            <subscribe>gwt-backbone+subscribe@googlegroups.com</subscribe>
+            <unsubscribe>gwt-backbone+unsubscribe@googlegroups.com</unsubscribe>
+            <post>https://groups.google.com/d/forum/gwt-backbone</post>
+        </mailingList>
+    </mailingLists>
 	
 	<developers>
         <developer>
@@ -25,15 +64,34 @@
         </developer>
     </developers>
 
+    <contributors>
+        <contributor>
+            <name>Liraz Shilkrot</name>
+            <email>lirazshilk@gmail.com</email>
+            <roles>
+                <role>Project Manager</role>
+                <role>Architect</role>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </contributor>
+    </contributors>
+
+    <ciManagement>
+        <system>Travis CI</system>
+    </ciManagement>
+
     <modules>
-        <module>gwt-backbone-core</module>
         <module>gwt-backbone-reflection</module>
+        <module>gwt-backbone-core</module>
+        <module>gwt-backbone-validation</module>
         <module>gwt-backbone-examples</module>
     </modules>
 
     <properties>
         <gwtversion>2.7.0</gwtversion>
         <gwtmaven>2.7.0</gwtmaven>
+        <gquery.version>1.4.3</gquery.version>
         <gwt.loglevel>INFO</gwt.loglevel>
         <gwt.outputstyle>OBF</gwt.outputstyle>
         <appengine.app.version>1</appengine.app.version>

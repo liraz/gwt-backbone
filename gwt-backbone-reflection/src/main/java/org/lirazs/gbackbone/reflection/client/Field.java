@@ -48,8 +48,8 @@ public interface Field extends AccessDef, HasAnnotations, Member {
 	 */
 	@Deprecated
 	public String getTypeName();
-	
-	
+
+	public Class getTypeClass();
 	
 	/**
 	 * Get field value from instance

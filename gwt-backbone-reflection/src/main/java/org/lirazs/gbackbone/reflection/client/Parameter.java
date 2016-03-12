@@ -20,13 +20,17 @@
 package org.lirazs.gbackbone.reflection.client;
 
 
+import org.lirazs.gbackbone.reflection.client.impl.AbstractMethodImpl;
 
 public interface Parameter {
 
-	public abstract Method getEnclosingMethod();
+	//TODO: why only Method interface?.. it can be a constructor as well..
+	//public abstract Method getEnclosingMethod();
+	public abstract AbstractMethod getEnclosingMethod();
 
 	public abstract String getName();
 
 	public abstract String getTypeName();
+	public abstract Class getTypeClass();
 	public abstract Type getType() throws ReflectionRequiredException;
 }

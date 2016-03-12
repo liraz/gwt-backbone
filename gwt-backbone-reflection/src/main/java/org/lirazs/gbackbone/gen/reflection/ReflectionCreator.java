@@ -22,22 +22,16 @@ import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.typeinfo.JAnnotationMethod;
-import com.google.gwt.core.ext.typeinfo.JAnnotationType;
-import com.google.gwt.core.ext.typeinfo.JArrayType;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
-import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.*;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import org.lirazs.gbackbone.gen.AnnotationsHelper;
 import org.lirazs.gbackbone.gen.GenUtils;
 import org.lirazs.gbackbone.gen.LogableSourceCreator;
+import org.lirazs.gbackbone.reflection.client.ClassType;
 import org.lirazs.gbackbone.reflection.client.HasReflect;
 import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.reflection.client.Type;
@@ -105,18 +99,81 @@ public class ReflectionCreator extends LogableSourceCreator {
 
 			if (this.reflectable.constructors()) {
 				if ((classType.isClass() != null)
-						&& GenUtils.hasPublicDefaultConstructor(classType)) {
+						/*&& GenUtils.hasPublicDefaultConstructor(classType)*/) {
 					if ((!classType.isAbstract())
-							&& (classType.isDefaultInstantiable())) {
-						sourceWriter.println("new ConstructorImpl(this){");
-						sourceWriter
-								.println("	public java.lang.Object newInstance() {");
-						sourceWriter.println("return new "
-								+ classType.getQualifiedSourceName() + "();");
-						// sourceWriter.println("		return GWT.create(" +
-						// classType.getQualifiedSourceName() + ".class);");
-						sourceWriter.println("	}");
-						sourceWriter.println("};");
+							/*&& (classType.isDefaultInstantiable())*/) {
+
+						sourceWriter.println("Constructor constructor;");
+
+						JClassType javascriptClassType = null;
+						try {
+							javascriptClassType = typeOracle.getType(JavaScriptObject.class.getName());
+						} catch (NotFoundException e) {
+							e.printStackTrace();
+						}
+
+						JConstructor[] constructors = classType.getConstructors();
+
+						if ((javascriptClassType != null && !classType.isAssignableTo(javascriptClassType))) {
+							for (JConstructor constructor : constructors) {
+
+								sourceWriter.println("constructor = new ConstructorImpl(this){");
+								sourceWriter.println("	public java.lang.Object newInstance(Object ... initargs) {");
+
+                                JType[] parameterTypes = constructor.getParameterTypes();
+                                sourceWriter.println(String.format("if(initargs != null && initargs.length == %d) {", parameterTypes.length));
+                                //sourceWriter.println("			int paramEqualTypeCount = 0;");
+
+                                int i = 0;
+                                String parametersString = "";
+
+                                for (JType parameterType : parameterTypes) {
+									String qualifiedSourceName = parameterType.getQualifiedSourceName();
+									if (qualifiedSourceName.contains("extends")) {
+										qualifiedSourceName = parameterType.getErasedType().getQualifiedSourceName();
+									}
+
+                                    String indexedArgumentString = String.format("initargs[%d]", i);
+
+                                    /*sourceWriter.println(String.format("if(ReflectionUtils.getQualifiedSourceName(%s.getClass()).equals(\"%s\")) {", indexedArgumentString, qualifiedSourceName));
+                                    sourceWriter.println("					paramEqualTypeCount++;");
+                                    sourceWriter.println("			}");*/
+
+                                    parametersString += String.format("(%s)", qualifiedSourceName) + indexedArgumentString;
+                                    parametersString += i != parameterTypes.length - 1 ? "," : "";
+
+									i++;
+                                }
+
+                                //sourceWriter.println("			if(paramEqualTypeCount == initargs.length) {");
+                                sourceWriter.println("				return new " + classType.getQualifiedSourceName() + "(" + parametersString + ");");
+                                //sourceWriter.println("			}");
+                                sourceWriter.println("		}");
+
+								if (GenUtils.hasPublicDefaultConstructor(classType) && classType.isDefaultInstantiable() && (javascriptClassType != null && !classType.isAssignableTo(javascriptClassType))) {
+									sourceWriter.println("		return new " + classType.getQualifiedSourceName() + "();");
+								} else {
+									sourceWriter.println("		return null;");
+								}
+								sourceWriter.println("	}");
+
+								sourceWriter.println("};");
+
+								JParameter[] params = constructor.getParameters();
+								for (int j = 0; j < params.length; j++) {
+									JParameter param = params[j];
+									String qualifiedSourceName = param.getType().getQualifiedSourceName();
+									if (qualifiedSourceName.contains("extends")) {
+										qualifiedSourceName = param.getType().getErasedType().getQualifiedSourceName();
+									}
+
+									sourceWriter.println("new ParameterImpl(constructor, \""
+											+ qualifiedSourceName + "\", "
+											+ qualifiedSourceName + ".class, "
+											+ "\"" + param.getName() + "\");");
+								}
+                            }
+						}
 					}
 				}
 			}
@@ -352,17 +409,31 @@ public class ReflectionCreator extends LogableSourceCreator {
 
 					source.println("field.addModifierBits("
 							+ GeneratorHelper.AccessDefToInt(field) + "); ");
+
+					String qualifiedSourceName = field.getType().getQualifiedSourceName();
 					source
 							.println("field.setTypeName(\""
-									+ field.getType().getQualifiedSourceName()
+									+ qualifiedSourceName
 									+ "\");");
+
+					if (qualifiedSourceName.contains("extends")) {
+						source
+                                .println("field.setTypeClass("
+										+ field.getType().getErasedType().getQualifiedSourceName()
+										+ ".class);");
+					} else {
+						source
+								.println("field.setTypeClass("
+										+ qualifiedSourceName
+										+ ".class);");
+					}
 
 					// GeneratorHelper.addMetaDatas("field", source, field);
 
 					if (this.reflectable.fieldAnnotations()
 							|| (field.getAnnotation(HasReflect.class) != null && field
 									.getAnnotation(HasReflect.class)
-									.annotation())) {
+							.annotation())) {
 						Annotation[] annotations = AnnotationsHelper
 								.getAnnotations(field);
 						GeneratorHelper.addAnnotations_AnnotationImpl(
@@ -405,9 +476,19 @@ public class ReflectionCreator extends LogableSourceCreator {
 							+ method.getName() + "\");");
 					source.println("method.addModifierBits("
 							+ GeneratorHelper.AccessDefToInt(method) + "); ");
+
+
+					String returnTypeQualifiedSourceName = method.getReturnType().getQualifiedSourceName();
+					if (returnTypeQualifiedSourceName.contains("extends")) {
+						returnTypeQualifiedSourceName = method.getReturnType().getErasedType().getQualifiedSourceName();
+					}
+
 					source.println("method.setReturnTypeName(\""
-							+ method.getReturnType().getQualifiedSourceName()
+							+ returnTypeQualifiedSourceName
 							+ "\");");
+					source.println("method.setReturnTypeClass("
+							+ returnTypeQualifiedSourceName
+							+ ".class);");
 
 					if (method.isAnnotationMethod() != null) {
 						try {
@@ -448,9 +529,15 @@ public class ReflectionCreator extends LogableSourceCreator {
 					JParameter[] params = method.getParameters();
 					for (int j = 0; j < params.length; j++) {
 						JParameter param = params[j];
+						String qualifiedSourceName = param.getType().getQualifiedSourceName();
+						if (qualifiedSourceName.contains("extends")) {
+							qualifiedSourceName = param.getType().getErasedType().getQualifiedSourceName();
+						}
+
 						source.println("new ParameterImpl(method, \""
-								+ param.getType().getQualifiedSourceName()
-								+ "\", \"" + param.getName() + "\");");
+								+ qualifiedSourceName + "\", "
+								+ qualifiedSourceName + ".class, "
+								+ "\"" + param.getName() + "\");");
 						// TODO Support annotation of Parameter
 					}
 

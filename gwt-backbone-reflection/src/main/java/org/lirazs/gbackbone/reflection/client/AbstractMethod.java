@@ -41,4 +41,5 @@ public interface AbstractMethod extends HasAnnotations, Member  {
 
 	public void setVarArgs();
 
+	void addParameter(Parameter param);
 }

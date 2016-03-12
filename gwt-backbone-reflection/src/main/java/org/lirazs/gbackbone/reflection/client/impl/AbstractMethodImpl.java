@@ -208,7 +208,8 @@ public abstract class AbstractMethodImpl implements HasAnnotations, AbstractMeth
 	// sb.append(">");
 	// }
 
-	void addParameter(Parameter param) {
+	@Override
+	public void addParameter(Parameter param) {
 		params.add(param);
 	}
 

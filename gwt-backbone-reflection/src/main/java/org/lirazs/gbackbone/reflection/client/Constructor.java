@@ -25,5 +25,7 @@ public interface Constructor<T> extends AbstractMethod {
 	 * For now just support create class that contains default Constructor.
 	 * @return
 	 */
-	public T newInstance();
+	//T newInstance();
+
+	T newInstance(Object ... initargs);
 }
