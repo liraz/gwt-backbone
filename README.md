@@ -1,5 +1,5 @@
 
-GwtBackbone v0.4.1 [![Travis-CI Build Status](https://travis-ci.org/liraz/gwt-backbone.svg?branch=master)](https://travis-ci.org/liraz/gwt-backbone)
+GwtBackbone v0.5.0 [![Travis-CI Build Status](https://travis-ci.org/liraz/gwt-backbone.svg?branch=master)](https://travis-ci.org/liraz/gwt-backbone)
 ===========
 
 GwtBackbone a.k.a. GBackbone is a Backbone-like API written in GWT, which allows GWT to be used convert already written enterprise backbone projects into entirely used in GWT.
