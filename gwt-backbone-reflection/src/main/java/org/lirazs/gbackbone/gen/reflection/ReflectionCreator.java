@@ -100,7 +100,8 @@ public class ReflectionCreator extends LogableSourceCreator {
 				sourceWriter.println("addMethods();");
 			}
 
-			if (this.reflectable.constructors() && !isAnnotation) {
+			Reflectable annotation = classType.getAnnotation(Reflectable.class);
+			if (annotation != null && annotation.constructors() && !isAnnotation) {
 				if ((classType.isClass() != null)
 						/*&& GenUtils.hasPublicDefaultConstructor(classType)*/) {
 					if ((!classType.isAbstract())
