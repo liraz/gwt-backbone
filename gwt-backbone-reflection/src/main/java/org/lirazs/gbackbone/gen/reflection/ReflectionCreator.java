@@ -75,11 +75,11 @@ public class ReflectionCreator extends LogableSourceCreator {
 			// if (classType.isAnnotation() != null){
 			// createAnnotationImpl(classType.isAnnotation());
 			// }
-			
-			if (classType.isAnnotation() != null) {
+
+			boolean isAnnotation = classType.isAnnotation() != null;
+			if (isAnnotation) {
 				createAnnotationImpl(this.sourceWriter, classType
 						.isAnnotation());
-
 			}
 
 			sourceWriter.println("public " + className + "(){");
@@ -93,11 +93,16 @@ public class ReflectionCreator extends LogableSourceCreator {
 			sourceWriter.println("super(" + classType.getQualifiedSourceName()
 					+ ".class);");
 			// sourceWriter.println("addClassMeta();");
-			sourceWriter.println("addAnnotations();");
+			if (!isAnnotation) {
+				sourceWriter.println("addAnnotations();");
+			}
 			sourceWriter.println("addFields();");
-			sourceWriter.println("addMethods();");
 
-			if (this.reflectable.constructors()) {
+			if (!isAnnotation) {
+				sourceWriter.println("addMethods();");
+			}
+
+			if (this.reflectable.constructors() && !isAnnotation) {
 				if ((classType.isClass() != null)
 						/*&& GenUtils.hasPublicDefaultConstructor(classType)*/) {
 					if ((!classType.isAbstract())
@@ -180,7 +185,7 @@ public class ReflectionCreator extends LogableSourceCreator {
 
 			sourceWriter.println("");
 			if (classType.getSuperclass() != null
-					&& classType.getSuperclass().isPublic()) {
+					&& classType.getSuperclass().isPublic() && !isAnnotation) {
 				// sourceWriter.println("if (" + "TypeOracleImpl.findType(" +
 				// classType.getSuperclass().getQualifiedSourceName() +
 				// ".class)" + " != null)");
@@ -207,7 +212,7 @@ public class ReflectionCreator extends LogableSourceCreator {
 
 			sourceWriter.println();
 			for (JClassType type : classType.getImplementedInterfaces()) {
-				if (type.isParameterized() != null) {
+				if (type.isParameterized() != null && !isAnnotation) {
 					String actArgs = GeneratorHelper
 							.stringArrayToCode(GeneratorHelper
 									.convertJClassTypeToStringArray(type
@@ -250,10 +255,13 @@ public class ReflectionCreator extends LogableSourceCreator {
 			// -----Add fields----------------------------------------
 			addFields(classType, sourceWriter);
 			// -----Add methods---------------------------------------
-			addMethods(classType, sourceWriter);
+			if (!isAnnotation) {
+				addMethods(classType, sourceWriter);
+			}
 
-			setFieldValue(classType, sourceWriter);
-
+			if (!isAnnotation) {
+				setFieldValue(classType, sourceWriter);
+			}
 			getFieldValue(classType, sourceWriter);
 		}
 

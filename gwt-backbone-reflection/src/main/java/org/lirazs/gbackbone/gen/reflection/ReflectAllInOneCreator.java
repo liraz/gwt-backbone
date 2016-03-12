@@ -33,17 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
-import com.google.gwt.core.ext.typeinfo.HasAnnotations;
-import com.google.gwt.core.ext.typeinfo.JAnnotationMethod;
-import com.google.gwt.core.ext.typeinfo.JAnnotationType;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.JField;
-import com.google.gwt.core.ext.typeinfo.JMethod;
-import com.google.gwt.core.ext.typeinfo.JParameter;
-import com.google.gwt.core.ext.typeinfo.JType;
-import com.google.gwt.core.ext.typeinfo.NotFoundException;
+import com.google.gwt.core.ext.typeinfo.*;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import org.lirazs.gbackbone.common.client.CheckedExceptionWrapper;
@@ -62,6 +55,8 @@ public class ReflectAllInOneCreator extends LogableSourceCreator {
 	
 	private List<String> allGeneratedClassNames = new ArrayList<String>();
 	private Set<JClassType> relationClassesProcessed = new HashSet<JClassType>();
+
+	JClassType javascriptClassType;
 
 	public ReflectAllInOneCreator(TreeLogger logger, GeneratorContext context,
 			String typeName) {
@@ -90,8 +85,7 @@ public class ReflectAllInOneCreator extends LogableSourceCreator {
 	public void createSource(SourceWriter source, JClassType classType) {
 		//ClassType -->> the interface name created automatically
 		Map<JClassType, String> typeNameMap = new HashMap<JClassType, String>();
-				
-		
+
 		genAllClasses(source, typeNameMap);
 		
 //		source.println("public " + getSimpleUnitName(classType) + "(){");
@@ -246,7 +240,8 @@ public class ReflectAllInOneCreator extends LogableSourceCreator {
 		boolean need = reflectable.relationTypes();
 		
 		for (JField field : classType.getFields()) {
-			if (reflectable.fieldAnnotations() || (hasReflectionAnnotation(field))){
+			Annotation[] annotations = AnnotationsHelper.getAnnotations(field);
+			if ((reflectable.fieldAnnotations() && annotations.length > 0) || (hasReflectionAnnotation(field))){
 				processAnnotationClasses(field, reflectable);
 			  
 				JClassType type = field.getType().isClassOrInterface();
@@ -403,15 +398,19 @@ public class ReflectAllInOneCreator extends LogableSourceCreator {
 		String qualifiedSourceName = classType.getQualifiedSourceName();
 
 		//no need java.lang.class
-		//if (qualifiedSourceName.equals("java.lang.Class"))
-		//	return false;
+		if (qualifiedSourceName.equals("java.lang.Class"))
+			return false;
 
 		//no need for system or gwt core classes
 		if (qualifiedSourceName.contains("java.lang") || qualifiedSourceName.contains("java.util")
 				|| qualifiedSourceName.contains("java.io")
 				|| qualifiedSourceName.contains("com.google.gwt"))
 			return false;
-		
+
+		// if class is extending javascript object we cannot create reflection for it.
+		if ((javascriptClassType != null && classType.isAssignableTo(javascriptClassType)))
+			return false;
+
 		if (candidateList.indexOf(classType.getErasedType()) < 0){
 			candidateList.add(classType.getErasedType());
 			candidates.put(classType.getErasedType(), setting);
@@ -422,6 +421,12 @@ public class ReflectAllInOneCreator extends LogableSourceCreator {
 	}
 
 	protected SourceWriter doGetSourceWriter(JClassType classType) throws NotFoundException {
+		try {
+			javascriptClassType = typeOracle.getType(JavaScriptObject.class.getName());
+		} catch (NotFoundException e) {
+			e.printStackTrace();
+		}
+
 		if (candidates.size() <= 0){
 			getAllReflectionClasses();
 		}

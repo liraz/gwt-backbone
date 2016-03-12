@@ -37,9 +37,18 @@ public class GenExclusionCompositeReflection extends GenExclusionCompositeImpl i
 		addGenExclusion(new GenExclusion(){
 
 			public boolean exclude(JClassType classType) {
-				if (classType.getName().endsWith(GenUtils.getAOP_SUFFIX()))
+				String qualifiedSourceName = classType.getQualifiedSourceName();
+
+				if (classType.getName().endsWith(GenUtils.getAOP_SUFFIX())) {
 					return true;
-				
+				}
+
+				//no need for system or gwt core classes
+				if (qualifiedSourceName.contains("java.lang") || qualifiedSourceName.contains("java.util")
+						|| qualifiedSourceName.contains("java.io")
+						|| qualifiedSourceName.contains("com.google.gwt"))
+					return true;
+
 				return false;
 			}
 			

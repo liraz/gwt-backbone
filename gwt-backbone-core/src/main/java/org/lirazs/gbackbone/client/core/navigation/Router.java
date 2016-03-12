@@ -112,9 +112,9 @@ public class Router extends Events {
                 @Override
                 public void f() {
                     ClassType classType = TypeOracle.Instance.getClassType(Router.this.getClass());
-                    Class[] params = new Class[getArguments().length];
+                    String[] params = new String[getArguments().length];
                     for (int i = 0; i < getArguments().length; i++) {
-                        params[i] = String.class;
+                        params[i] = ReflectionUtils.getQualifiedSourceName( String.class );
                     }
 
                     Method method = classType.findMethod(name, params);
@@ -123,7 +123,7 @@ public class Router extends Events {
                         method.invoke(Router.this, getArguments());
                     } else {
                         // try another look for a String[] array parameter
-                        method = classType.findMethod(name, String[].class);
+                        method = classType.findMethod(name, new String[] { "java.lang.String[]" });
                         if(method != null) {
                             method.invoke(Router.this, new Object[] { getArguments() });
                         }
