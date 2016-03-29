@@ -45,6 +45,9 @@ import org.lirazs.gbackbone.client.generator.Reflection;
 
 import java.util.*;
 
+@org.lirazs.gbackbone.reflection.client.Reflectable(classAnnotations = false, fields = true, methods = false, constructors = false,
+        fieldAnnotations = true, relationTypes=false,
+        superClasses=true, assignableClasses=false)
 public class Model extends Events<Model> implements Synchronized, Reflectable {
 
     /**
@@ -212,20 +215,31 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
     }
 
     /**
-      Run validation against the next complete set of model attributes,
-      returning `true` if all is well. Otherwise, fire an `"invalid"` event.
+     * Validate the entire model
+     * @return
      */
-    public Object validate(Options attributes, Options options) {
+    public <T> T validate() {
+        Options options = new Options();
+        options.put("validate", true);
+
+        this.internalValidate(new Options(), options);
+        return (T)options.get("validationError");
+    }
+
+    /**
+     Run validation against the next complete set of model attributes,
+     returning `true` if all is well. Otherwise, fire an `"invalid"` event.
+     */
+    public <T> T validate(Options attributes, Options options) {
         if(validator != null) { // we have a validator registered, use it
             List<ValidationError> validationErrors = validator.isValid(attributes);
             if(validationErrors != null && validationErrors.size() > 0) {
-                return validationErrors;
+                return (T) validationErrors;
             }
         }
 
         return null; // override
     }
-
 
     public void setCollection(Collection<? extends Model> collection) {
         this.collection = collection;
@@ -1010,14 +1024,51 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
      }
      */
     public boolean isValid() {
-        return isValid(null);
+        return isValid(new Options());
     }
-    public boolean isValid(Options options) {
+    public boolean isValid(Options attributes) {
+        return isValid(attributes, null);
+    }
+    public boolean isValid(String attributeName) {
+        Options attributes = new Options();
+        attributes.put(attributeName, get(attributeName));
+
+        return isValid(attributes, null);
+    }
+    public boolean isValid(String[] attributeNames) {
+        return isValid(Arrays.asList(attributeNames));
+    }
+    public boolean isValid(List<String> attributeNames) {
+        Options attributes = new Options();
+        for (String attributeName : attributeNames) {
+            attributes.put(attributeName, get(attributeName));
+        }
+
+        return isValid(attributes, null);
+    }
+
+    public boolean isValid(Options attributes, Options options) {
         if(options == null)
             options = new Options();
         options.put("validate", true);
 
-        return this.internalValidate(new Options(), options);
+        return this.internalValidate(attributes, options);
+    }
+
+
+    public List<ValidationError> preValidate(String key, String value) {
+        return preValidate(new Options(key, value));
+    }
+
+    /**
+     * Sometimes it can be useful to check (for instance on each key press)
+     * if the input is valid - without changing the model - to perform some sort of live validation.
+     *
+     * @param attributes
+     * @return
+     */
+    public List<ValidationError> preValidate(Options attributes) {
+        return (List<ValidationError>) validate(attributes, null);
     }
 
     protected boolean internalValidate(Options attributes, Options options) {
@@ -1025,11 +1076,18 @@ public class Model extends Events<Model> implements Synchronized, Reflectable {
 
         Options attrs = new Options().extend(getAttributes()).extend(attributes);
         Object error = validationError = validate(attrs, options);
-        if(error == null || (error instanceof Boolean && ((Boolean) error)))
-            return true;
 
-        if(options == null)
-            options = new Options();
+        if(error == null || (error instanceof Boolean && ((Boolean) error))) {
+            // trigger validation events
+            trigger("validated", true, this, error);
+            trigger("validated:valid", this);
+
+            return true;
+        } else {
+            // trigger validation events
+            trigger("validated", false, this, error);
+            trigger("validated:invalid", this, error);
+        }
 
         options.put("validationError", error);
 

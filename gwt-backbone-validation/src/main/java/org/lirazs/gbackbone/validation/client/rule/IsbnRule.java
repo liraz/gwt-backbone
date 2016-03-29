@@ -16,12 +16,15 @@ package org.lirazs.gbackbone.validation.client.rule;
 
 
 import org.apache.commons.validator.routines.ISBNValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Isbn;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class IsbnRule extends AnnotationRule<Isbn, String> {
 
-    protected IsbnRule(final Isbn isbn) {
+    public IsbnRule(final Isbn isbn) {
         super(isbn);
     }
 

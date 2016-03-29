@@ -1,8 +1,13 @@
 package org.lirazs.gbackbone.client.core.validation;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
+
 /**
  * Created on 05/02/2016.
  */
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public interface Rule<VALIDATABLE> {
 
     /**

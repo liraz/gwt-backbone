@@ -14,14 +14,17 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.ValidationContext;
 import org.lirazs.gbackbone.validation.client.annotation.ConfirmPassword;
 import org.lirazs.gbackbone.validation.client.annotation.Password;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class ConfirmPasswordRule extends SameValueContextualRule<ConfirmPassword, Password, String> {
 
-    protected ConfirmPasswordRule(final ValidationContext validationContext,
+    public ConfirmPasswordRule(final ValidationContext validationContext,
             final ConfirmPassword confirmPassword) {
         super(validationContext, confirmPassword, Password.class);
     }

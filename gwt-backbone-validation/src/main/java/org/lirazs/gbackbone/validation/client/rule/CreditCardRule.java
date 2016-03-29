@@ -20,9 +20,12 @@ import java.util.HashSet;
 import java.util.Map;
 
 import org.apache.commons.validator.routines.CreditCardValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.CreditCard;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class CreditCardRule extends AnnotationRule<CreditCard, String> {
     private static final Map<CreditCard.Type, Long> CARD_TYPE_REGISTRY =
             new HashMap<CreditCard.Type, Long>(){{
@@ -33,7 +36,7 @@ public class CreditCardRule extends AnnotationRule<CreditCard, String> {
                 put(CreditCard.Type.VISA, CreditCardValidator.VISA);
             }};
 
-    protected CreditCardRule(final CreditCard creditCard) {
+    public CreditCardRule(final CreditCard creditCard) {
         super(creditCard);
     }
 

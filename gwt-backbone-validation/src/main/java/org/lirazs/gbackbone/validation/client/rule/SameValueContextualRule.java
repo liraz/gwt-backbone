@@ -59,6 +59,6 @@ public class SameValueContextualRule<CONFIRM extends Annotation, SOURCE extends 
         Object target = sourceTargets.get(0);
         Object sourceValue = mValidationContext.getData(target, mSourceClass);
 
-        return confirmValue.equals(sourceValue);
+        return confirmValue != null ? confirmValue.equals(sourceValue) : sourceValue == null;
     }
 }

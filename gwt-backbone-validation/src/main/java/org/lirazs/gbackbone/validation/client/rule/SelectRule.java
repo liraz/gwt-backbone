@@ -14,12 +14,15 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Select;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class SelectRule extends AnnotationRule<Select, Integer> {
 
-    protected SelectRule(final Select select) {
+    public SelectRule(final Select select) {
         super(select);
     }
 

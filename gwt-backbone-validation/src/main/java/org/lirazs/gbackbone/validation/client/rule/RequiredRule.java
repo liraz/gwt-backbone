@@ -15,13 +15,16 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.ValidationContext;
 import org.lirazs.gbackbone.validation.client.annotation.Required;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class RequiredRule extends ContextualAnnotationRule<Required, String> {
 
-    protected RequiredRule(final ValidationContext validationContext, final Required required) {
+    public RequiredRule(final ValidationContext validationContext, final Required required) {
         super(validationContext, required);
     }
 

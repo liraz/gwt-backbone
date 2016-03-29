@@ -14,12 +14,15 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Min;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class MinRule extends AnnotationRule<Min, Integer> {
 
-    protected MinRule(final Min min) {
+    public MinRule(final Min min) {
         super(min);
     }
 

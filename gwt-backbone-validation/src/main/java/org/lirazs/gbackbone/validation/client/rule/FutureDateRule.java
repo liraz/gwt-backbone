@@ -15,15 +15,18 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 import com.google.gwt.i18n.client.DateTimeFormat;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.ValidationContext;
 import org.lirazs.gbackbone.validation.client.annotation.FutureDate;
 
 import java.util.Date;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class FutureDateRule extends ContextualAnnotationRule<FutureDate, String> {
 
-    protected FutureDateRule(final ValidationContext validationContext, final FutureDate future) {
+    public FutureDateRule(final ValidationContext validationContext, final FutureDate future) {
         super(validationContext, future);
     }
 

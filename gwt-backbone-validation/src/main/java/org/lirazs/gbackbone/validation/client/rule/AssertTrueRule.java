@@ -14,12 +14,15 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.AssertTrue;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class AssertTrueRule extends AnnotationRule<AssertTrue, Boolean> {
 
-    protected AssertTrueRule(final AssertTrue assertTrue) {
+    public AssertTrueRule(final AssertTrue assertTrue) {
         super(assertTrue);
     }
 

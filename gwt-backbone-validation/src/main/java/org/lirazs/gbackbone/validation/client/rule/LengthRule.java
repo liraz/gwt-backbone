@@ -16,12 +16,15 @@ package org.lirazs.gbackbone.validation.client.rule;
 
 
 import org.lirazs.gbackbone.client.core.util.StringUtils;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Length;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class LengthRule extends AnnotationRule<Length, String> {
 
-    protected LengthRule(final Length length) {
+    public LengthRule(final Length length) {
         super(length);
     }
 

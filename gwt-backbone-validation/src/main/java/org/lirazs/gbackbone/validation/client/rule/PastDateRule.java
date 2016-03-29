@@ -15,15 +15,18 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 import com.google.gwt.i18n.client.DateTimeFormat;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.ValidationContext;
 import org.lirazs.gbackbone.validation.client.annotation.PastDate;
 
 import java.util.Date;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class PastDateRule extends ContextualAnnotationRule<PastDate, String> {
 
-    protected PastDateRule(final ValidationContext validationContext, final PastDate past) {
+    public PastDateRule(final ValidationContext validationContext, final PastDate past) {
         super(validationContext, past);
     }
 

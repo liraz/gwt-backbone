@@ -15,12 +15,15 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 import org.apache.commons.validator.routines.RegexValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Pattern;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class PatternRule extends AnnotationRule<Pattern, String> {
 
-    protected PatternRule(final Pattern pattern) {
+    public PatternRule(final Pattern pattern) {
         super(pattern);
     }
 

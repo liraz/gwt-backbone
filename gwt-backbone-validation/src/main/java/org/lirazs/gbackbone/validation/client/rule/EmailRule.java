@@ -16,12 +16,15 @@ package org.lirazs.gbackbone.validation.client.rule;
 
 
 import org.apache.commons.validator.routines.EmailValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Email;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class EmailRule extends AnnotationRule<Email, String> {
 
-    protected EmailRule(final Email email) {
+    public EmailRule(final Email email) {
         super(email);
     }
 

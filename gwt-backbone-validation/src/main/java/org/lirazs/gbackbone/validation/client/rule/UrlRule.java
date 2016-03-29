@@ -15,12 +15,15 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 import org.apache.commons.validator.routines.UrlValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Url;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class UrlRule extends AnnotationRule<Url, String> {
 
-    protected UrlRule(final Url url) {
+    public UrlRule(final Url url) {
         super(url);
     }
 

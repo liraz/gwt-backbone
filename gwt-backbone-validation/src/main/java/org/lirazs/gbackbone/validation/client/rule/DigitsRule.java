@@ -16,12 +16,15 @@ package org.lirazs.gbackbone.validation.client.rule;
 
 
 import org.lirazs.gbackbone.client.core.util.StringUtils;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Digits;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class DigitsRule extends AnnotationRule<Digits, String> {
 
-    protected DigitsRule(final Digits digits) {
+    public DigitsRule(final Digits digits) {
         super(digits);
     }
 

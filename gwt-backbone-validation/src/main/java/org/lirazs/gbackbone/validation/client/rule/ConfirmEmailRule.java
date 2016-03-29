@@ -14,14 +14,17 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.ValidationContext;
 import org.lirazs.gbackbone.validation.client.annotation.ConfirmEmail;
 import org.lirazs.gbackbone.validation.client.annotation.Email;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class ConfirmEmailRule extends SameValueContextualRule<ConfirmEmail, Email, String> {
 
-    protected ConfirmEmailRule(final ValidationContext validationContext,
+    public ConfirmEmailRule(final ValidationContext validationContext,
             final ConfirmEmail confirmEmail) {
         super(validationContext, confirmEmail, Email.class);
     }

@@ -15,11 +15,15 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 import org.apache.commons.validator.routines.InetAddressValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.IpAddress;
 
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class IpAddressRule extends AnnotationRule<IpAddress, String> {
 
-    protected IpAddressRule(final IpAddress ipAddress) {
+    public IpAddressRule(final IpAddress ipAddress) {
         super(ipAddress);
     }
 

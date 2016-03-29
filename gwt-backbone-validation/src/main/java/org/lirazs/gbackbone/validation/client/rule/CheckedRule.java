@@ -14,12 +14,15 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Checked;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class CheckedRule extends AnnotationRule<Checked, Boolean> {
 
-    protected CheckedRule(final Checked checked) {
+    public CheckedRule(final Checked checked) {
         super(checked);
     }
 

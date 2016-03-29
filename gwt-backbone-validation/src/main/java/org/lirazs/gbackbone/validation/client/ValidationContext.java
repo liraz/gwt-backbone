@@ -1,6 +1,7 @@
 package org.lirazs.gbackbone.validation.client;
 
 import org.lirazs.gbackbone.client.core.data.Pair;
+import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.validation.Rule;
 import org.lirazs.gbackbone.reflection.client.ClassType;
 import org.lirazs.gbackbone.reflection.client.TypeOracle;
@@ -20,6 +21,7 @@ import java.util.Set;
  */
 public class ValidationContext {
 
+    Object controller;
     Map<Object, List<Pair<Rule, TargetDataAdapter>>> targetRulesMap;
 
     /**
@@ -35,23 +37,23 @@ public class ValidationContext {
         Class<? extends AnnotationRule> annotationRuleClass = getRuleClass(validationAnnotation);
 
         // Find all targets with the target rule
-        List<Object> annotatedViews = new ArrayList<>();
+        List<Object> annotatedTargets = new ArrayList<>();
         Set<Object> targets = targetRulesMap.keySet();
 
         for (Object target : targets) {
             List<Pair<Rule, TargetDataAdapter>> ruleAdapterPairs = targetRulesMap.get(target);
 
             for (Pair<Rule, TargetDataAdapter> ruleAdapterPair : ruleAdapterPairs) {
-                boolean uniqueMatchingView =
+                boolean uniqueMatchingTarget =
                         annotationRuleClass.equals(ruleAdapterPair.getFirst().getClass())
-                                && !annotatedViews.contains(target);
-                if (uniqueMatchingView) {
-                    annotatedViews.add(target);
+                                && !annotatedTargets.contains(target);
+                if (uniqueMatchingTarget) {
+                    annotatedTargets.add(target);
                 }
             }
         }
 
-        return annotatedViews;
+        return annotatedTargets;
     }
 
     /**
@@ -71,7 +73,12 @@ public class ValidationContext {
         for (Pair<Rule, TargetDataAdapter> ruleAdapterPair : ruleAdapterPairs) {
             if (annotationRuleClass.equals(ruleAdapterPair.getFirst().getClass())) {
                 try {
-                    data = ruleAdapterPair.getSecond().getData(target);
+                    if(controller instanceof Model) {
+                        Model model = (Model) controller;
+                        data = model.get((String) target);
+                    } else {
+                        data = ruleAdapterPair.getSecond().getData(target);
+                    }
                 } catch (ConversionException e) {
                     e.printStackTrace();
                 }
@@ -85,6 +92,9 @@ public class ValidationContext {
         this.targetRulesMap = targetRulesMap;
     }
 
+    void setController(Object controller) {
+        this.controller = controller;
+    }
 
     private Class<? extends AnnotationRule> getRuleClass(final Class<? extends Annotation> validationAnnotation) {
 

@@ -1,7 +1,6 @@
 package org.lirazs.gbackbone.validation.client.rule;
 
 import org.lirazs.gbackbone.client.core.validation.Rule;
-import org.lirazs.gbackbone.reflection.client.ReflectionUtils;
 import org.lirazs.gbackbone.validation.client.Reflector;
 
 import java.lang.annotation.Annotation;

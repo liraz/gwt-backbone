@@ -14,12 +14,15 @@
 
 package org.lirazs.gbackbone.validation.client.rule;
 
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Password;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class PasswordRule extends AnnotationRule<Password, String> {
 
     /*
@@ -41,7 +44,7 @@ public class PasswordRule extends AnnotationRule<Password, String> {
                     "(?=.*[a-z])(?=.*[A-Z])(?=.*[\\d])(?=.*([^\\w])).+");
             }};
 
-    protected PasswordRule(final Password password) {
+    public PasswordRule(final Password password) {
         super(password);
     }
 

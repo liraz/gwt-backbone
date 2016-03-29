@@ -5,10 +5,12 @@ import com.google.gwt.dom.client.SelectElement;
 import com.google.gwt.query.client.GQuery;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.data.Pair;
+import org.lirazs.gbackbone.client.core.model.Model;
 import org.lirazs.gbackbone.client.core.util.StringUtils;
 import org.lirazs.gbackbone.client.core.validation.Rule;
 import org.lirazs.gbackbone.client.core.validation.ValidationError;
 import org.lirazs.gbackbone.client.core.validation.Validator;
+import org.lirazs.gbackbone.client.core.view.View;
 import org.lirazs.gbackbone.reflection.client.*;
 import org.lirazs.gbackbone.validation.client.adapter.*;
 import org.lirazs.gbackbone.validation.client.annotation.*;
@@ -170,15 +172,15 @@ public class AnnotationValidator implements Validator {
     /**
      * Add one or more {@link QuickRule}s for a target.
      *
-     * @param view  A target for which
+     * @param target  A target for which
      *      {@link QuickRule}(s) are to be added.
      * @param quickRules  Varargs of {@link QuickRule}s.
      *
      * @param <TARGET>  The target type for which the
      *      {@link QuickRule}s are being registered.
      */
-    public <TARGET> void put(final TARGET view, final QuickRule<TARGET>... quickRules) {
-        assertNotNull(view, "view");
+    public <TARGET> void put(final TARGET target, final QuickRule<TARGET>... quickRules) {
+        assertNotNull(target, "target");
         assertNotNull(quickRules, "quickRules");
         if (quickRules.length == 0) {
             throw new IllegalArgumentException("'quickRules' cannot be empty.");
@@ -192,7 +194,7 @@ public class AnnotationValidator implements Validator {
         createRulesSafelyAndLazily(true);
 
         // If there are no rules, create an empty list
-        List<Pair<Rule, TargetDataAdapter>> ruleAdapterPairs = mTargetRulesMap.get(view);
+        List<Pair<Rule, TargetDataAdapter>> ruleAdapterPairs = mTargetRulesMap.get(target);
         ruleAdapterPairs = ruleAdapterPairs == null
                 ? new ArrayList<Pair<Rule, TargetDataAdapter>>() : ruleAdapterPairs;
 
@@ -202,7 +204,7 @@ public class AnnotationValidator implements Validator {
                 ruleAdapterPairs.add(new Pair<Rule, TargetDataAdapter>(quickRule, null));
             }
         }
-        mTargetRulesMap.put(view, ruleAdapterPairs);
+        mTargetRulesMap.put(target, ruleAdapterPairs);
     }
 
     /**
@@ -237,6 +239,7 @@ public class AnnotationValidator implements Validator {
             mTargetRulesMap = createRules(annotatedFields);
             mTargetAttributeKeyMap = createAttributes(annotatedFields);
 
+            mValidationContext.setController(mController);
             mValidationContext.setTargetRulesMap(mTargetRulesMap);
         }
 
@@ -253,8 +256,8 @@ public class AnnotationValidator implements Validator {
                 registry.getRegisteredAnnotations();
 
         List<Field> annotatedFields = new ArrayList<>();
-        List<Field> controllerViewFields = getControllerTargetFields(controllerClass);
-        for (Field field : controllerViewFields) {
+        List<Field> controllerTargetFields = getControllerTargetFields(controllerClass);
+        for (Field field : controllerTargetFields) {
             if (isValidationAnnotatedField(field, validationAnnotations)) {
                 annotatedFields.add(field);
             }
@@ -264,22 +267,26 @@ public class AnnotationValidator implements Validator {
     }
 
     private List<Field> getControllerTargetFields(final Class<?> controllerClass) {
-        List<Field> controllerViewFields = new ArrayList<>();
+        List<Field> controllerTargetFields = new ArrayList<>();
 
         // Fields declared in the controller
-        controllerViewFields.addAll(getTargetFields(controllerClass));
+        controllerTargetFields.addAll(getTargetFields(controllerClass));
 
         // Inherited fields
         Class<?> superClass = controllerClass.getSuperclass();
-        while (!superClass.equals(Object.class)) {
+        // don't start grabbing the View or Model fields - just stop there...
+        while (!superClass.equals(Object.class) &&
+                !superClass.equals(Model.class) &&
+                !superClass.equals(View.class)) {
+
             List<Field> targetFields = getTargetFields(superClass);
             if (targetFields.size() > 0) {
-                controllerViewFields.addAll(targetFields);
+                controllerTargetFields.addAll(targetFields);
             }
             superClass = superClass.getSuperclass();
         }
 
-        return controllerViewFields;
+        return controllerTargetFields;
     }
 
     private List<Field> getTargetFields(final Class<?> clazz) {
@@ -294,7 +301,8 @@ public class AnnotationValidator implements Validator {
 
             if(typeName.equals("com.google.gwt.query.client.GQuery")
                     || typeName.equals("com.google.gwt.dom.client.InputElement")
-                    || typeName.equals("com.google.gwt.dom.client.SelectElement")) {
+                    || typeName.equals("com.google.gwt.dom.client.SelectElement")
+                    || mController instanceof Model) { // for instance of Model we accept all fields
 
                 //TODO: Find a way to deal with custom input/select/gquery elements?!... not sure
                 targetFields.add(field);
@@ -322,7 +330,7 @@ public class AnnotationValidator implements Validator {
     private Map<Object, List<Pair<Rule, TargetDataAdapter>>> createRules(
             final List<Field> annotatedFields) {
 
-        final Map<Object, List<Pair<Rule, TargetDataAdapter>>> viewRulesMap =
+        final Map<Object, List<Pair<Rule, TargetDataAdapter>>> targetRulesMap =
                 new LinkedHashMap<>();
 
         for (Field field : annotatedFields) {
@@ -337,10 +345,10 @@ public class AnnotationValidator implements Validator {
                 }
             }
 
-            viewRulesMap.put(getTarget(field), ruleAdapterPairs);
+            targetRulesMap.put(getTarget(field), ruleAdapterPairs);
         }
 
-        return viewRulesMap;
+        return targetRulesMap;
     }
 
     private Map<Object, String> createAttributes(final List<Field> annotatedFields) {
@@ -354,17 +362,17 @@ public class AnnotationValidator implements Validator {
     }
 
     private Pair<Rule, TargetDataAdapter> getRuleAdapterPair(final Annotation validationAnnotation,
-                                                           final Field viewField) {
+                                                           final Field targetField) {
 
         final Class<? extends Annotation> annotationType = validationAnnotation.annotationType();
-        final Class viewFieldType = viewField.getTypeClass();
+        final Class targetFieldType = targetField.getTypeClass();
         final Class<?> ruleDataType = Reflector.getRuleDataType(validationAnnotation);
 
-        final TargetDataAdapter dataAdapter = getDataAdapter(annotationType, viewFieldType, ruleDataType);
+        final TargetDataAdapter dataAdapter = getDataAdapter(annotationType, targetFieldType, ruleDataType);
 
         // If no matching adapter is found, throw.
         if (dataAdapter == null) {
-            String viewType = viewFieldType.getName();
+            String viewType = targetFieldType.getName();
             String message = StringUtils.format(
                     "To use '%s' on '%s', register a '%s' that returns a '%s' from the '%s'.",
                     annotationType.getName(),
@@ -413,7 +421,11 @@ public class AnnotationValidator implements Validator {
     private Object getTarget(final Field field) {
         Object target = null;
         try {
-            target = field.getFieldValue(mController);
+            if(mController instanceof Model) { // name of the field will be used as the key
+                target = field.getName();
+            } else {
+                target = field.getFieldValue(mController);
+            }
 
             if (target == null) {
                 String message = StringUtils.format("'%s %s' is null.",
@@ -456,7 +468,7 @@ public class AnnotationValidator implements Validator {
                 Pair<Rule, TargetDataAdapter> ruleAdapterPair = ruleAdapterPairs.get(i);
 
                 Rule failedRule;
-                if(attributes != null) {
+                if(attributes != null && !attributes.isEmpty()) {
                     Object data = attributes.get(mTargetAttributeKeyMap.get(target));
                     failedRule = validateDataWithRule(data, ruleAdapterPair.getFirst());
                 } else {
@@ -492,7 +504,12 @@ public class AnnotationValidator implements Validator {
             Object data;
 
             try {
-                data = dataAdapter.getData(target);
+                if(mController instanceof Model) {
+                    Model model = (Model) mController;
+                    data = model.get((String) target); // target now is a name of the field
+                } else {
+                    data = dataAdapter.getData(target);
+                }
                 valid = rule.isValid(data);
             } catch (ConversionException e) {
                 valid = false;
@@ -565,13 +582,30 @@ public class AnnotationValidator implements Validator {
                 Select.class);
 
         // TextViewDoubleAdapter
-        registry.register(DecimalMax.class, DecimalMin.class);
+        registry.register(GQuery.class, /*Double.class,*/
+                new GQueryDoubleAdapter(),
+                DecimalMax.class, DecimalMin.class);
+        registry.register(InputElement.class, /*Double.class,*/
+                new InputElementDoubleAdapter(),
+                DecimalMax.class, DecimalMin.class);
 
         // TextViewIntegerAdapter
-        registry.register(Max.class, Min.class);
+        registry.register(GQuery.class, /*Integer.class,*/
+                new GQueryIntegerAdapter(),
+                Max.class, Min.class);
+        registry.register(InputElement.class, /*Integer.class,*/
+                new InputElementIntegerAdapter(),
+                Max.class, Min.class);
 
         // TextViewStringAdapter
-        registry.register(
+        registry.register(GQuery.class, /*String.class,*/
+                new GQueryStringAdapter(),
+                ConfirmEmail.class, ConfirmPassword.class, CreditCard.class,
+                Digits.class, Domain.class, Email.class, FutureDate.class,
+                IpAddress.class, Isbn.class, Length.class, Required.class,
+                Password.class, PastDate.class, Pattern.class, Url.class);
+        registry.register(InputElement.class, /*String.class,*/
+                new InputElementStringAdapter(),
                 ConfirmEmail.class, ConfirmPassword.class, CreditCard.class,
                 Digits.class, Domain.class, Email.class, FutureDate.class,
                 IpAddress.class, Isbn.class, Length.class, Required.class,

@@ -16,12 +16,15 @@ package org.lirazs.gbackbone.validation.client.rule;
 
 
 import org.apache.commons.validator.routines.DomainValidator;
+import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.annotation.Domain;
 
-
+@Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        fieldAnnotations = false, relationTypes=false,
+        superClasses=false, assignableClasses=false)
 public class DomainRule extends AnnotationRule<Domain, String> {
 
-    protected DomainRule(final Domain domain) {
+    public DomainRule(final Domain domain) {
         super(domain);
     }
 

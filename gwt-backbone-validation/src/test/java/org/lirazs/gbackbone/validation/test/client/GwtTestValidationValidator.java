@@ -4,10 +4,13 @@ import com.google.gwt.junit.client.GWTTestCase;
 import com.google.gwt.query.client.Function;
 import com.google.gwt.query.client.GQuery;
 import org.lirazs.gbackbone.client.core.event.Events;
+import org.lirazs.gbackbone.client.core.validation.ValidationError;
 import org.lirazs.gbackbone.client.core.view.TemplateFactory;
+import org.lirazs.gbackbone.validation.test.client.model.TestDataModel;
 import org.lirazs.gbackbone.validation.test.client.view.TestFormView;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created on 23/10/2015.
@@ -52,6 +55,14 @@ public class GwtTestValidationValidator extends GWTTestCase {
                 finishTest();
             }
         });
+    }
+
+    public void testValidationModel() {
+        TestDataModel model = new TestDataModel();
+        assertFalse(model.isValid());
+
+        List<ValidationError> errors = model.validate();
+        assertTrue(errors.size() > 0);
     }
 
     public void testValidationViewWithModel() {
