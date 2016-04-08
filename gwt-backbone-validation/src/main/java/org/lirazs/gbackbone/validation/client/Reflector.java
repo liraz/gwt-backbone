@@ -1,9 +1,6 @@
 package org.lirazs.gbackbone.validation.client;
 
-import com.google.gwt.query.client.GQuery;
-import org.lirazs.gbackbone.client.core.util.StringUtils;
 import org.lirazs.gbackbone.reflection.client.*;
-import org.lirazs.gbackbone.reflection.client.NoSuchMethodException;
 import org.lirazs.gbackbone.validation.client.adapter.TargetDataAdapter;
 import org.lirazs.gbackbone.validation.client.annotation.ValidateUsing;
 import org.lirazs.gbackbone.validation.client.rule.AnnotationRule;
@@ -55,7 +52,7 @@ public class Reflector {
 
     /**
      * Finds and returns the correct
-     * {@link org.lirazs.gbackbone.validation.client.adapter.TargetDataAdapter#getData(Object)}
+     * {@link TargetDataAdapter#getData(Object, String)}
      * {@link java.lang.reflect.Method}.
      *
      * @param dataAdapterType  The {@link org.lirazs.gbackbone.validation.client.adapter.TargetDataAdapter}

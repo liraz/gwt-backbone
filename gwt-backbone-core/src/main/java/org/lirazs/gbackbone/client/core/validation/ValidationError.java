@@ -8,6 +8,7 @@ import java.util.List;
 public class ValidationError {
 
     // can be a view or a model that this validation error is correlated to
+    private final String attribute;
     private final Object target;
     private final List<Rule> failedRules;
 
@@ -18,7 +19,8 @@ public class ValidationError {
      * @param failedRules  A {@link java.util.List} of failed
      *      {@link Rule}s.
      */
-    public ValidationError(final Object target, final List<Rule> failedRules) {
+    public ValidationError(final String attribute, final Object target, final List<Rule> failedRules) {
+        this.attribute = attribute;
         this.target = target;
         this.failedRules = failedRules;
     }
@@ -29,6 +31,14 @@ public class ValidationError {
      */
     public Object getTarget() {
         return target;
+    }
+
+    /**
+     *
+     * @return The attribute associated to this error
+     */
+    public String getAttribute() {
+        return attribute;
     }
 
     /**
@@ -60,7 +70,8 @@ public class ValidationError {
     @Override
     public String toString() {
         return "ValidationError{" +
-                "target=" + target +
+                "attribute=" + attribute +
+                ", target=" + target +
                 ", failedRules=" + failedRules +
                 '}';
     }

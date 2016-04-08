@@ -8,7 +8,7 @@ import com.google.gwt.dom.client.InputElement;
 public class InputElementBooleanAdapter implements TargetDataAdapter<InputElement, Boolean> {
 
     @Override
-    public Boolean getData(final InputElement input) {
+    public Boolean getData(final InputElement input, String attribute) {
         return input.isChecked();
     }
 }

@@ -31,7 +31,7 @@ public class PastDateRule extends ContextualAnnotationRule<PastDate, String> {
     }
 
     @Override
-    public boolean isValid(final String dateString) {
+    public boolean isValid(final String dateString, String attribute) {
         DateTimeFormat dateFormat = getDateFormat();
         Date parsedDate = null;
         try {

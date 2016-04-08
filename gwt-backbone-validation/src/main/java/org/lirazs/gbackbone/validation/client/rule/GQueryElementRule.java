@@ -15,5 +15,5 @@ public interface GQueryElementRule extends Rule<GQuery> {
      *
      * @return true if valid, false otherwise.
      */
-    boolean isValid(GQuery element);
+    boolean isValid(GQuery element, String attribute);
 }

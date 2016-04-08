@@ -28,7 +28,7 @@ public class PatternRule extends AnnotationRule<Pattern, String> {
     }
 
     @Override
-    public boolean isValid(final String text) {
+    public boolean isValid(final String text, String attribute) {
         String regex = ruleAnnotation.regex();
         boolean caseSensitive = ruleAnnotation.caseSensitive();
         return new RegexValidator(regex, caseSensitive).isValid(text);

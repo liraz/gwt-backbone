@@ -6,6 +6,7 @@ import org.lirazs.gbackbone.reflection.client.Reflectable;
  * Created on 05/02/2016.
  */
 @Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
+        //TODO: IMPORTANT - assignable constructors - if true all assigning classes will generate constructors !!
         fieldAnnotations = false, relationTypes=false,
         superClasses=false, assignableClasses=false)
 public interface Rule<VALIDATABLE> {
@@ -17,7 +18,7 @@ public interface Rule<VALIDATABLE> {
      *
      * @return true if valid, false otherwise.
      */
-    boolean isValid(VALIDATABLE validatable);
+    boolean isValid(VALIDATABLE validatable, String attribute);
 
     /**
      * Returns a failure message associated with the rule.

@@ -10,7 +10,7 @@ public class SelectElementFloatAdapter implements TargetDataAdapter<SelectElemen
     private static final String REGEX_DECIMAL = "[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?";
 
     @Override
-    public Float getData(final SelectElement input) throws ConversionException {
+    public Float getData(final SelectElement input, String attribute) throws ConversionException {
         String floatString = input.getValue().trim();
         if (!floatString.matches(REGEX_DECIMAL)) {
             String message = "Expected a floating point number, but was " + floatString;

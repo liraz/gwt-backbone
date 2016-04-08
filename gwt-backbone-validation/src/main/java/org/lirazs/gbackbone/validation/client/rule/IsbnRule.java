@@ -29,7 +29,7 @@ public class IsbnRule extends AnnotationRule<Isbn, String> {
     }
 
     @Override
-    public boolean isValid(final String isbn) {
+    public boolean isValid(final String isbn, String attribute) {
         return ISBNValidator.getInstance().isValid(isbn);
     }
 }

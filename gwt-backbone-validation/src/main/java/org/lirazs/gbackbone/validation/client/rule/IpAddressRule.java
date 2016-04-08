@@ -28,7 +28,7 @@ public class IpAddressRule extends AnnotationRule<IpAddress, String> {
     }
 
     @Override
-    public boolean isValid(final String ipAddress) {
+    public boolean isValid(final String ipAddress, String attribute) {
         return InetAddressValidator.getInstance().isValid(ipAddress);
     }
 }

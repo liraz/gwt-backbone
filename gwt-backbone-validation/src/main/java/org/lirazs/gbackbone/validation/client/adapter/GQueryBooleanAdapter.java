@@ -8,7 +8,7 @@ import com.google.gwt.query.client.GQuery;
 public class GQueryBooleanAdapter implements TargetDataAdapter<GQuery, Boolean> {
 
     @Override
-    public Boolean getData(final GQuery gqueryInput) {
+    public Boolean getData(final GQuery gqueryInput, String attribute) {
         return gqueryInput.is(":checked");
     }
 }

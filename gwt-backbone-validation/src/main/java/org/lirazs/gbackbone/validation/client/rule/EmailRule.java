@@ -29,7 +29,7 @@ public class EmailRule extends AnnotationRule<Email, String> {
     }
 
     @Override
-    public boolean isValid(final String email) {
+    public boolean isValid(final String email, String attribute) {
         boolean allowLocal = ruleAnnotation.allowLocal();
         return EmailValidator.getInstance(allowLocal).isValid(email);
     }

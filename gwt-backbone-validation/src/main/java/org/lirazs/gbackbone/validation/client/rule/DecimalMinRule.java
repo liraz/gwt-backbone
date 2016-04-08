@@ -27,7 +27,7 @@ public class DecimalMinRule extends AnnotationRule<DecimalMin, Double> {
     }
 
     @Override
-    public boolean isValid(final Double value) {
+    public boolean isValid(final Double value, String attribute) {
         if (value == null) {
             throw new IllegalArgumentException("'Double' cannot be null.");
         }

@@ -15,5 +15,5 @@ public interface ElementRule<E extends Element> extends Rule<E> {
      *
      * @return true if valid, false otherwise.
      */
-    boolean isValid(E element);
+    boolean isValid(E element, String attribute);
 }

@@ -28,7 +28,7 @@ public class UrlRule extends AnnotationRule<Url, String> {
     }
 
     @Override
-    public boolean isValid(final String url) {
+    public boolean isValid(final String url, String attribute) {
         String[] schemes = ruleAnnotation.schemes();
         long options = ruleAnnotation.allowFragments()
                 ? 0 : UrlValidator.NO_FRAGMENTS;

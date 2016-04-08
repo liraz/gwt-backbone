@@ -27,7 +27,7 @@ public class SelectRule extends AnnotationRule<Select, Integer> {
     }
 
     @Override
-    public boolean isValid(final Integer index) {
+    public boolean isValid(final Integer index, String attribute) {
         if (index == null) {
             throw new IllegalArgumentException("'index' cannot be null.");
         }

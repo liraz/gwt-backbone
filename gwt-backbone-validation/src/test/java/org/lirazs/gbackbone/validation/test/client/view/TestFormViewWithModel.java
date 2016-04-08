@@ -2,19 +2,15 @@ package org.lirazs.gbackbone.validation.test.client.view;
 
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.InputElement;
-import com.google.gwt.dom.client.SpanElement;
 import com.google.gwt.query.client.GQuery;
-import org.lirazs.gbackbone.client.core.annotation.EventHandler;
 import org.lirazs.gbackbone.client.core.annotation.InjectView;
 import org.lirazs.gbackbone.client.core.annotation.ViewTemplate;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.validation.ValidationError;
 import org.lirazs.gbackbone.client.core.view.View;
-import org.lirazs.gbackbone.validation.client.ErrorClassTargetValidatedAction;
 import org.lirazs.gbackbone.validation.client.ValidationListener;
 import org.lirazs.gbackbone.validation.client.ViewValidator;
-import org.lirazs.gbackbone.validation.client.annotation.*;
-import org.lirazs.gbackbone.validation.test.client.model.TestDataModel;
+import org.lirazs.gbackbone.validation.test.client.model.TestFailedDataModel;
 
 import java.util.List;
 
@@ -32,7 +28,7 @@ public class TestFormViewWithModel extends View implements ValidationListener {
 
     private ViewValidator validator;
 
-    public TestFormViewWithModel(TestDataModel model) {
+    public TestFormViewWithModel(TestFailedDataModel model) {
         super(new Options("model", model));
     }
 

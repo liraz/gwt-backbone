@@ -1,7 +1,6 @@
 package org.lirazs.gbackbone.validation.client.adapter;
 
 import com.google.gwt.dom.client.InputElement;
-import com.google.gwt.query.client.GQuery;
 import org.lirazs.gbackbone.validation.client.exception.ConversionException;
 
 /**
@@ -11,7 +10,7 @@ public class InputElementFloatAdapter implements TargetDataAdapter<InputElement,
     private static final String REGEX_DECIMAL = "[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?";
 
     @Override
-    public Float getData(final InputElement input) throws ConversionException {
+    public Float getData(final InputElement input, String attribute) throws ConversionException {
         String floatString = input.getValue().trim();
         if (!floatString.matches(REGEX_DECIMAL)) {
             String message = "Expected a floating point number, but was " + floatString;

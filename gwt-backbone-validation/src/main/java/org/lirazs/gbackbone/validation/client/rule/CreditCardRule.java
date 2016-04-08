@@ -41,7 +41,7 @@ public class CreditCardRule extends AnnotationRule<CreditCard, String> {
     }
 
     @Override
-    public boolean isValid(final String creditCardNumber) {
+    public boolean isValid(final String creditCardNumber, String attribute) {
         CreditCard.Type[] types = ruleAnnotation.cardTypes();
         HashSet<CreditCard.Type> typesSet = new HashSet<CreditCard.Type>(Arrays.asList(types));
 

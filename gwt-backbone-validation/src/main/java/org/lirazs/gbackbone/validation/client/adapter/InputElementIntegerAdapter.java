@@ -1,7 +1,6 @@
 package org.lirazs.gbackbone.validation.client.adapter;
 
 import com.google.gwt.dom.client.InputElement;
-import com.google.gwt.query.client.GQuery;
 import org.lirazs.gbackbone.validation.client.exception.ConversionException;
 
 /**
@@ -11,7 +10,7 @@ public class InputElementIntegerAdapter implements TargetDataAdapter<InputElemen
     private static final String REGEX_INTEGER = "\\d+";
 
     @Override
-    public Integer getData(final InputElement input) throws ConversionException {
+    public Integer getData(final InputElement input, String attribute) throws ConversionException {
         String integerString = input.getValue().trim();
         if (!integerString.matches(REGEX_INTEGER)) {
             String message = "Expected an integer, but was " + integerString;

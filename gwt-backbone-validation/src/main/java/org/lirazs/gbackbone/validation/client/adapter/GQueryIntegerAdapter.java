@@ -10,7 +10,7 @@ public class GQueryIntegerAdapter implements TargetDataAdapter<GQuery, Integer> 
     private static final String REGEX_INTEGER = "\\d+";
 
     @Override
-    public Integer getData(final GQuery gQueryInput) throws ConversionException {
+    public Integer getData(final GQuery gQueryInput, String attribute) throws ConversionException {
         String integerString = gQueryInput.val().trim();
         if (!integerString.matches(REGEX_INTEGER)) {
             String message = "Expected an integer, but was " + integerString;

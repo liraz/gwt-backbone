@@ -21,5 +21,5 @@ public abstract class QuickRule<TARGET> implements Rule<TARGET> {
      *
      * @return true if valid, false otherwise.
      */
-    public abstract boolean isValid(TARGET target);
+    public abstract boolean isValid(TARGET target, String attribute);
 }

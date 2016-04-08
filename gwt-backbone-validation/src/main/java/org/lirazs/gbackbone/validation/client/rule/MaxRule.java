@@ -27,7 +27,7 @@ public class MaxRule extends AnnotationRule<Max, Integer> {
     }
 
     @Override
-    public boolean isValid(final Integer value) {
+    public boolean isValid(final Integer value, String attribute) {
         if (value == null) {
             throw new IllegalArgumentException("'Integer' cannot be null.");
         }

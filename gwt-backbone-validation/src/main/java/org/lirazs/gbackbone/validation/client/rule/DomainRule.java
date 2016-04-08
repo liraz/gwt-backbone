@@ -29,7 +29,7 @@ public class DomainRule extends AnnotationRule<Domain, String> {
     }
 
     @Override
-    public boolean isValid(final String domain) {
+    public boolean isValid(final String domain, String attribute) {
         boolean allowLocal = ruleAnnotation.allowLocal();
         DomainValidator domainValidator = DomainValidator.getInstance(allowLocal);
         return domainValidator.isValid(domain);

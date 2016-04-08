@@ -18,26 +18,36 @@ package org.lirazs.gbackbone.validation.client.rule;
 import org.lirazs.gbackbone.reflection.client.Reflectable;
 import org.lirazs.gbackbone.validation.client.ValidationContext;
 import org.lirazs.gbackbone.validation.client.annotation.Required;
+import org.lirazs.gbackbone.validation.client.annotation.RequiredIfAttributeNotEmpty;
 
 @Reflectable(classAnnotations = false, fields = false, methods = true, constructors = true,
         fieldAnnotations = false, relationTypes=false,
         superClasses=false, assignableClasses=false)
-public class RequiredRule extends ContextualAnnotationRule<Required, String> {
+public class RequiredIfAttributeNotEmptyRule extends ContextualAnnotationRule<RequiredIfAttributeNotEmpty, String> {
 
-    public RequiredRule(final ValidationContext validationContext, final Required required) {
+    public RequiredIfAttributeNotEmptyRule(final ValidationContext validationContext,
+                                           final RequiredIfAttributeNotEmpty required) {
         super(validationContext, required);
     }
 
     @Override
     public boolean isValid(final String data, String attribute) {
-        boolean isEmpty = false;
-        if (data != null) {
-            String text = ruleAnnotation.trim() ? data.trim() : data;
 
-            String emptyText = ruleAnnotation.emptyText();
-            isEmpty = emptyText.equals(text) || "".equals(text);
+        String[] sourceAttributes = ruleAnnotation.attribute();
+        for (String sourceAttribute : sourceAttributes) {
+            Object sourceDataObject = mValidationContext.getData(sourceAttribute);
+            String sourceData = sourceDataObject != null ? String.valueOf(sourceDataObject) : null;
+
+            if (sourceData != null) {
+                String text = ruleAnnotation.trim() ? sourceData.trim() : sourceData;
+
+                String emptyText = ruleAnnotation.emptyText();
+                boolean isEmpty = emptyText.equals(text) || "".equals(text);
+                if(!isEmpty)
+                    return false;
+            }
         }
 
-        return !isEmpty && data != null;
+        return true;
     }
 }

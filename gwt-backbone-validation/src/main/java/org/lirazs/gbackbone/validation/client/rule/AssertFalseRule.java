@@ -16,7 +16,7 @@ public class AssertFalseRule extends AnnotationRule<AssertFalse, Boolean> {
     }
 
     @Override
-    public boolean isValid(Boolean value) {
+    public boolean isValid(Boolean value, String attribute) {
         if (value == null) {
             throw new IllegalArgumentException("'data' cannot be null.");
         }

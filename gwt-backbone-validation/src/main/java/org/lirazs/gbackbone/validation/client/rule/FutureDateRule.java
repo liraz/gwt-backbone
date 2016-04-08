@@ -31,7 +31,7 @@ public class FutureDateRule extends ContextualAnnotationRule<FutureDate, String>
     }
 
     @Override
-    public boolean isValid(final String dateString) {
+    public boolean isValid(final String dateString, String attribute) {
         DateTimeFormat dateFormat = getDateFormat();
         Date parsedDate = null;
         try {

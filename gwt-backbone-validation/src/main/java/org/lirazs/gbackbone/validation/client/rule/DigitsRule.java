@@ -29,7 +29,7 @@ public class DigitsRule extends AnnotationRule<Digits, String> {
     }
 
     @Override
-    public boolean isValid(final String digits) {
+    public boolean isValid(final String digits, String attribute) {
         int integer = ruleAnnotation.integer();
         int fraction = ruleAnnotation.fraction();
 

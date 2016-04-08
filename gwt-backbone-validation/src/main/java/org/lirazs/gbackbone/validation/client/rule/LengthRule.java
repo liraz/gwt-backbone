@@ -29,10 +29,10 @@ public class LengthRule extends AnnotationRule<Length, String> {
     }
 
     @Override
-    public boolean isValid(final String text) {
-        if (text == null) {
+    public boolean isValid(final String text, String attribute) {
+        /*if (text == null) {
             throw new IllegalArgumentException("'text' cannot be null.");
-        }
+        }*/
         int ruleMin = ruleAnnotation.min();
         int ruleMax = ruleAnnotation.max();
 
@@ -40,7 +40,7 @@ public class LengthRule extends AnnotationRule<Length, String> {
         assertMinMax(ruleMin, ruleMax);
 
         // Trim?
-        int length = ruleAnnotation.trim() ? text.trim().length() : text.length();
+        int length = text != null ? (ruleAnnotation.trim() ? text.trim().length() : text.length()) : 0;
 
         // Check for min length
         boolean minIsValid = true;

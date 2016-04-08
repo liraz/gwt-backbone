@@ -30,7 +30,7 @@ public class ConfirmPasswordRule extends SameValueContextualRule<ConfirmPassword
     }
 
     @Override
-    public boolean isValid(final String confirmValue) {
-        return super.isValid(confirmValue);
+    public boolean isValid(final String confirmValue, String attribute) {
+        return super.isValid(confirmValue, attribute);
     }
 }

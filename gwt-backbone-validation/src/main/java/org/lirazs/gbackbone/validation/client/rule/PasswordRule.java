@@ -49,7 +49,7 @@ public class PasswordRule extends AnnotationRule<Password, String> {
     }
 
     @Override
-    public boolean isValid(final String password) {
+    public boolean isValid(final String password, String attribute) {
         boolean hasMinChars = password.length() >= ruleAnnotation.min();
         boolean matchesScheme = password.matches(SCHEME_PATTERNS.get(ruleAnnotation.scheme()));
         return hasMinChars && matchesScheme;

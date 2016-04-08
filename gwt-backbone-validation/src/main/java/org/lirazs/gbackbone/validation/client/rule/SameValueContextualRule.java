@@ -19,6 +19,7 @@ import org.lirazs.gbackbone.validation.client.ValidationContext;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A generic class for comparing values across two targets.
@@ -40,24 +41,25 @@ public class SameValueContextualRule<CONFIRM extends Annotation, SOURCE extends 
     }
 
     @Override
-    public boolean isValid(final DATA_TYPE confirmValue) {
-        List<Object> sourceTargets = mValidationContext.getAnnotatedTargets(mSourceClass);
-        int nSourceViews = sourceTargets.size();
+    public boolean isValid(final DATA_TYPE confirmValue, String attribute) {
+        Set<String> sourceAttributes = mValidationContext.getAnnotatedAttributes(mSourceClass);
+        int nSourceAttributes = sourceAttributes.size();
 
-        if (nSourceViews == 0) {
+        if (nSourceAttributes == 0) {
             String message = StringUtils.format(
-                    "You should have a view annotated with '%s' to use '%s'.",
+                    "You should have a attribute annotated with '%s' to use '%s'.",
                     mSourceClass.getName(), mConfirmClass.getName());
             throw new IllegalStateException(message);
-        } else if (nSourceViews > 1) {
+        } else if (nSourceAttributes > 1) {
             String message = StringUtils.format(
                     "More than 1 field annotated with '%s'.", mSourceClass.getName());
             throw new IllegalStateException(message);
         }
 
         // There's only one, then we're good to go :)
-        Object target = sourceTargets.get(0);
-        Object sourceValue = mValidationContext.getData(target, mSourceClass);
+        String sourceAttribute = sourceAttributes.iterator().next();
+
+        Object sourceValue = mValidationContext.getData(sourceAttribute, mSourceClass);
 
         return confirmValue != null ? confirmValue.equals(sourceValue) : sourceValue == null;
     }

@@ -27,7 +27,7 @@ public class CheckedRule extends AnnotationRule<Checked, Boolean> {
     }
 
     @Override
-    public boolean isValid(final Boolean value) {
+    public boolean isValid(final Boolean value, String attribute) {
         if (value == null) {
             throw new IllegalArgumentException("'data' cannot be null.");
         }

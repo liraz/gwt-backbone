@@ -8,7 +8,7 @@ import com.google.gwt.query.client.GQuery;
 public class GQueryStringAdapter implements TargetDataAdapter<GQuery, String> {
 
     @Override
-    public String getData(final GQuery gqueryInput) {
+    public String getData(final GQuery gqueryInput, String attribute) {
         return gqueryInput.val();
     }
 }

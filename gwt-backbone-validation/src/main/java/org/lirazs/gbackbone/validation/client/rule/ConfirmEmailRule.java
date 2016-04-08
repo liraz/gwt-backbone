@@ -30,7 +30,7 @@ public class ConfirmEmailRule extends SameValueContextualRule<ConfirmEmail, Emai
     }
 
     @Override
-    public boolean isValid(final String confirmValue) {
-        return super.isValid(confirmValue);
+    public boolean isValid(final String confirmValue, String attribute) {
+        return super.isValid(confirmValue, attribute);
     }
 }

@@ -9,7 +9,7 @@ import org.lirazs.gbackbone.validation.client.annotation.Required;
 /**
  * Created on 17/03/2016.
  */
-public class TestDataModel extends Model {
+public class TestFailedDataModel extends Model {
 
     @Email
     @Required
@@ -17,9 +17,9 @@ public class TestDataModel extends Model {
 
     @ConfirmEmail
     @Required
-    private String emailRetype;
+    private String confirmEmail;
 
-    public TestDataModel() {
+    public TestFailedDataModel() {
         super();
 
         new ModelValidator(this);
