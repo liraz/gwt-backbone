@@ -1,5 +1,5 @@
 /*
- * Copyright 2015, Liraz Shilkrot
+ * Copyright 2016, Liraz Shilkrot
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,6 +21,8 @@ import com.google.gwt.regexp.shared.RegExp;
 import org.lirazs.gbackbone.client.core.annotation.Route;
 import org.lirazs.gbackbone.client.core.data.Options;
 import org.lirazs.gbackbone.client.core.event.Events;
+import org.lirazs.gbackbone.client.core.navigation.function.OnRouteFunction;
+import org.lirazs.gbackbone.client.core.util.RouterUtils;
 import org.lirazs.gbackbone.reflection.client.*;
 
 import java.util.*;
@@ -28,7 +30,7 @@ import java.util.*;
 @Reflectable(classAnnotations = true, fields = false, methods = true, constructors = false,
         fieldAnnotations = true, relationTypes=false,
         superClasses=false, assignableClasses=false)
-public class Router extends Events {
+public class Router extends Events<Router> {
 
     private Map<String, ?> routes;
 
@@ -54,6 +56,45 @@ public class Router extends Events {
 
         bindRoutes();
         initialize(options);
+    }
+
+    /**
+     * Gets a specific route by a given method name that is associated to this route.
+     *
+     * @param methodName
+     * @return
+     */
+    public String getRouteByMethodName(String methodName) {
+        for (Map.Entry<String, ?> routeEntry : routes.entrySet()) {
+            Object value = routeEntry.getValue();
+            if(value instanceof String) {
+                String stringValue = (String) value;
+
+                if(stringValue.equals(methodName)) {
+                    return routeEntry.getKey();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Getting all the routes associated to this router...
+     *
+     * @return
+     */
+    public String[] getRoutes() {
+        Set<String> strings = routes.keySet();
+        return strings.toArray(new String[strings.size()]);
+    }
+
+    /**
+     *
+     * @param callback
+     * @return
+     */
+    public Router onRoute(OnRouteFunction callback) {
+        return on("route", callback);
     }
 
     // Initialize is an empty function by default. Override it with your own
@@ -99,7 +140,7 @@ public class Router extends Events {
         return route(route, "", callback);
     }
     protected Router route(String route, String name, Function callback) {
-        RegExp regExp = routeToRegExp(route);
+        RegExp regExp = RouterUtils.routeToRegExp(route);
         return route(regExp, name, callback);
     }
     protected Router route(RegExp route, Function callback) {
@@ -138,7 +179,7 @@ public class Router extends Events {
             @Override
             public void f() {
                 String fragment = this.getArgument(0);
-                String[] args = extractParameters(route, fragment);
+                String[] args = RouterUtils.extractParameters(route, fragment);
 
                 if (execute(innerCallback, args, name)) {
                     trigger("route:" + name, args);
@@ -250,74 +291,4 @@ public class Router extends Events {
         }
         return routes;
     }
-
-    /**
-     *
-     * var optionalParam = /\((.*?)\)/g;
-     var namedParam    = /(\(\?)?:\w+/g;
-     var splatParam    = /\*\w+/g;
-     var escapeRegExp  = /[\-{}\[\]+?.,\\\^$|#\s]/g;
-     *
-     * // Convert a route string into a regular expression, suitable for matching
-     // against the current location hash.
-     _routeToRegExp: function(route) {
-         route = route.replace(escapeRegExp, '\\$&')
-             .replace(optionalParam, '(?:$1)?')
-             .replace(namedParam, function(match, optional) {
-                return optional ? match : '([^/?]+)';
-             })
-             .replace(splatParam, '([^?]*?)');
-         return new RegExp('^' + route + '(?:\\?([\\s\\S]*))?$');
-     },
-     *
-     */
-    private RegExp routeToRegExp(String route) {
-        return RegExp.compile(nativeRouteToRegExp(route));
-    }
-
-    private native String nativeRouteToRegExp(String input) /*-{
-        input = input.replace(/[\-{}\[\]+?.,\\\^$|#\s]/g, '\\$&')
-            .replace(/\((.*?)\)/g, '(?:$1)?')
-            .replace(/(\(\?)?:\w+/g, function(match, optional) {
-                return optional ? match : '([^/?]+)';
-            })
-            .replace(/\*\w+/g, '([^?]*?)');
-        return '^' + input + '(?:\\?([\\s\\S]*))?$';
-    }-*/;
-
-    /**
-     * Given a route, and a URL fragment that it matches, return the array of
-     * extracted decoded parameters. Empty or unmatched parameters will be
-     * treated as `null` to normalize cross-browser behavior.
-     *
-     * @param route
-     * @param fragment
-     * @return
-     */
-    private String[] extractParameters(RegExp route, String fragment) {
-        MatchResult matchResult = route.exec(fragment);
-        int groupCount = matchResult.getGroupCount() - 1;
-        if(groupCount < 0)
-            groupCount = 0;
-
-        List<String> params = new ArrayList<String>();
-
-        for (int i = 0; i < groupCount; i++) {
-            String param = matchResult.getGroup(i + 1);
-
-            if (param != null && !param.isEmpty()) {
-                // Don't decode the search params.
-                if(i == groupCount - 1) {
-                    params.add(param);
-                } else {
-                    params.add(decodeURIComponent(param));
-                }
-            }
-        }
-        return params.toArray(new String[params.size()]);
-    }
-
-    private native String decodeURIComponent(String s) /*-{
-        return decodeURIComponent(s);
-    }-*/;
 }

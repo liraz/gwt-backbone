@@ -7,7 +7,7 @@
     <groupId>org.lirazs.gbackbone</groupId>
     <artifactId>gwt-backbone</artifactId>
     <packaging>pom</packaging>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <name>Gwt Backbone Project</name>
 	<description>GwtBackbone is a Backbone.js clone written in GWT.</description>
     <url>https://github.com/liraz/gwt-backbone</url>
@@ -27,7 +27,7 @@
         <url>git@github.com:liraz/gwt-backbone.git</url>
         <connection>scm:git@github.com:liraz/gwt-backbone.git</connection>
         <developerConnection>scm:git@github.com:liraz/gwt-backbone.git</developerConnection>
-        <tag>0.5.0</tag>
+        <tag>0.6.0</tag>
     </scm>
 
     <issueManagement>
@@ -86,6 +86,7 @@
         <module>gwt-backbone-core</module>
         <module>gwt-backbone-validation</module>
         <module>gwt-backbone-examples</module>
+        <module>gwt-backbone-navigation</module>
     </modules>
 
     <properties>
